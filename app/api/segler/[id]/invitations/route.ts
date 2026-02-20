@@ -1,13 +1,13 @@
-// route.ts
+// app/api/segler/[id]/invitations/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
 export const GET = async (
-  request: NextRequest,
-  context: any // 🔹 hier any, um TypeScript-Check zu umgehen
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> } // ✅ Promise
 ) => {
-  const userId = context.params.id;
+  const { id: userId } = await context.params; // ✅ Promise auflösen
 
   const invPath = path.join(process.cwd(), 'app/api/accounts/invitations.json');
   const eventsPath = path.join(process.cwd(), 'app/api/events/events.json');
