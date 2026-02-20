@@ -1,0 +1,411 @@
+[
+  {
+    "id": "4709860e-525f-4a83-ae49-a9517dfa9f1c",
+    "name": "JXX Championship & ILCA",
+    "datumVon": "2025-08-20",
+    "datumBis": "2025-08-25",
+    "land": "Luxemburg",
+    "location": "1, um Séi",
+    "vereinId": "cbe0cfe7-ddcf-4882-9ed4-961c4dc9dd45",
+    "privat": false,
+    "notiz": "",
+    "alleKlassen": false,
+    "bootsklassen": [
+      "ILCA 4",
+      "ILCA 6",
+      "ILCA 7",
+      "J70",
+      "J80",
+      "J24",
+      "Laser II"
+    ],
+    "gebuehrenProKlasse": {
+      "ILCA 4": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Mixed",
+        "minAge": null,
+        "maxAge": 18,
+        "limit": null
+      },
+      "ILCA 6": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Frauen",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      },
+      "ILCA 7": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Herren",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      },
+      "J70": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Mixed",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      },
+      "J80": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Mixed",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      },
+      "J24": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Mixed",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      },
+      "Laser II": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Mixed",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      }
+    },
+    "extras": [],
+    "documents": [
+      {
+        "id": "6120584a-2d4c-41a5-921e-576d317b5994",
+        "name": "Bulletin_inscription_regate.pdf",
+        "url": "blob:http://localhost:3000/a9e925ac-dfbf-41ff-8f6f-2619b4cdabbb"
+      }
+    ],
+    "segler": {
+      "ILCA 4": [],
+      "ILCA 6": [
+        {
+          "skipper": {
+            "seglerId": "127a0956-f4ef-4dfe-8be8-56d8ef51fe13",
+            "name": "nora feltz",
+            "nation": "Lux",
+            "verein": "YCL",
+            "email": "norafeltz@gmail.com",
+            "telefon": "621393424",
+            "geschlecht": "w",
+            "lizenzNummer": "6426",
+            "geburtsdatum": "2005-09-05"
+          },
+          "boot": {
+            "bootName": "",
+            "segelnummer": "184639",
+            "countryCode": "LUX"
+          },
+          "crew": [],
+          "extras": [],
+          "paidAt": "2025-01-16T21:12:30.631Z",
+          "bezahlt": true,
+          "paymentIntent": "pi_3SqKJkIqloZPkNcW2GqaMRpb"
+        },
+        {
+          "skipper": {
+            "seglerId": "08220c06-5764-4a1c-9203-cb3a12b8d500",
+            "name": "Hattie Roggers",
+            "verein": "YCL",
+            "email": "gromperenkichelchen07@gmail.com",
+            "telefon": "",
+            "geschlecht": "w",
+            "lizenzNummer": "1234567",
+            "geburtsdatum": "5678-34-12"
+          },
+          "boot": {
+            "bootName": "",
+            "segelnummer": "12345678",
+            "countryCode": "GBR"
+          },
+          "crew": [],
+          "extras": [],
+          "paidAt": "2025-02-13T15:45:52.877Z",
+          "bezahlt": true,
+          "paymentIntent": "pi_3T0OYyIqloZPkNcW09Fs9eO2"
+        }
+      ],
+      "ILCA 7": [
+        {
+          "skipper": {
+            "seglerId": "dd0945b2-c841-4e6d-abed-284057b9cf96",
+            "name": "Nicolas Feltz",
+            "nation": "Lux",
+            "verein": "YCL",
+            "email": "nicolasf07@icloud.com",
+            "telefon": "621393424",
+            "geschlecht": "m",
+            "lizenzNummer": "2036",
+            "geburtsdatum": "2007-10-06"
+          },
+          "boot": {
+            "bootName": "Louisa",
+            "segelnummer": "207471",
+            "countryCode": "LUX"
+          },
+          "crew": [],
+          "extras": [],
+          "paidAt": "2025-01-16T21:12:30.631Z",
+          "bezahlt": true,
+          "paymentIntent": "pi_3SqKJkIqloZPkNcW2GqaMRpb"
+        },
+        {
+          "skipper": {
+            "seglerId": "2010174a-efc2-4a62-bfa1-653e8c796635",
+            "name": "Matheo",
+            "nation": "Bel",
+            "verein": "BRYC",
+            "email": "matheo@be.com",
+            "telefon": "",
+            "geschlecht": "m",
+            "lizenzNummer": "63524",
+            "geburtsdatum": "5678-34-12"
+          },
+          "boot": {
+            "bootName": "",
+            "segelnummer": "197727",
+            "countryCode": "BEL"
+          },
+          "crew": [],
+          "extras": [],
+          "paidAt": "2025-02-12T23:17:45.801Z",
+          "bezahlt": true,
+          "paymentIntent": "pi_3T098lIqloZPkNcW0lXWuOka"
+        },
+        {
+          "skipper": {
+            "seglerId": "d8401ecd-7da7-4a1b-981f-f8781588c377",
+            "name": "Fredrik Lästh",
+            "verein": "SYCS",
+            "email": "henrie@pt.swe",
+            "telefon": "",
+            "geschlecht": "m",
+            "lizenzNummer": "840204",
+            "geburtsdatum": "2003-05-05"
+          },
+          "boot": {
+            "bootName": "",
+            "segelnummer": "848201",
+            "countryCode": "SWE"
+          },
+          "crew": [],
+          "extras": [],
+          "paidAt": "2025-02-12T23:25:38.532Z",
+          "bezahlt": true,
+          "paymentIntent": "pi_3T09GOIqloZPkNcW0yt1wfyh"
+        }
+      ],
+      "J70": [],
+      "J80": [],
+      "J24": [],
+      "Laser II": []
+    },
+    "anmeldungsZeitraum": {
+      "von": "2025-01-17",
+      "bis": "2025-05-06"
+    },
+    "createdAt": "2025-01-16T18:40:41.726Z",
+    "latitude": 49.9012089,
+    "longitude": 5.8838985,
+    "updatedAt": "2025-02-13T15:45:52.877Z"
+  },
+  {
+    "id": "d6850881-9b64-4289-9644-ff2ae195f480",
+    "name": "Test 1",
+    "datumVon": "2026-02-27",
+    "datumBis": "2026-03-01",
+    "land": "Luxemburg",
+    "location": "1, um Séi L-9665 Liefrange",
+    "vereinId": "cbe0cfe7-ddcf-4882-9ed4-961c4dc9dd45",
+    "privat": false,
+    "notiz": "ikuzjthrtgb",
+    "alleKlassen": false,
+    "bootsklassen": [
+      "ILCA 7",
+      "ILCA 6",
+      "ILCA 4"
+    ],
+    "gebuehrenProKlasse": {
+      "ILCA 7": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Herren",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      },
+      "ILCA 6": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Damen",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      },
+      "ILCA 4": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Mixed",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      }
+    },
+    "extras": [
+      {
+        "name": "test 1",
+        "price": 65
+      }
+    ],
+    "documents": [],
+    "segler": {
+      "ILCA 7": [
+        {
+          "skipper": {
+            "seglerId": "dd0945b2-c841-4e6d-abed-284057b9cf96",
+            "name": "Nicolas Feltz",
+            "nation": "Lux",
+            "email": "nicolasf07@icloud.com",
+            "telefon": "",
+            "verein": "YCL",
+            "geburtsdatum": "",
+            "lizenzNummer": "2036"
+          },
+          "boot": {
+            "bootName": "LOUISA",
+            "segelnummer": "207471",
+            "countryCode": "LUX"
+          },
+          "crew": [],
+          "extras": [
+            {
+              "name": "test 1",
+              "price": 65,
+              "quantity": 1
+            }
+          ],
+          "bezahlt": true,
+          "paidAt": "2026-02-17T15:23:27.572Z",
+          "paymentIntent": "pi_3T1q7SIqloZPkNcW3U9gNo4x"
+        }
+      ]
+    },
+    "anmeldungsZeitraum": {
+      "von": "2026-02-17",
+      "bis": "2026-02-27"
+    },
+    "latitude": 49.9012089,
+    "longitude": 5.8838985,
+    "createdAt": "2026-02-17T13:40:24.519Z",
+    "updatedAt": "2026-02-17T20:48:03.835Z"
+  },
+  {
+    "id": "d25edd34-9adb-407c-acd7-364882b7a43a",
+    "name": "test 2",
+    "datumVon": "2026-02-20",
+    "datumBis": "2026-02-21",
+    "land": "Deutschland",
+    "location": "Kiellinie 215 24106 Kiel",
+    "vereinId": "cbe0cfe7-ddcf-4882-9ed4-961c4dc9dd45",
+    "privat": false,
+    "notiz": "",
+    "alleKlassen": false,
+    "bootsklassen": [
+      "RS Aero"
+    ],
+    "gebuehrenProKlasse": {
+      "RS Aero": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Mixed",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      }
+    },
+    "extras": [],
+    "documents": [],
+    "segler": {
+      "RS Aero": [],
+      "undefined": [
+        {
+          "skipper": {
+            "seglerId": "08220c06-5764-4a1c-9203-cb3a12b8d500",
+            "name": "Hattie Roggers",
+            "nation": "GBR",
+            "email": "gromperenkichelchen07@gmail.com",
+            "telefon": "",
+            "verein": "Ycl",
+            "geburtsdatum": "",
+            "lizenzNummer": "45729038"
+          },
+          "boot": {
+            "bootName": "",
+            "segelnummer": "5432",
+            "countryCode": ""
+          },
+          "crew": [],
+          "extras": [],
+          "bezahlt": true,
+          "paidAt": "2026-02-18T16:43:41.019Z",
+          "paymentIntent": "pi_3T2DqfIqloZPkNcW3raBNIvI"
+        }
+      ]
+    },
+    "anmeldungsZeitraum": {
+      "von": "2026-02-16",
+      "bis": "2026-02-19"
+    },
+    "latitude": 54.3515315,
+    "longitude": 10.1419605,
+    "createdAt": "2026-02-17T19:28:42.184Z",
+    "updatedAt": "2026-02-18T16:43:41.036Z"
+  },
+  {
+    "id": "c999732e-7ab7-4e27-bf9b-4d54ae68bc99",
+    "name": "test privat",
+    "datumVon": "2026-02-21",
+    "datumBis": "2026-02-22",
+    "land": "Niederlande",
+    "location": "1, um Séi",
+    "vereinId": "cbe0cfe7-ddcf-4882-9ed4-961c4dc9dd45",
+    "privat": true,
+    "notiz": "",
+    "alleKlassen": false,
+    "bootsklassen": [
+      "Global"
+    ],
+    "gebuehrenProKlasse": {
+      "Global": {
+        "normal": 30,
+        "spaet": 40,
+        "gender": "Offen",
+        "minAge": null,
+        "maxAge": null,
+        "limit": null
+      }
+    },
+    "extras": [],
+    "documents": [],
+    "segler": {
+      "Global": []
+    },
+    "anmeldungsZeitraum": {
+      "von": "2026-02-16",
+      "bis": "2026-02-20"
+    },
+    "latitude": 54.3515315,
+    "longitude": 10.1419605,
+    "createdAt": "2026-02-18T14:23:50.764Z",
+    "updatedAt": "2026-02-18T14:23:50.764Z"
+  }
+]
