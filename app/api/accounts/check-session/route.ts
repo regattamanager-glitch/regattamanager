@@ -1,19 +1,21 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
     const { sessionId } = await req.json();
-    const sessionsFile = path.join(process.cwd(), "app/api/accounts/sessions.json");
 
-    if (fs.existsSync(sessionsFile)) {
-      const sessions = JSON.parse(fs.readFileSync(sessionsFile, "utf-8"));
-      const session = sessions.find((s: any) => s.id === sessionId && s.expires > Date.now());
-      if (session) return NextResponse.json({ ok: true });
+    const session = await prisma.session.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!session || session.expires < new Date()) {
+      return NextResponse.json({ ok: false }, { status: 401 });
     }
-    return NextResponse.json({ ok: false }, { status: 401 });
+
+    return NextResponse.json({ ok: true });
   } catch (e) {
+    console.error(e);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Verein {
+  id              String   @id @default(cuid())
+  name            String
+  kuerzel         String?
+  email           String   @unique
+  passwort        String
+  adresse         String?
+  instagram       String?
+  tiktok          String?
+  stripeAccountId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  segler          Segler[] @relation("SeglerVereine")
+}
+
+model Segler {
+  id             String   @id @default(cuid())
+  vorname        String
+  nachname       String
+  geburtsjahr    String
+  nation         String
+  email          String   @unique
+  passwort       String
+  worldSailingId String?
+  lizenzNummer   String?
+  instagram      String?
+  tiktok         String?
+  profilbild     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  Segler_A       Segler[] @relation("SeglerFriends")
+  Segler_B       Segler[] @relation("SeglerFriends")
+  vereine        Verein[] @relation("SeglerVereine")
+}
+
+model LoginCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expires   DateTime
+  seglerId  String?
+  vereinId  String?
+  createdAt DateTime @default(now())
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  userType  String
+  userAgent String?
+  ip        String?
+  expires   DateTime
+  createdAt DateTime @default(now())
+}

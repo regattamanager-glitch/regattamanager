@@ -1,29 +1,6 @@
-// app/api/accounts/session/route.ts
-import fs from "fs";
-import path from "path";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-
-type Account = {
-  id: string;
-  type: string;
-  name: string;
-  kuerzel?: string;
-  adresse?: string;
-  email: string; 
-  passwort: string;
-};
-
-type Session = {
-  id: string;
-  userId: string;
-  ua: string;
-  ip: string;
-  expires: number;
-};
-
-const accountsFile = path.join(process.cwd(), "app/api/accounts/accounts.json");
-const sessionsFile = path.join(process.cwd(), "app/api/accounts/sessions.json");
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -31,14 +8,12 @@ export async function GET() {
 
   if (!sessionId) return NextResponse.json(null, { status: 404 });
 
-  if (!fs.existsSync(sessionsFile)) return NextResponse.json(null, { status: 404 });
+  const session = await prisma.session.findUnique({ where: { id: sessionId } });
+  if (!session || session.expires < new Date()) return NextResponse.json(null, { status: 404 });
 
-  const sessions: Session[] = JSON.parse(fs.readFileSync(sessionsFile, "utf-8"));
-  const session = sessions.find((s: Session) => s.id === sessionId && s.expires > Date.now());
-  if (!session) return NextResponse.json(null, { status: 404 });
-
-  const accounts: Account[] = JSON.parse(fs.readFileSync(accountsFile, "utf-8"));
-  const user = accounts.find((u: Account) => u.id === session.userId);
+  const user =
+    (await prisma.segler.findUnique({ where: { id: session.userId } })) ||
+    (await prisma.verein.findUnique({ where: { id: session.userId } }));
 
   if (!user) return NextResponse.json(null, { status: 404 });
 
