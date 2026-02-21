@@ -3,12 +3,15 @@ import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
 import nodemailer from "nodemailer";
 // Import auf 'db' korrigiert (passend zu deiner lib/prisma.ts)
-import db from "@/lib/prisma"; 
+import { getPrisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
+    const db = getPrisma();
     const { email, passwort } = await req.json();
 
     if (!email || !passwort) {

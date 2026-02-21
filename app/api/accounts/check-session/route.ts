@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import db from "@/lib/prisma"; 
+import { getPrisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 export async function POST(req: Request) {
   try {
+    const db = getPrisma();
     const { sessionId } = await req.json();
 
     if (!sessionId) return NextResponse.json({ ok: false }, { status: 400 });

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 // Import auf 'db' korrigiert
-import db from "@/lib/prisma"; 
+import { getPrisma } from "@/lib/prisma"; 
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const db = getPrisma();
     // 'prisma' durch 'db' ersetzt
     const invitations = await db.loginCode.findMany({
       where: { 

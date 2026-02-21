@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 // Import auf 'db' korrigiert
-import db from "@/lib/prisma"; 
+import { getPrisma } from "@/lib/prisma";
+import { Verein } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
+    const db = getPrisma();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -19,8 +23,11 @@ export async function GET(req: Request) {
         return NextResponse.json({
           ...segler,
           type: "segler",
-          vereinsNamen: segler.vereine.map((v) => v.kuerzel || v.name),
-          verein: segler.vereine.length > 0 ? segler.vereine[0].kuerzel || segler.vereine[0].name : "",
+          // Hier fügen wir den Typ (v: Verein) hinzu:
+          vereinsNamen: segler.vereine.map((v: Verein) => v.kuerzel || v.name),
+          verein: segler.vereine.length > 0 
+            ? (segler.vereine[0].kuerzel || segler.vereine[0].name) 
+            : "",
         });
       }
 

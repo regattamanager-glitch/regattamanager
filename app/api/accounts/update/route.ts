@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 // Import auf 'db' korrigiert
-import db from "@/lib/prisma"; 
+import { getPrisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    const db = getPrisma();
     const body = await req.json();
     const { email, currentPassword, update } = body;
 

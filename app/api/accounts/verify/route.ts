@@ -2,10 +2,13 @@ import { randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
 // Import auf 'db' korrigiert
-import db from "@/lib/prisma"; 
+import { getPrisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    const db = getPrisma();
     const { email, code } = await req.json();
     if (!email || !code) {
       return NextResponse.json({ success: false, message: "Fehlende Daten" }, { status: 400 });

@@ -1,20 +1,17 @@
 // lib/prisma.ts
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    // In v7 kann die URL hier direkt oder über die config gesteuert werden
-    // Falls npx prisma generate immer noch meckert, stelle sicher, 
-    // dass DATABASE_URL in deiner .env korrekt gesetzt ist.
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = db;
+declare global {
+  var prisma: PrismaClient | undefined;
 }
 
-export default db;
+export function getPrisma(): PrismaClient {
+  // Nur beim ersten Aufruf instanziieren
+  if (!global.prisma) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL fehlt in der .env!');
+    }
+    global.prisma = new PrismaClient();
+  }
+  return global.prisma;
+}

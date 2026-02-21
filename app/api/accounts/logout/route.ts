@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import db from "@/lib/prisma"; // Import für die Datenbank-Interaktion
+import { getPrisma } from "@/lib/prisma"; // Import für die Datenbank-Interaktion
+
+export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
+    const db = getPrisma();
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
 

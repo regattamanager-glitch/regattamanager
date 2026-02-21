@@ -1,11 +1,14 @@
 // app/api/accounts/register/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import db from "@/lib/prisma"; // Nutzt dein exportiertes 'db'
+import { getPrisma } from "@/lib/prisma";
 import nodemailer from "nodemailer";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    const db = getPrisma();
     const body = await req.json();
     const { type, email, passwort, vorname, nachname, geburtsjahr, nation, name, kuerzel, adresse } = body;
 
