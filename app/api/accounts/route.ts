@@ -1,27 +1,58 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+// Import auf 'db' korrigiert
+import db from "@/lib/prisma"; 
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
 
-  const segler = await prisma.segler.findMany({ include: { vereine: true } });
-  const vereine = await prisma.verein.findMany();
-
-  if (id) {
-    const user = segler.find((s) => s.id === id) || vereine.find((v) => v.id === id);
-    if (!user) return NextResponse.json({ error: "Nutzer nicht gefunden" }, { status: 404 });
-
-    if ("vorname" in user) {
-      return NextResponse.json({
-        ...user,
-        vereinsNamen: user.vereine.map((v) => v.kuerzel || v.name),
-        verein: user.vereine.length > 0 ? user.vereine[0].kuerzel || user.vereine[0].name : "",
+    // FALL 1: Spezifischen Nutzer laden
+    if (id) {
+      // Zuerst in Seglern suchen (mit Relationen)
+      const segler = await db.segler.findUnique({
+        where: { id },
+        include: { vereine: true }
       });
+
+      if (segler) {
+        return NextResponse.json({
+          ...segler,
+          type: "segler",
+          vereinsNamen: segler.vereine.map((v) => v.kuerzel || v.name),
+          verein: segler.vereine.length > 0 ? segler.vereine[0].kuerzel || segler.vereine[0].name : "",
+        });
+      }
+
+      // Falls kein Segler, in Vereinen suchen
+      const verein = await db.verein.findUnique({
+        where: { id }
+      });
+
+      if (verein) {
+        return NextResponse.json({
+          ...verein,
+          type: "verein"
+        });
+      }
+
+      return NextResponse.json({ error: "Nutzer nicht gefunden" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
-  }
+    // FALL 2: Alle Nutzer laden (z.B. für Admin-Listen)
+    const allSegler = await db.segler.findMany({ include: { vereine: true } });
+    const allVereine = await db.verein.findMany();
 
-  return NextResponse.json([...segler, ...vereine]);
+    // Wir fügen den Typ hinzu, damit das Frontend sie unterscheiden kann
+    const combined = [
+      ...allSegler.map(s => ({ ...s, type: "segler" })),
+      ...allVereine.map(v => ({ ...v, type: "verein" }))
+    ];
+
+    return NextResponse.json(combined);
+
+  } catch (error) {
+    console.error("Fehler in /api/accounts:", error);
+    return NextResponse.json({ error: "Serverfehler" }, { status: 500 });
+  }
 }

@@ -1,7 +1,7 @@
-// app/api/accounts/update/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma"; // Dein Prisma-Client
+// Import auf 'db' korrigiert
+import db from "@/lib/prisma"; 
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,69 +12,65 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Fehlende Daten" }, { status: 400 });
     }
 
-    // Benutzer laden
-    const user = await prisma.user.findUnique({ where: { email } });
+    // 1. Benutzer suchen (entweder in Segler oder Verein)
+    let user: any = await db.segler.findUnique({ where: { email } });
+    let userType: "segler" | "verein" = "segler";
+
+    if (!user) {
+      user = await db.verein.findUnique({ where: { email } });
+      userType = "verein";
+    }
+
     if (!user) {
       return NextResponse.json({ success: false, message: "Benutzer nicht gefunden" }, { status: 404 });
     }
 
-    // Passwort prüfen
+    // 2. Passwort prüfen
     const match = await bcrypt.compare(currentPassword, user.passwort);
     if (!match) {
       return NextResponse.json({ success: false, message: "Aktuelles Passwort falsch" }, { status: 401 });
     }
 
-    // Felder vorbereiten
-    const commonFields: any = {};
-    const seglerFields = [
-      "vorname",
-      "nachname",
-      "nation",
-      "worldSailingId",
-      "instagram",
-      "tiktok",
-      "profilbild",
-      "vereine"
-    ];
-    const vereinFields = [
-      "name",
-      "kuerzel",
-      "adresse",
-      "stripeAccountId",
-      "instagram",
-      "tiktok",
-      "profilbild"
-    ];
-
-    // Gemeinsame Felder updaten
-    if (update.email) commonFields.email = update.email;
-
-    // Typ-spezifische Felder
-    if (user.type === "segler") {
-      seglerFields.forEach(f => { if (update[f] !== undefined) commonFields[f] = update[f]; });
-    }
-    if (user.type === "verein") {
-      vereinFields.forEach(f => { if (update[f] !== undefined) commonFields[f] = update[f]; });
-    }
+    // 3. Felder vorbereiten
+    const updateData: any = {};
 
     // Passwort optional ändern
     if (update.passwort && update.passwort.trim() !== "") {
-      commonFields.passwort = await bcrypt.hash(update.passwort, 10);
+      updateData.passwort = await bcrypt.hash(update.passwort, 10);
     }
 
-    // Update ausführen
-    const updatedUser = await prisma.user.update({
-      where: { email },
-      data: commonFields
-    });
+    // Email optional ändern
+    if (update.email) updateData.email = update.email;
 
-    return NextResponse.json({
-      success: true,
-      message: "Profil erfolgreich aktualisiert",
-      user: updatedUser
-    });
+    // 4. Typ-spezifische Updates
+    if (userType === "segler") {
+      const seglerFields = ["vorname", "nachname", "nation", "worldSailingId", "instagram", "tiktok", "profilbild"];
+      seglerFields.forEach(f => {
+        if (update[f] !== undefined) updateData[f] = update[f];
+      });
+
+      const updatedSegler = await db.segler.update({
+        where: { email },
+        data: updateData
+      });
+
+      return NextResponse.json({ success: true, user: updatedSegler });
+    } else {
+      const vereinFields = ["name", "kuerzel", "adresse", "stripeAccountId", "instagram", "tiktok"];
+      vereinFields.forEach(f => {
+        if (update[f] !== undefined) updateData[f] = update[f];
+      });
+
+      const updatedVerein = await db.verein.update({
+        where: { email },
+        data: updateData
+      });
+
+      return NextResponse.json({ success: true, user: updatedVerein });
+    }
+
   } catch (error) {
-    console.error(error);
+    console.error("Update Fehler:", error);
     return NextResponse.json({ success: false, message: "Fehler beim Aktualisieren" }, { status: 500 });
   }
 }

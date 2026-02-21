@@ -1,21 +1,54 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+// Import auf 'db' korrigiert
+import db from "@/lib/prisma"; 
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session")?.value;
+  try {
+    const cookieStore = await cookies();
+    // Prüfe beide gängigen Cookie-Namen zur Sicherheit
+    const sessionId = cookieStore.get("session")?.value || cookieStore.get("session_id")?.value;
 
-  if (!sessionId) return NextResponse.json(null, { status: 404 });
+    if (!sessionId) {
+      return NextResponse.json(null, { status: 401 });
+    }
 
-  const session = await prisma.session.findUnique({ where: { id: sessionId } });
-  if (!session || session.expires < new Date()) return NextResponse.json(null, { status: 404 });
+    // 1. Session aus der Datenbank laden
+    const session = await db.session.findUnique({ 
+      where: { id: sessionId } 
+    });
 
-  const user =
-    (await prisma.segler.findUnique({ where: { id: session.userId } })) ||
-    (await prisma.verein.findUnique({ where: { id: session.userId } }));
+    // 2. Prüfen, ob Session existiert und noch gültig ist
+    if (!session || session.expires < new Date()) {
+      return NextResponse.json(null, { status: 401 });
+    }
 
-  if (!user) return NextResponse.json(null, { status: 404 });
+    // 3. Den passenden Nutzer laden (basierend auf userType aus deinem Schema)
+    let user = null;
+    if (session.userType === "verein") {
+      user = await db.verein.findUnique({ 
+        where: { id: session.userId },
+        select: { id: true, name: true, email: true, kuerzel: true } // Passwort niemals mitsenden!
+      });
+    } else {
+      user = await db.segler.findUnique({ 
+        where: { id: session.userId },
+        select: { id: true, vorname: true, nachname: true, email: true, nation: true }
+      });
+    }
 
-  return NextResponse.json(user);
+    if (!user) {
+      return NextResponse.json(null, { status: 404 });
+    }
+
+    // 4. Benutzerdaten mit Typ-Information zurückgeben
+    return NextResponse.json({
+      ...user,
+      type: session.userType
+    });
+
+  } catch (error) {
+    console.error("Session-Fehler:", error);
+    return NextResponse.json(null, { status: 500 });
+  }
 }
