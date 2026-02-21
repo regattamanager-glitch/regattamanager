@@ -4,6 +4,7 @@ import { randomInt } from "crypto";
 import nodemailer from "nodemailer";
 // Import auf 'db' korrigiert (passend zu deiner lib/prisma.ts)
 import { getPrisma } from "@/lib/prisma";
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = "force-dynamic";
 

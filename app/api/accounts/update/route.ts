@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 // Import auf 'db' korrigiert
 import { getPrisma } from "@/lib/prisma";
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = "force-dynamic";
 

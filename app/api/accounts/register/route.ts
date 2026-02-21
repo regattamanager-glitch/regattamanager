@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getPrisma } from "@/lib/prisma";
 import nodemailer from "nodemailer";
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = "force-dynamic";
 

@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
 // Import auf 'db' korrigiert
 import { getPrisma } from "@/lib/prisma";
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = "force-dynamic";
 
