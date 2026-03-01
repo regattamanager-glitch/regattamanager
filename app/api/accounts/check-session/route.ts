@@ -1,46 +1,61 @@
 import { NextResponse } from "next/server";
-import { getPrisma } from "@/lib/prisma";
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/lib/prisma"; // Umgestellt auf direkten Export
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export async function POST(req: Request) {
   try {
-    const db = getPrisma();
-    const { sessionId } = await req.json();
+    // 1. Daten aus dem Request holen
+    const body = await req.json().catch(() => ({}));
+    const { sessionId } = body;
 
-    if (!sessionId) return NextResponse.json({ ok: false }, { status: 400 });
+    if (!sessionId) {
+      return NextResponse.json({ ok: false, error: "Keine Session-ID" }, { status: 400 });
+    }
 
-    const session = await db.session.findUnique({
+    // 2. Session in der Neon-Datenbank suchen
+    const session = await prisma.session.findUnique({
       where: { id: sessionId },
     });
 
-    // In deinem Schema heißt es 'expires'
+    // 3. Gültigkeit prüfen (In deinem Schema heißt das Feld 'expires')
     if (!session || session.expires < new Date()) {
-      return NextResponse.json({ ok: false }, { status: 401 });
+      return NextResponse.json({ ok: false, error: "Session abgelaufen" }, { status: 401 });
     }
 
-    // Wir prüfen, welcher User-Typ es ist, um in der richtigen Tabelle zu suchen
+    // 4. User-Daten laden basierend auf userType
     let user = null;
     if (session.userType === "verein") {
-      user = await db.verein.findUnique({ where: { id: session.userId } });
+      user = await prisma.verein.findUnique({ 
+        where: { id: session.userId } 
+      });
     } else {
-      user = await db.segler.findUnique({ where: { id: session.userId } });
+      user = await prisma.segler.findUnique({ 
+        where: { id: session.userId } 
+      });
     }
 
-    if (!user) return NextResponse.json({ ok: false }, { status: 401 });
+    // 5. Falls Session existiert, aber User gelöscht wurde
+    if (!user) {
+      return NextResponse.json({ ok: false, error: "Nutzer nicht gefunden" }, { status: 401 });
+    }
 
+    // 6. Erfolg: Daten strukturiert zurückgeben
     return NextResponse.json({ 
       ok: true, 
       user: { 
         id: user.id, 
-        name: session.userType === "verein" ? (user as any).name : `${(user as any).vorname} ${(user as any).nachname}`,
+        // Dynamische Namensbildung für Verein vs. Segler
+        name: session.userType === "verein" 
+          ? (user as any).name 
+          : `${(user as any).vorname} ${(user as any).nachname}`,
         role: session.userType 
       } 
     });
+
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    console.error("Fehler bei Session-Check:", e);
+    return NextResponse.json({ ok: false, error: "Serverfehler" }, { status: 500 });
   }
 }

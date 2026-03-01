@@ -1,27 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-// Import auf 'db' korrigiert
-import { getPrisma } from "@/lib/prisma";
-import { PrismaClient } from '@prisma/client';
+// Umgestellt auf den direkten Prisma 7 Export
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const db = getPrisma();
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { email, currentPassword, update } = body;
 
     if (!email || !currentPassword || !update) {
       return NextResponse.json({ success: false, message: "Fehlende Daten" }, { status: 400 });
     }
 
-    // 1. Benutzer suchen (entweder in Segler oder Verein)
-    let user: any = await db.segler.findUnique({ where: { email } });
+    // 1. Benutzer suchen
+    let user: any = await prisma.segler.findUnique({ where: { email } });
     let userType: "segler" | "verein" = "segler";
 
     if (!user) {
-      user = await db.verein.findUnique({ where: { email } });
+      user = await prisma.verein.findUnique({ where: { email } });
       userType = "verein";
     }
 
@@ -29,33 +27,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Benutzer nicht gefunden" }, { status: 404 });
     }
 
-    // 2. Passwort prüfen
+    // 2. Passwort zur Sicherheit vor Änderungen prüfen
     const match = await bcrypt.compare(currentPassword, user.passwort);
     if (!match) {
       return NextResponse.json({ success: false, message: "Aktuelles Passwort falsch" }, { status: 401 });
     }
 
-    // 3. Felder vorbereiten
+    // 3. Update-Daten vorbereiten
     const updateData: any = {};
 
-    // Passwort optional ändern
+    // Falls ein neues Passwort gesetzt werden soll
     if (update.passwort && update.passwort.trim() !== "") {
       updateData.passwort = await bcrypt.hash(update.passwort, 10);
     }
 
-    // Email optional ändern
-    if (update.email) updateData.email = update.email;
+    // Email-Änderung (Achtung: Prisma wirft Fehler, falls neue Email schon existiert)
+    if (update.email && update.email !== email) {
+      updateData.email = update.email;
+    }
 
-    // 4. Typ-spezifische Updates
+    // 4. Typ-spezifische Felder mappen
     if (userType === "segler") {
       const seglerFields = ["vorname", "nachname", "nation", "worldSailingId", "instagram", "tiktok", "profilbild"];
       seglerFields.forEach(f => {
         if (update[f] !== undefined) updateData[f] = update[f];
       });
 
-      const updatedSegler = await db.segler.update({
+      const updatedSegler = await prisma.segler.update({
         where: { email },
-        data: updateData
+        data: updateData,
+        // Passwort nicht zurück ans Frontend senden
+        select: { id: true, email: true, vorname: true, nachname: true, nation: true, worldSailingId: true }
       });
 
       return NextResponse.json({ success: true, user: updatedSegler });
@@ -65,16 +67,21 @@ export async function POST(req: NextRequest) {
         if (update[f] !== undefined) updateData[f] = update[f];
       });
 
-      const updatedVerein = await db.verein.update({
+      const updatedVerein = await prisma.verein.update({
         where: { email },
-        data: updateData
+        data: updateData,
+        select: { id: true, email: true, name: true, kuerzel: true, stripeAccountId: true }
       });
 
       return NextResponse.json({ success: true, user: updatedVerein });
     }
 
-  } catch (error) {
-    console.error("Update Fehler:", error);
-    return NextResponse.json({ success: false, message: "Fehler beim Aktualisieren" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Detaillierter Update-Fehler:", error);
+    // P2002 ist der Prisma-Code für Unique-Constraint-Verletzung (z.B. Email schon vergeben)
+    if (error.code === 'P2002') {
+      return NextResponse.json({ success: false, message: "Die neue E-Mail wird bereits verwendet." }, { status: 400 });
+    }
+    return NextResponse.json({ success: false, message: "Fehler beim Aktualisieren der Daten" }, { status: 500 });
   }
 }

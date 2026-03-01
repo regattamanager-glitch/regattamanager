@@ -1,33 +1,35 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getPrisma } from "@/lib/prisma"; // Import für die Datenbank-Interaktion
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "@/lib/prisma"; // Umgestellt auf direkten Prisma 7 Export
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
-    const db = getPrisma();
     const cookieStore = await cookies();
     const sessionId = cookieStore.get("session_id")?.value;
 
-    // 1. Session in der Datenbank löschen, falls vorhanden
+    // 1. Session in der Neon-Datenbank löschen
     if (sessionId) {
       try {
-        await db.session.delete({
+        await prisma.session.delete({
           where: { id: sessionId },
         });
       } catch (e) {
-        // Falls die Session schon weg ist oder nicht existiert, ignorieren wir den Fehler
-        console.log("Session existierte bereits nicht mehr in der DB.");
+        // Falls die Session bereits abgelaufen oder gelöscht war, 
+        // fangen wir den Fehler ab, damit der Logout-Prozess weiterläuft.
+        console.log("Session war in der Datenbank bereits nicht mehr vorhanden.");
       }
     }
 
     const response = NextResponse.json({ success: true });
 
-    // 2. Cookies im Browser löschen (Sowohl 'session' als auch 'session_id')
+    // 2. Cookies im Browser ungültig machen
+    // Wir setzen das Ablaufdatum auf den 01.01.1970
     const cookieOptions = {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
       expires: new Date(0),
       path: "/",
     };
@@ -37,7 +39,7 @@ export async function POST() {
 
     return response;
   } catch (error) {
-    console.error("Logout Fehler:", error);
-    return NextResponse.json({ success: false }, { status: 500 });
+    console.error("Detaillierter Logout-Fehler:", error);
+    return NextResponse.json({ success: false, message: "Serverfehler beim Logout" }, { status: 500 });
   }
 }
