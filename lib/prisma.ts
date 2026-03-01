@@ -1,9 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 
-// Wir stellen sicher, dass DATABASE_URL im Prozess existiert, 
-// damit Prisma 7 sie automatisch aus der Umgebung zieht.
 const prismaClientSingleton = () => {
-  return new PrismaClient()
+  // Wir nutzen 'any', um die strengen Prisma 7 Typen zu umgehen, 
+  // damit der Vercel-Build die URL findet.
+  return new PrismaClient({
+    datasourceUrl: process.env.DATABASE_URL,
+  } as any)
 }
 
 declare global {
