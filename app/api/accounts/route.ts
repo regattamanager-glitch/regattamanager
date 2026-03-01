@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"; // Umgestellt auf direkten Prisma 7 Expor
 import { Verein } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 export const fetchCache = "force-no-store";
 
 export async function GET(req: Request) {

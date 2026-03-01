@@ -1,11 +1,8 @@
 import { PrismaClient } from '@prisma/client'
 
+// Prisma 7 erwartet bei vorhandener prisma.config.ts einen leeren Konstruktor.
 const prismaClientSingleton = () => {
-  // Wir nutzen 'any', um die strengen Prisma 7 Typen zu umgehen, 
-  // damit der Vercel-Build die URL findet.
-  return new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
-  } as any)
+  return new PrismaClient()
 }
 
 declare global {
