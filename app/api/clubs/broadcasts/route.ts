@@ -1,56 +1,58 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { sql } from '@vercel/postgres';
+import { v4 as uuidv4 } from 'uuid';
 
+// 1. POST: Eine neue Nachricht für einen Club speichern
 export async function POST(request: Request) {
   try {
     const { clubId, message } = await request.json();
-    const filePath = path.join(process.cwd(), 'app', 'api', 'clubs', 'broadcasts', 'broadcasts.json');
 
-    // 1. Bestehende Nachrichten laden
-    let broadcasts = [];
-    try {
-      const fileData = await fs.readFile(filePath, 'utf-8');
-      broadcasts = JSON.parse(fileData);
-    } catch (e) { broadcasts = []; }
+    if (!clubId || !message) {
+      return NextResponse.json({ error: "Daten unvollständig" }, { status: 400 });
+    }
 
-    // 2. Zeitstempel für "vor 30 Tagen" berechnen
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const id = uuidv4();
+    const timestamp = new Date().toISOString();
 
-    // 3. Neue Nachricht hinzufügen + Alte Nachrichten (30 Tage) filtern
-    const newBroadcast = {
-      id: crypto.randomUUID(),
-      clubId,
-      message,
-      timestamp: Date.now()
-    };
- 
-    const updatedBroadcasts = [
-      newBroadcast,
-      ...broadcasts.filter((b: any) => b.timestamp > thirtyDaysAgo)
-    ];
+    // In die Tabelle club_broadcasts schreiben
+    await sql`
+      INSERT INTO club_broadcasts (id, club_id, message, timestamp)
+      VALUES (${id}, ${clubId}, ${message}, ${timestamp});
+    `;
 
-    // 4. Speichern
-    await fs.writeFile(filePath, JSON.stringify(updatedBroadcasts, null, 2));
+    // Optional: Alte Nachrichten (älter als 30 Tage) direkt aus der DB löschen, 
+    // um die Tabelle sauber zu halten (entspricht deiner alten Logik)
+    await sql`
+      DELETE FROM club_broadcasts 
+      WHERE timestamp < NOW() - INTERVAL '30 days';
+    `;
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
+    return NextResponse.json({ success: true, id });
+  } catch (error: any) {
+    console.error("Broadcast POST Fehler:", error);
     return NextResponse.json({ error: "Fehler beim Senden" }, { status: 500 });
   }
 }
 
+// 2. GET: Alle gültigen Nachrichten der letzten 30 Tage abrufen
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), 'app', 'api', 'clubs', 'broadcasts', 'broadcasts.json');
-    const fileData = await fs.readFile(filePath, 'utf-8');
-    const broadcasts = JSON.parse(fileData);
-    
-    // Auch hier: Beim Lesen direkt alte Nachrichten (30 Tage) ignorieren/filtern
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    const validBroadcasts = broadcasts.filter((b: any) => b.timestamp > thirtyDaysAgo);
+    // Nur Nachrichten abrufen, die jünger als 30 Tage sind
+    const { rows } = await sql`
+      SELECT 
+        id, 
+        club_id as "clubId", 
+        message, 
+        timestamp 
+      FROM club_broadcasts
+      WHERE timestamp > NOW() - INTERVAL '30 days'
+      ORDER BY timestamp DESC;
+    `;
 
-    return NextResponse.json(validBroadcasts);
-  } catch (e) {
+    return NextResponse.json(rows);
+  } catch (error: any) {
+    console.error("Broadcast GET Fehler:", error);
+    // Bei Fehlern geben wir ein leeres Array zurück, damit das Frontend nicht abstürzt
     return NextResponse.json([]);
   }
 }

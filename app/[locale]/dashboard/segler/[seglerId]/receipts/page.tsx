@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 import 'dayjs/locale/de';
-import 'dayjs/locale/en'; // Falls Englisch unterstützt wird
+import 'dayjs/locale/en';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useRouter } from "@/navigation";
@@ -26,7 +26,6 @@ export default function SeglerReceiptsPage() {
   const [receipts, setReceipts] = useState<any[]>([]);
   const [totalCost, setTotalCost] = useState(0);
 
-  // Dayjs an Sprache anpassen
   useEffect(() => {
     dayjs.locale(locale);
   }, [locale]);
@@ -34,68 +33,66 @@ export default function SeglerReceiptsPage() {
   async function loadReceiptData() {
     try {
       setLoading(true);
-      const [resEvents, resAccounts] = await Promise.all([
-        fetch('/api/events'),
-        fetch('/api/accounts')
-      ]); 
+      const [resMyEvents, resAccount] = await Promise.all([
+        fetch(`/api/events/my-registrations?seglerId=${seglerId}`),
+        fetch(`/api/accounts/session`)
+      ]);
 
-      const allEvents = await resEvents.json();
-      const allAccounts = await resAccounts.json();
+      if (!resMyEvents.ok) throw new Error("Fehler beim Laden");
+      
+      const myEvents = await resMyEvents.json();
+      const currentAccount = await resAccount.json();
+      setSegler(currentAccount);
 
-      const currentSegler = allAccounts.find((acc: any) => String(acc.id).trim() === seglerId);
-      setSegler(currentSegler);
+      const processedReceipts: any[] = [];
+      let grandTotal = 0;
 
-      const seglerEvents: any[] = [];
-      let total = 0;
-
-      allEvents.forEach((event: any) => {
+      myEvents.forEach((event: any) => {
         if (!event.segler) return;
 
         Object.entries(event.segler).forEach(([klasse, participants]: [string, any]) => {
-          const partArray = participants as any[];
-          const participantEntry = partArray.find(p => 
+          const participantEntry = (participants as any[]).find(p => 
             String(p.skipper?.seglerId || p.seglerId || "").trim() === seglerId
           );
 
           if (participantEntry) {
-            const classInfo = event.gebuehrenProKlasse?.[klasse];
-            const eventCost = classInfo?.normal ? parseFloat(classInfo.normal) : 0;
-            
-            const selectedExtraIds = participantEntry.extras || [];
-            let extrasCost = 0;
-            if (selectedExtraIds.length > 0 && event.extras) {
-              selectedExtraIds.forEach((extraId: any) => {
-                const searchId = typeof extraId === 'object' ? extraId.id : extraId;
-                const extraDef = event.extras.find((e: any) => e.id === searchId);
-                if (extraDef) extrasCost += parseFloat(extraDef.price || extraDef.kosten || 0);
-              });
-            }
+            // 1. Startgebühr aus dem JSONB 'gebuehren_pro_klasse'
+            const classData = event.gebuehren_pro_klasse?.[klasse] || event.gebuehrenProKlasse?.[klasse];
+            const baseCost = parseFloat(classData?.normal || 0);
 
-            const subtotal = eventCost + extrasCost;
-            const serviceFee = subtotal * 0.08; 
+            // 2. Extras berechnen (Nutzt 'price' und 'quantity' aus dem JSONB Array)
+            const selectedExtras = participantEntry.extras || [];
+            const extrasCost = selectedExtras.reduce((sum: number, extra: any) => {
+              return sum + (parseFloat(extra.price || 0) * parseInt(extra.quantity || 1));
+            }, 0);
+
+            // 3. Service-Gebühr (8% auf Netto-Summe)
+            const subtotal = baseCost + extrasCost;
+            const serviceFee = subtotal * 0.08;
             const totalItemCost = subtotal + serviceFee;
-            
-            total += totalItemCost;
 
-            seglerEvents.push({
+            grandTotal += totalItemCost;
+
+            processedReceipts.push({
               eventId: event.id,
               eventName: event.name || event.titel,
-              datum: event.datumVon,
+              datum: event.datum_von || event.datumVon,
               klasse,
-              baseCost: eventCost,
-              extrasCost: extrasCost,
-              serviceFee: serviceFee,
+              baseCost,
+              extrasCost,
+              serviceFee,
               cost: totalItemCost,
-              location: event.location
+              location: event.location,
+              extrasDetails: selectedExtras // Für das PDF gespeichert
             });
           }
         });
       });
 
-      setReceipts(seglerEvents.sort((a, b) => dayjs(b.datum).diff(dayjs(a.datum))));
-      setTotalCost(total);
+      setReceipts(processedReceipts.sort((a, b) => dayjs(b.datum).diff(dayjs(a.datum))));
+      setTotalCost(grandTotal);
     } catch (err) {
-      console.error("Error loading receipts:", err);
+      console.error("Error:", err);
     } finally {
       setLoading(false);
     }
@@ -103,59 +100,53 @@ export default function SeglerReceiptsPage() {
 
   const downloadReceipt = (item: any) => {
     const doc = new jsPDF();
-    const dateStr = dayjs(item.datum).format('DD.MM.YYYY');
-    const receiptNumber = `RE-${item.eventId.substring(0, 5)}-${Math.floor(Math.random() * 1000)}`;
+    const receiptNumber = `RE-${item.eventId.substring(0, 5)}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // PDF Übersetzungen
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold").setFontSize(22);
     doc.text(t('pdfTitle'), 14, 25);
     
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(100);
+    doc.setFontSize(10).setFont("helvetica", "normal").setTextColor(100);
     doc.text(`${t('pdfReceiptNo')}: ${receiptNumber}`, 14, 32);
     doc.text(`${t('pdfIssueDate')}: ${dayjs().format('DD.MM.YYYY')}`, 14, 37);
 
-    doc.setDrawColor(230);
-    doc.line(14, 45, 196, 45);
+    doc.setDrawColor(230).line(14, 45, 196, 45);
 
-    doc.setTextColor(0);
-    doc.setFont("helvetica", "bold");
-    doc.text(t('pdfEventHeader'), 14, 55);
-    doc.setFont("helvetica", "normal");
-    doc.text(`${item.eventName}`, 14, 60);
-    doc.text(`${t('pdfLocation')}: ${item.location || 'N/A'}`, 14, 65);
-    doc.text(`${t('pdfDate')}: ${dateStr}`, 14, 70);
+    // Event Info
+    doc.setTextColor(0).setFont("helvetica", "bold").text(t('pdfEventHeader'), 14, 55);
+    doc.setFont("helvetica", "normal")
+       .text(`${item.eventName}`, 14, 60)
+       .text(`${t('pdfLocation')}: ${item.location || 'N/A'}`, 14, 65)
+       .text(`${t('pdfDate')}: ${dayjs(item.datum).format('DD.MM.YYYY')}`, 14, 70);
 
-    doc.setFont("helvetica", "bold");
-    doc.text(t('pdfParticipantHeader'), 120, 55);
-    doc.setFont("helvetica", "normal");
-    doc.text(`${segler?.vorname} ${segler?.nachname}`, 120, 60);
-    doc.text(`ID: ${seglerId}`, 120, 65);
+    // Teilnehmer Info
+    doc.setFont("helvetica", "bold").text(t('pdfParticipantHeader'), 120, 55);
+    doc.setFont("helvetica", "normal")
+       .text(`${segler?.vorname} ${segler?.nachname}`, 120, 60)
+       .text(`ID: ${seglerId}`, 120, 65);
 
     autoTable(doc, {
       startY: 80,
       head: [[t('tablePos'), t('tableDetails'), t('tableAmount')]],
       body: [
-        [t('posEntryFee'), `${t('tableClass')}: ${item.klasse}`, `${(item.baseCost || 0).toFixed(2)} €`],
-        [t('posExtras'), t('posExtrasDetail'), `${(item.extrasCost || 0).toFixed(2)} €`],
-        [t('posServiceFee'), t('posServiceFeeDetail'), `${(item.serviceFee || 0).toFixed(2)} €`],
+        [t('posEntryFee'), `${t('tableClass')}: ${item.klasse}`, `${item.baseCost.toFixed(2)} €`],
+        [
+          t('posExtras'), 
+          item.extrasDetails.map((e: any) => `${e.quantity}x ${e.name}`).join(', ') || '-', 
+          `${item.extrasCost.toFixed(2)} €`
+        ],
+        [t('posServiceFee'), t('posServiceFeeDetail'), `${item.serviceFee.toFixed(2)} €`],
       ],
-      foot: [
-        [t('totalAmount'), '', { content: `${(item.cost || 0).toFixed(2)} €`, styles: { fontStyle: 'bold', fontSize: 12 } }]
-      ],
+      foot: [[t('totalAmount'), '', { content: `${item.cost.toFixed(2)} €`, styles: { fontStyle: 'bold', fontSize: 12 } }]],
       theme: 'grid',
       headStyles: { fillColor: [15, 23, 42] },
       footStyles: { fillColor: [240, 249, 255], textColor: [14, 165, 233] },
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 20;
-    doc.setFontSize(9);
-    doc.setTextColor(150);
-    doc.setFont("helvetica", "italic");
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
+    doc.setFontSize(8).setTextColor(150).setFont("helvetica", "italic");
     doc.text(t('pdfNoteAutomated'), 14, finalY);
-    doc.text(t('pdfNoteSystem'), 14, finalY + 5);
+    // Wichtiger Hinweis aus deinen Notizen:
+    doc.text("Hinweis: Die Service-Gebühr (8%) kann im Falle einer Stornierung nicht zurückerstattet werden.", 14, finalY + 5);
 
     doc.save(`${t('pdfFileName')}_${item.eventName.replace(/\s+/g, '_')}.pdf`);
   };
@@ -190,11 +181,9 @@ export default function SeglerReceiptsPage() {
             </p>
           </div>
 
-          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 backdrop-blur-md">
-            <div className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">{t('totalExpenses')}</div>
-            <div className="text-4xl font-black text-white italic">
-              {totalCost.toFixed(2)}€
-            </div>
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 backdrop-blur-md text-right">
+            <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">{t('totalExpenses')}</div>
+            <div className="text-4xl font-black text-white italic">{totalCost.toFixed(2)}€</div>
           </div>
         </div>
       </header>
@@ -202,10 +191,7 @@ export default function SeglerReceiptsPage() {
       <main className="max-w-5xl mx-auto">
         <div className="space-y-4">
           {receipts.map((item, i) => (
-            <div 
-              key={i}
-              className="group bg-white/5 border border-white/10 hover:border-sky-500/50 rounded-[2rem] p-6 transition-all backdrop-blur-sm flex flex-col md:flex-row items-center justify-between gap-6"
-            >
+            <div key={i} className="group bg-white/5 border border-white/10 hover:border-sky-500/50 rounded-[2rem] p-6 transition-all backdrop-blur-sm flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-6 w-full md:w-auto">
                 <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
                   <CreditCard size={24} />
@@ -221,20 +207,14 @@ export default function SeglerReceiptsPage() {
 
               <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-8 border-t md:border-t-0 border-white/5 pt-4 md:pt-0">
                 <div className="text-right">
-                  <div className="text-2xl font-black text-white italic">
-                    {item.cost.toFixed(2)}€
-                  </div>
+                  <div className="text-2xl font-black text-white italic">{item.cost.toFixed(2)}€</div>
                   <div className="text-[8px] font-bold text-sky-400 uppercase tracking-tight">
                     {t('includingDetails', { amount: (item.extrasCost + item.serviceFee).toFixed(2) })}
-                  </div>
-                  <div className="text-[9px] font-black text-emerald-500 uppercase tracking-[0.2em]">
-                    {t('statusPaid')}
                   </div>
                 </div>
                 <button 
                   onClick={() => downloadReceipt(item)}
                   className="p-4 bg-white/5 hover:bg-sky-500 text-white rounded-2xl transition-all active:scale-95"
-                  title={t('tooltipDownload')}
                 >
                   <Download size={20} />
                 </button>
@@ -250,10 +230,10 @@ export default function SeglerReceiptsPage() {
           )}
         </div>
       </main>
-
+      
       <footer className="max-w-5xl mx-auto mt-12 pt-8 border-t border-white/5 text-center">
         <p className="text-[9px] font-bold text-slate-600 uppercase tracking-[0.3em]">
-          {t('footerCopyright', { year: 2026 })}
+          Regatta Manager © 2026
         </p>
       </footer>
     </div>

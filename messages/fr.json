@@ -339,7 +339,8 @@
   "saving": "Chargement...",
   "confirmPasswordAlert": "Veuillez saisir votre mot de passe actuel pour confirmer",
   "successAlert": "Profil mis à jour avec succès !",
-  "errorAlert": "Erreur lors de l’enregistrement."
+  "errorAlert": "Erreur lors de l’enregistrement.",
+  "createStripeAccount": "Créer un compte"
 },
 "ClubPerformance": {
   "loading": "Chargement des performances...",

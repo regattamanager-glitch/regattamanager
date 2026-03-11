@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import sql from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -11,70 +10,67 @@ export async function POST(req: Request) {
 
     const { inviteId, action } = body;
 
-    const invitePath = path.join(process.cwd(), 'app/api/accounts/invitations.json');
-    const accountPath = path.join(process.cwd(), 'app/api/accounts/accounts.json');
+    // 1. Zuerst prüfen: Ist es eine Event-Einladung?
+    const eventInvite = await sql`
+      SELECT * FROM event_invitations WHERE id = ${inviteId}
+    `;
 
-    let invitations = JSON.parse(fs.readFileSync(invitePath, 'utf8'));
-    const inviteIndex = invitations.findIndex((i: any) => String(i.id) === String(inviteId));
+    if (eventInvite.length > 0) {
+      const invite = eventInvite[0];
 
-    if (inviteIndex === -1) {
-      return NextResponse.json({ error: "Einladung nicht gefunden" }, { status: 404 });
-    }
-
-    const invite = invitations[inviteIndex];
-
-    // --- LOGIK-WEICHE ---
- 
-    // FALL A: Event-Einladung
-    if (invite.eventId) {
       if (action === 'accept') {
-        // Status auf 'accepted' setzen, damit die UI weiß: "Hier geht's zum Event"
-        invitations[inviteIndex].status = 'accepted';
-        
-        // Speichern der Änderung (Status-Update)
-        fs.writeFileSync(invitePath, JSON.stringify(invitations, null, 2));
+        // Status auf 'accepted' setzen
+        await sql`
+          UPDATE event_invitations 
+          SET status = 'accepted' 
+          WHERE id = ${inviteId}
+        `;
 
-        // Erfolg melden und dem Frontend sagen, dass es weiterleiten soll
         return NextResponse.json({ 
           success: true, 
           type: 'event', 
-          redirectTo: `/regatta/${invite.eventId}` // Pfad zur Event-Seite
+          redirectTo: `/regatta/${invite.event_id}` 
         });
       } else {
-        // Bei Ablehnung (decline) wird die Event-Einladung sofort gelöscht
-        invitations = invitations.filter((i: any) => String(i.id) !== String(inviteId));
-        fs.writeFileSync(invitePath, JSON.stringify(invitations, null, 2));
+        // Bei Ablehnung: Löschen
+        await sql`DELETE FROM event_invitations WHERE id = ${inviteId}`;
+        return NextResponse.json({ success: true, type: 'event' });
       }
-    } 
-    // FALL B: Freundschaftsanfrage
-    else {
-      if (action === 'accept') {
-        let accounts = JSON.parse(fs.readFileSync(accountPath, 'utf8'));
-        const { senderId, receiverId } = invite;
-
-        accounts = accounts.map((acc: any) => {
-          if (String(acc.id) === String(receiverId)) {
-            const friends = acc.friends || [];
-            if (!friends.includes(senderId)) return { ...acc, friends: [...friends, senderId] };
-          }
-          if (String(acc.id) === String(senderId)) {
-            const friends = acc.friends || [];
-            if (!friends.includes(receiverId)) return { ...acc, friends: [...friends, receiverId] };
-          }
-          return acc;
-        });
-        fs.writeFileSync(accountPath, JSON.stringify(accounts, null, 2));
-      }
-      
-      // Freundschaftsanfragen werden nach Bearbeitung immer gelöscht (egal ob accept oder decline)
-      invitations = invitations.filter((i: any) => String(i.id) !== String(inviteId));
-      fs.writeFileSync(invitePath, JSON.stringify(invitations, null, 2));
     }
 
-    return NextResponse.json({ success: true, type: invite.eventId ? 'event' : 'friend' });
+    // 2. Falls nicht, prüfen: Ist es eine Freundschaftsanfrage?
+    const friendInvite = await sql`
+      SELECT * FROM invitations WHERE id = ${inviteId}
+    `;
+
+    if (friendInvite.length > 0) {
+      const invite = friendInvite[0];
+
+      if (action === 'accept') {
+        // In einer relationalen DB lösen wir das "Freunde-Array" idealerweise 
+        // über den Status in der 'invitations' Tabelle oder eine 'friends' Tabelle.
+        // Hier setzen wir den Status auf 'accepted'.
+        await sql`
+          UPDATE invitations 
+          SET status = 'accepted', timestamp = NOW() 
+          WHERE id = ${inviteId}
+        `;
+        
+        // HINWEIS: Falls du eine separate 'friends' Tabelle hast, 
+        // müsstest du hier zusätzlich einen INSERT machen. 
+        // Wenn du nur die 'invitations' Tabelle filterst, reicht das Update oben.
+      } else {
+        // Bei Ablehnung oder Löschung nach Bearbeitung:
+        await sql`DELETE FROM invitations WHERE id = ${inviteId}`;
+      }
+
+      return NextResponse.json({ success: true, type: 'friend' });
+    }
+
+    return NextResponse.json({ error: "Einladung nicht gefunden" }, { status: 404 });
 
   } catch (err) {
-    console.error("Server Error:", err);
+    console.error("Notification Respond Error:", err);
     return NextResponse.json({ error: "Interner Server Fehler" }, { status: 500 });
   }
 }

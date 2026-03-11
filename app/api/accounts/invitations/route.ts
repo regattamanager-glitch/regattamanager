@@ -1,22 +1,21 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Umgestellt auf direkten Export
+import sql from '@/lib/db';
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export async function GET() {
   try {
-    // Wir nutzen jetzt direkt 'prisma'
-    const invitations = await prisma.loginCode.findMany({
-      where: { 
-        expires: { 
-          gt: new Date() // Nur Codes anzeigen, die noch nicht abgelaufen sind
-        } 
-      },
-      orderBy: {
-        createdAt: 'desc' // Neueste Einladungen zuerst
-      }
-    });
+    // Aktuelles Datum für den Vergleich
+    const now = new Date();
+
+    // SQL-Abfrage: Nur nicht abgelaufene Codes, sortiert nach Erstellungsdatum
+    // Wir nutzen "LoginCode" (in Anführungszeichen), da PostgreSQL Case-Sensitive ist
+    const invitations = await sql`
+      SELECT * FROM "LoginCode" 
+      WHERE expires > ${now} 
+      ORDER BY "createdAt" DESC
+    `;
 
     return NextResponse.json(invitations);
   } catch (error) {

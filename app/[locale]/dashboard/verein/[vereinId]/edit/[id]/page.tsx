@@ -133,7 +133,14 @@ export default function EditEventPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files);
-    const newDocs = files.map(f => ({ name: f.name, url: "#" }));
+    
+    const newDocs = files.map(f => ({ 
+      name: f.name, 
+      url: "#", 
+      file_url: "#", 
+      title: f.name 
+    }));
+    
     setForm({ ...form, documents: [...form.documents, ...newDocs] });
   };
 

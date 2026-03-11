@@ -339,7 +339,8 @@
     "saving": "Lädt...",
     "confirmPasswordAlert": "Bitte aktuelles Passwort zur Bestätigung eingeben",
     "successAlert": "Profil erfolgreich aktualisiert!",
-    "errorAlert": "Fehler beim Speichern."
+    "errorAlert": "Fehler beim Speichern.",
+    "createStripeAccount": "Account erstellen"
   },
   "ClubPerformance": {
     "loading": "Lade Performance...",

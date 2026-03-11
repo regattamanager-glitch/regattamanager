@@ -192,23 +192,47 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
 }
 
   useEffect(() => {
-    async function load() {
-      const events: Event[] = await fetch("/api/events").then(r => r.json());
-      const found = events.find(e => e.id === id);
-      if (!found) return;
+  async function load() {
+    try {
+      // 1. Event laden
+      const res = await fetch("/api/events");
+      const events: Event[] = await res.json();
+      
+      // Das spezifische Event suchen
+      const found: any = events.find(e => e.id === id);
+if (!found) return;
 
-      setEvent(found);
+// ... im useEffect nach const found = ...
+const vId = found.vereinId || found.verein_id;
 
-      const accounts: Account[] = await fetch("/api/accounts").then(r => r.json());
-      setVerein(accounts.find(a => a.id === found.vereinId) || null);
+setEvent({
+  ...found,
+  vereinId: vId,
+  // Hier mappen wir die Felder mit dem "s" aus der DB auf deine State-Variablen
+  anmeldungVon: found.anmeldungVon || found.anmeldungs_von, 
+  anmeldungBis: found.anmeldungBis || found.anmeldungs_bis,
+  datumVon: found.datumVon || found.datum_von,
+  datumBis: found.datumBis || found.datum_bis,
+});
 
-      // Standardklasse setzen
-      if (found.bootsklassen.length > 0) {
+      // 2. Vereinsdaten laden (NICHT alle Accounts laden!)
+      if (vId) {
+        const accountRes = await fetch(`/api/accounts?id=${vId}`);
+        if (accountRes.ok) {
+          const accountData = await accountRes.json();
+          setVerein(accountData);
+        }
+      }
+
+      if (found.bootsklassen?.length > 0) {
         setSelectedClass(found.bootsklassen[0]);
       }
+    } catch (err) {
+      console.error("Fehler beim Laden der Regatta-Details:", err);
     }
-    load();
-  }, [id]);
+  }
+  load();
+}, [id]);
 
   useEffect(() => {
   if (isInviteModalOpen && seglerId) {
@@ -461,31 +485,75 @@ return (
       <section className="bg-blue-900/50 rounded-3xl p-8 border border-white/10 text-white">
 
         {/* DETAILS */}
-        {activeTab === "details" && (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <p><strong>{t("details.eventPeriod")}:</strong> {event!.datumVon} – {event!.datumBis}</p>
-              <p><strong>{t("details.registrationPeriod")}:</strong> {event!.anmeldungVon} – {event!.anmeldungBis}</p>
-              <p><strong>{t("details.organizer")}:</strong> {verein?.name || "—"}</p>
-              <p><strong>{t("details.email")}:</strong> {verein?.email || "—"}</p>
-              <p><strong>{t("details.address")}:</strong> {verein?.adresse || event!.location}</p>
-            </div>
+{activeTab === "details" && (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 bg-blue-800/20 p-6 rounded-2xl border border-white/5">
+      
+      {/* Linke Spalte */}
+      <div className="space-y-4">
+        <p className="flex gap-1.5 items-baseline">
+          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
+            {t("details.eventPeriod")}:
+          </span> 
+          <span className="font-semibold text-white">
+            {event?.datumVon ? new Date(event.datumVon).toLocaleDateString("de-DE") : "—"} 
+            {" – "}
+            {event?.datumBis ? new Date(event.datumBis).toLocaleDateString("de-DE") : "—"}
+          </span>
+        </p>
 
-            {isInviteModalOpen!==true && Number.isFinite(event!.latitude) && Number.isFinite(event!.longitude) ? (
-              <div className="h-80 w-full rounded-2xl overflow-hidden border border-white/10">
-                <EventMap
-                  lat={event!.latitude!}
-                  lng={event!.longitude!}
-                  title={event!.name}
-                />
-              </div>
-            ) : (
-              <div className="h-80 flex items-center justify-center rounded-2xl border border-white/10 text-white/60">
-                {t("details.noCoordinates")}
-              </div>
-            )}
-          </div>
-        )}
+        <p className="flex gap-1.5 items-baseline">
+          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
+            {t("details.registrationPeriod")}:
+          </span> 
+          <span className="font-semibold text-white">
+            {event?.anmeldungVon ? new Date(event.anmeldungVon).toLocaleDateString("de-DE") : "—"} 
+            {" – "}
+            {event?.anmeldungBis ? new Date(event.anmeldungBis).toLocaleDateString("de-DE") : "—"}
+          </span>
+        </p>
+
+        <p className="flex gap-1.5 items-baseline">
+          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
+            {t("details.organizer")}:
+          </span> 
+          <span className="font-semibold text-white">{verein?.name || "—"}</span>
+        </p>
+      </div>
+
+      {/* Rechte Spalte */}
+      <div className="space-y-4">
+        <p className="flex gap-1.5 items-baseline">
+          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
+            {t("details.email")}:
+          </span> 
+          <span className="font-semibold text-blue-400">{verein?.email || "—"}</span>
+        </p>
+        <p className="flex gap-1.5 items-baseline">
+          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
+            {t("details.address")}:
+          </span> 
+          <span className="font-semibold text-white">{verein?.adresse || event!.location}</span>
+        </p>
+      </div>
+    </div>
+
+    {/* MAP Bereich ... */}
+    {isInviteModalOpen !== true && Number.isFinite(event!.latitude) && Number.isFinite(event!.longitude) ? (
+      <div className="h-80 w-full rounded-2xl overflow-hidden border border-white/10">
+        <EventMap
+          lat={event!.latitude!}
+          lng={event!.longitude!}
+          title={event!.name}
+        />
+      </div>
+    ) : (
+      <div className="h-80 flex items-center justify-center rounded-2xl border border-white/10 text-white/60">
+        {t("details.noCoordinates")}
+      </div>
+    )}
+  </div>
+)}
 
         {/* BOOTSKLASSEN */}
         {activeTab === "bootsklassen" && (

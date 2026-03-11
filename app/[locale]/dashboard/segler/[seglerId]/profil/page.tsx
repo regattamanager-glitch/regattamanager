@@ -91,8 +91,7 @@ export default function SeglerProfilPage() {
           update: { ...segler },
         }),
       });
-      if (res.ok) {
-        alert(t('alertSuccess'));
+      if (!res.ok) {
         setCurrentPassword("");
         router.push(`/dashboard/segler/${seglerId}`);
       } else {

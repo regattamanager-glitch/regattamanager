@@ -1,44 +1,55 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import sql from "@/lib/db";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
     const { senderId, friendIds, eventId, eventName } = await req.json();
-    const folderPath = path.join(process.cwd(), 'app/api/accounts');
-    const filePath = path.join(folderPath, 'invitations.json');
 
-    // Ordner sicherheitshalber prüfen
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true });
+    if (!senderId || !friendIds || !Array.isArray(friendIds) || !eventId) {
+      return NextResponse.json({ error: "Daten unvollständig" }, { status: 400 });
     }
 
-    // 1. Bestehende Einladungen laden
-    let invitations = [];
-    if (fs.existsSync(filePath)) {
-      const fileData = fs.readFileSync(filePath, 'utf8');
-      invitations = JSON.parse(fileData || "[]");
-    }
+    // Wir erstellen die Einladungen in der Datenbank.
+    // Wie in den vorherigen Routen nutzen wir Promise.all für effiziente parallele Inserts.
+    const newEntries = await Promise.all(
+      friendIds.map(async (fId: string) => {
+        const inviteId = crypto.randomUUID();
+        
+        await sql`
+          INSERT INTO event_invitations (
+            id, 
+            sender_id, 
+            receiver_id, 
+            event_id, 
+            event_name, 
+            status, 
+            created_at
+          )
+          VALUES (
+            ${inviteId}, 
+            ${senderId}, 
+            ${fId}, 
+            ${eventId}, 
+            ${eventName}, 
+            'pending', 
+            NOW()
+          )
+        `;
+        
+        return inviteId;
+      })
+    );
 
-    // 2. Neue Einträge generieren
-    const timestamp = new Date().toISOString();
-    const newEntries = friendIds.map((fId: string) => ({
-      inviteId: crypto.randomUUID(), // Eindeutige ID für die Einladung
-      from: senderId,
-      to: fId,
-      eventId,
-      eventName, 
-      status: 'pending',
-      sentAt: timestamp
-    }));
+    return NextResponse.json({ 
+      success: true, 
+      count: newEntries.length 
+    });
 
-    // 3. Zusammenführen und Speichern
-    const updatedInvitations = [...invitations, ...newEntries];
-    fs.writeFileSync(filePath, JSON.stringify(updatedInvitations, null, 2));
-
-    return NextResponse.json({ success: true, count: newEntries.length });
   } catch (error) {
-    console.error("Invite Error:", error);
-    return NextResponse.json({ error: "Server Fehler" }, { status: 500 });
+    console.error("Invite Error (SQL):", error);
+    // Falls ein Unique Constraint verletzt wird (z.B. Einladung existiert schon),
+    // fangen wir das hier ab oder lassen es als Server-Fehler loggen.
+    return NextResponse.json({ error: "Server Fehler beim Versenden der Einladungen" }, { status: 500 });
   }
 }

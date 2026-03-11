@@ -45,18 +45,28 @@ export default function VereinsProfilPage() {
 
   useEffect(() => {
     async function loadProfile() {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/accounts?id=${vereinId}`);
-        const data = await res.json();
-        setVerein(data);
-        if (data.stripeAccountId) setStripeId(data.stripeAccountId);
-      } catch (err) {
-        console.error("Fehler beim Laden:", err);
-      } finally {
-        setLoading(false);
-      }
+  setLoading(true);
+  try {
+    const res = await fetch(`/api/accounts?id=${vereinId}`);
+    if (!res.ok) throw new Error("Fehler beim Abrufen der Profildaten");
+    
+    const data = await res.json();
+    
+    // Wir setzen das gesamte Verein-Objekt
+    setVerein(data);
+    
+    // WICHTIG: Hier auf das große 'A' achten, da deine DB-Spalte stripeAccountId heißt
+    if (data.stripeAccountId) {
+      setStripeId(data.stripeAccountId);
+    } else {
+      setStripeId(""); // Zurücksetzen, falls keine ID vorhanden
     }
+  } catch (err) {
+    console.error("Fehler beim Laden des Vereins-Profils:", err);
+  } finally {
+    setLoading(false);
+  }
+}
     if (vereinId) loadProfile();
   }, [vereinId]);
 
@@ -101,14 +111,45 @@ export default function VereinsProfilPage() {
       });
 
       if (!res.ok) throw new Error("Save error");
-      alert(t('successAlert'));
       setCurrentPassword("");
+        router.push(`/dashboard/verein/${vereinId}`);
     } catch (err) {
       alert(t('errorAlert'));
     } finally {
       setSaving(false);
     }
   }
+
+  const [isConnectingStripe, setIsConnectingStripe] = useState(false);
+
+async function handleStripeConnect() {
+  setIsConnectingStripe(true);
+  setStripeError("");
+
+  try {
+    const res = await fetch("/api/stripe/connect/create-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vereinId: vereinId }), // vereinId kommt aus useParams
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Verbindung zu Stripe fehlgeschlagen");
+    }
+
+    // Wenn Stripe uns die URL schickt, leiten wir den User direkt weiter
+    if (data.url) {
+      window.location.href = data.url;
+    }
+  } catch (err: any) {
+    console.error("Stripe Onboarding Error:", err);
+    setStripeError(err.message);
+  } finally {
+    setIsConnectingStripe(false);
+  }
+}
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white italic">
@@ -134,9 +175,7 @@ export default function VereinsProfilPage() {
       <main className="max-w-5xl mx-auto px-6 pt-12">
         <header className="mb-12">
           <h1 className="text-5xl font-black text-white italic uppercase tracking-tighter mb-2">
-            {t.rich('title', {
-              edit: (chunks: React.ReactNode) => <span className="text-blue-600">{chunks}</span>
-            })}
+            Profil <span className="text-blue-600">bearbeiten</span>
           </h1>
           <p className="text-slate-400 uppercase text-xs tracking-widest font-bold">
             {t('subtitle')}
@@ -204,18 +243,41 @@ export default function VereinsProfilPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <section className="bg-[#1e293b] rounded-[2.5rem] p-8 border border-slate-700/50">
-                <h3 className="text-sm font-black uppercase text-blue-500 mb-6 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" /> {t('payments')}
-                </h3>
-                <InputGroup 
-                  label="Stripe Account ID" 
-                  value={stripeId} 
-                  placeholder={t('stripePlaceholder')}
-                  onChange={(v) => {setStripeId(v); setStripeError("");}} 
-                />
-                {stripeError && <p className="text-red-500 text-[10px] mt-2 font-bold uppercase">{stripeError}</p>}
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+                    <CreditCard className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-black uppercase italic text-white">{t('payments')}</h2>
+                </div>
+              
+                <div className="space-y-4">
+                  <InputGroup 
+                    label="Stripe Account ID" 
+                    value={stripeId} 
+                    placeholder={t('stripePlaceholder')}
+                    onChange={(v) => {setStripeId(v); setStripeError("");}} 
+                  />
+                  
+                  {stripeError ? (
+                    <p className="text-red-500 text-[10px] font-bold uppercase px-1">
+                      {stripeError}
+                    </p>
+                  ) : (
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleStripeConnect}
+                        disabled={isConnectingStripe}
+                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-50 hover:text-white transition-all shadow-sm disabled:opacity-50"
+                      >
+                        {isConnectingStripe 
+                          ? (t('loading') || 'Wird geladen...') 
+                          : (t('createStripeAccount') || 'Account erstellen')}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </section>
-
               <section className="bg-[#1e293b] rounded-[2.5rem] p-8 border border-slate-700/50">
                 <h3 className="text-sm font-black uppercase text-pink-500 mb-6 flex items-center gap-2">
                   <Instagram className="w-4 h-4" /> {t('socialMedia')}

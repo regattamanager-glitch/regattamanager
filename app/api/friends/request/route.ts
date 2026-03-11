@@ -1,42 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from 'fs';
-import path from 'path';
+import sql from "@/lib/db";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
     const { senderId, receiverId } = await req.json();
-    const filePath = path.join(process.cwd(), 'app/api/accounts/invitations.json');
 
-    // Datei laden oder leeres Array erstellen
-    let invitations = [];
-    if (fs.existsSync(filePath)) {
-      invitations = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (!senderId || !receiverId) {
+      return NextResponse.json({ message: "Sender oder Empfänger fehlt" }, { status: 400 });
     }
 
-    // Prüfen, ob bereits eine Anfrage existiert
-    const existing = invitations.find((i: any) => 
-      (i.senderId === senderId && i.receiverId === receiverId) ||
-      (i.senderId === receiverId && i.receiverId === senderId)
-    );
+    // 1. Prüfen, ob bereits eine Anfrage in IRGENDEINE Richtung existiert
+    // Das ersetzt das manuelle Suchen im JSON-Array
+    const existing = await sql`
+      SELECT id FROM invitations 
+      WHERE (sender_id = ${senderId} AND receiver_id = ${receiverId})
+         OR (sender_id = ${receiverId} AND receiver_id = ${senderId})
+      LIMIT 1
+    `;
 
-    if (existing) {
+    if (existing.length > 0) {
       return NextResponse.json({ message: "Anfrage existiert bereits" }, { status: 400 });
     }
 
-    // Neue Einladung hinzufügen
-    const newInvitation = {
-      id: crypto.randomUUID(),
-      senderId,
-      receiverId,
-      status: 'pending',
-      timestamp: new Date().toISOString()
-    };
- 
-    invitations.push(newInvitation);
-    fs.writeFileSync(filePath, JSON.stringify(invitations, null, 2));
+    // 2. Neue Einladung in die Datenbank schreiben
+    const newId = crypto.randomUUID();
+    
+    await sql`
+      INSERT INTO invitations (id, sender_id, receiver_id, status, timestamp)
+      VALUES (${newId}, ${senderId}, ${receiverId}, 'pending', NOW())
+    `;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, id: newId });
+
   } catch (error) {
+    console.error("FRIEND REQUEST ERROR:", error);
     return NextResponse.json({ message: "Server Fehler" }, { status: 500 });
   }
 }

@@ -339,7 +339,8 @@
   "saving": "Yükleniyor...",
   "confirmPasswordAlert": "Onay için lütfen mevcut şifreyi girin",
   "successAlert": "Profil başarıyla güncellendi!",
-  "errorAlert": "Kaydetme hatası."
+  "errorAlert": "Kaydetme hatası.",
+  "createStripeAccount": "Hesap oluştur"
 },
 "ClubPerformance": {
   "loading": "Performans yükleniyor...",

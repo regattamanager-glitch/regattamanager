@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import fs from "fs";
-import path from "path";
+import sql from "@/lib/db";
 
-export const runtime = "nodejs";
-
-// HIER FEHLTE DIE INITIALISIERUNG:
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2022-11-15", // Oder deine genutzte Version
+  apiVersion: "2022-11-15" as any,
 });
 
 export async function POST(req: NextRequest) {
@@ -15,79 +11,80 @@ export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
   let event: Stripe.Event;
 
+  // 1. Webhook Signatur validieren
   try {
-    // Jetzt ist 'stripe' (kleingeschrieben) definiert
     event = stripe.webhooks.constructEvent(
       body, 
       sig!, 
       process.env.STRIPE_WEBHOOK_SECRET!
-    ); 
+    );
   } catch (err: any) {
     console.error("Webhook Signature Error:", err.message);
     return NextResponse.json({ error: "Webhook Error" }, { status: 400 });
   }
 
+  // 2. Verarbeitung bei erfolgreicher Zahlung
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const { registrationId, eventId, klasse } = session.metadata || {};
+    const { registrationId, eventId } = session.metadata || {};
 
-    if (!registrationId) {
-        console.error("Keine registrationId in Metadata gefunden");
-        return NextResponse.json({ received: true });
+    if (!registrationId || !eventId) {
+      console.error("❌ Fehlende Metadaten in Stripe Session");
+      return NextResponse.json({ received: true });
     }
-
-    const filePath = path.join(process.cwd(), "data/pending_registrations", `${registrationId}.json`);
-    
-    if (!fs.existsSync(filePath)) {
-        console.error("Datei nicht gefunden:", filePath);
-        return NextResponse.json({ error: "Data not found" }, { status: 404 });
-    }
-
-    const rawData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-    const { skipper, boot, crew, extras } = rawData;
-
-    const geburtsdatum = (skipper.geburtsJahr && skipper.geburtsMonat && skipper.geburtsTag)
-      ? `${skipper.geburtsJahr}-${skipper.geburtsMonat.padStart(2, '0')}-${skipper.geburtsTag.padStart(2, '0')}`
-      : "";
-
-    const registrationData = {
-      skipper: {
-      seglerId: rawData.seglerId,
-      name: skipper.name,
-      nation: skipper.nation,
-      email: skipper.email,
-      telefon: skipper.telefon || "",
-      verein: skipper.verein || "",
-      geburtsdatum,
-      lizenzNummer: skipper.lizenzNummer || ""
-      },
-      boot,
-      crew,
-      extras: (extras || []).filter((e: any) => e.quantity > 0),
-      bezahlt: true,
-      paidAt: new Date().toISOString(),
-      paymentIntent: session.payment_intent
-    };
 
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/events`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: eventId,
-            action: "register",
-            data: registrationData,
-          }),
-        });
+      // 3. Daten aus pending_registrations abrufen
+      const pendingRows = await sql`
+        SELECT data FROM pending_registrations WHERE id = ${registrationId}
+      `;
 
-        if (res.ok) {
-            fs.unlinkSync(filePath);
-            console.log("✅ Registrierung erfolgreich verarbeitet und Temp-Datei gelöscht.");
-        } else {
-            console.error("❌ Fehler beim Update der events.json:", await res.text());
-        }
-    } catch (error) {
-        console.error("❌ API Fetch Error im Webhook:", error);
+      if (pendingRows.length === 0) {
+        console.error("❌ Keine schwebende Anmeldung gefunden für ID:", registrationId);
+        return NextResponse.json({ error: "Pending data not found" }, { status: 404 });
+      }
+
+      // Daten extrahieren (Neon gibt bei JSONB meist direkt ein Objekt zurück)
+      const rawData = pendingRows[0].data;
+      const data = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+      
+      const { skipper, boot, crew, extras, seglerId, klasse } = data;
+
+      // 4. In die neue 'registrations' Tabelle einfügen
+      // Beachte: Wir nutzen "" für CamelCase Spaltennamen in Postgres
+      await sql`
+        INSERT INTO registrations (
+          "seglerId", 
+          "eventId", 
+          "klasse", 
+          "skipper", 
+          "boot", 
+          "crew", 
+          "extras",
+          "paidAt",
+          "paymentIntent"
+        ) VALUES (
+          ${seglerId},
+          ${eventId},
+          ${klasse},
+          ${JSON.stringify(skipper)},
+          ${JSON.stringify(boot)},
+          ${JSON.stringify(crew)},
+          ${JSON.stringify(extras)},
+          NOW(),
+          ${session.payment_intent as string}
+        )
+      `;
+
+      // 5. Temporäre Daten aufräumen
+      await sql`DELETE FROM pending_registrations WHERE id = ${registrationId}`;
+
+      console.log(`✅ Anmeldung für Segler ${seglerId} (Event: ${eventId}) erfolgreich gespeichert.`);
+
+    } catch (dbError: any) {
+      console.error("❌ Datenbank-Fehler im Webhook:", dbError.message);
+      // Wir geben 500 zurück, damit Stripe den Webhook ggf. erneut sendet
+      return NextResponse.json({ error: "Database update failed" }, { status: 500 });
     }
   }
 

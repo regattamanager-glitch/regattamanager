@@ -339,7 +339,8 @@
   "saving": "Cargando...",
   "confirmPasswordAlert": "Por favor ingrese la contraseña actual para confirmar",
   "successAlert": "¡Perfil actualizado correctamente!",
-  "errorAlert": "Error al guardar."
+  "errorAlert": "Error al guardar.",
+  "createStripeAccount": "Crear cuenta"
 },
 "ClubPerformance": {
   "loading": "Cargando desempeño...",

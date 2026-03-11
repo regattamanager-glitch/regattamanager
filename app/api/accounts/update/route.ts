@@ -1,26 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-// Umgestellt auf den direkten Prisma 7 Export
-import { prisma } from "@/lib/prisma";
+import sql from '@/lib/db';
 
 export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
+export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
+  console.log(">>> UPDATE ROUTE TRIGGERED (FRONTEND-KOMPATIBEL) <<<");
+
   try {
     const body = await req.json().catch(() => ({}));
-    const { email, currentPassword, update } = body;
+    
+    // FLEXIBLER CHECK: Suche ID im Haupt-Body ODER im update-Objekt
+    const id = body.id || (body.update && body.update.id);
+    const { currentPassword, update } = body;
 
-    if (!email || !currentPassword || !update) {
-      return NextResponse.json({ success: false, message: "Fehlende Daten" }, { status: 400 });
+    // 1. Pflichtfelder prüfen (mit deinen Statuscodes)
+    if (!id) {
+      console.log("Fehler: ID nicht gefunden im Payload", body);
+      return NextResponse.json({ success: false, message: "ID fehlt" }, { status: 410 });
+    }
+    if (!currentPassword) {
+      return NextResponse.json({ success: false, message: "Passwort fehlt" }, { status: 409 });
+    }
+    if (!update) {
+      return NextResponse.json({ success: false, message: "Update-Daten fehlen" }, { status: 408 });
     }
 
-    // 1. Benutzer suchen
-    let user: any = await prisma.segler.findUnique({ where: { email } });
+    // 2. Benutzer suchen
+    let user;
     let userType: "segler" | "verein" = "segler";
 
+    const usersSegler = await sql`SELECT * FROM "Segler" WHERE "id" = ${id} LIMIT 1`;
+    user = usersSegler[0];
+
     if (!user) {
-      user = await prisma.verein.findUnique({ where: { email } });
+      const usersVerein = await sql`SELECT * FROM "Verein" WHERE "id" = ${id} LIMIT 1`;
+      user = usersVerein[0];
       userType = "verein";
     }
 
@@ -28,61 +44,66 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Benutzer nicht gefunden" }, { status: 404 });
     }
 
-    // 2. Passwort zur Sicherheit vor Änderungen prüfen
+    // 3. Passwort prüfen
     const match = await bcrypt.compare(currentPassword, user.passwort);
     if (!match) {
       return NextResponse.json({ success: false, message: "Aktuelles Passwort falsch" }, { status: 401 });
     }
 
-    // 3. Update-Daten vorbereiten
-    const updateData: any = {};
+    const now = new Date();
 
-    // Falls ein neues Passwort gesetzt werden soll
-    if (update.passwort && update.passwort.trim() !== "") {
-      updateData.passwort = await bcrypt.hash(update.passwort, 10);
-    }
-
-    // Email-Änderung (Achtung: Prisma wirft Fehler, falls neue Email schon existiert)
-    if (update.email && update.email !== email) {
-      updateData.email = update.email;
-    }
-
-    // 4. Typ-spezifische Felder mappen
+    // 4. Update ausführen (Nur die Profil-Felder, E-Mail/Passwort bleiben geschützt)
     if (userType === "segler") {
-      const seglerFields = ["vorname", "nachname", "nation", "worldSailingId", "instagram", "tiktok", "profilbild"];
-      seglerFields.forEach(f => {
-        if (update[f] !== undefined) updateData[f] = update[f];
-      });
+      await sql`
+        UPDATE "Segler"
+        SET 
+          "vorname" = ${update.vorname !== undefined ? update.vorname : user.vorname},
+          "nachname" = ${update.nachname !== undefined ? update.nachname : user.nachname},
+          "worldSailingId" = ${update.worldSailingId !== undefined ? update.worldSailingId : user.worldSailingId},
+          "instagram" = ${update.instagram !== undefined ? update.instagram : user.instagram},
+          "tiktok" = ${update.tiktok !== undefined ? update.tiktok : user.tiktok},
+          "profilbild" = ${update.profilbild !== undefined ? update.profilbild : user.profilbild},
+          "updatedAt" = ${now}
+        WHERE "id" = ${user.id}
+      `;
 
-      const updatedSegler = await prisma.segler.update({
-        where: { email },
-        data: updateData,
-        // Passwort nicht zurück ans Frontend senden
-        select: { id: true, email: true, vorname: true, nachname: true, nation: true, worldSailingId: true }
-      });
-
-      return NextResponse.json({ success: true, user: updatedSegler });
+      // Vereine (A = Segler ID, B = Verein ID)
+      if (update.vereine && Array.isArray(update.vereine)) {
+        await sql`DELETE FROM "_SeglerVereine" WHERE "A" = ${user.id}`;
+        for (const vId of update.vereine) {
+          if (vId) await sql`INSERT INTO "_SeglerVereine" ("A", "B") VALUES (${user.id}, ${vId})`;
+        }
+      }
     } else {
-      const vereinFields = ["name", "kuerzel", "adresse", "stripeAccountId", "instagram", "tiktok"];
-      vereinFields.forEach(f => {
-        if (update[f] !== undefined) updateData[f] = update[f];
-      });
-
-      const updatedVerein = await prisma.verein.update({
-        where: { email },
-        data: updateData,
-        select: { id: true, email: true, name: true, kuerzel: true, stripeAccountId: true }
-      });
-
-      return NextResponse.json({ success: true, user: updatedVerein });
+      // UPDATE FÜR VEREIN
+      await sql`
+        UPDATE "Verein"
+        SET 
+          "name" = ${update.name !== undefined ? update.name : user.name},
+          "kuerzel" = ${update.kuerzel !== undefined ? update.kuerzel : user.kuerzel},
+          "adresse" = ${update.adresse !== undefined ? update.adresse : user.adresse},
+          "instagram" = ${update.instagram !== undefined ? update.instagram : user.instagram},
+          "tiktok" = ${update.tiktok !== undefined ? update.tiktok : user.tiktok},
+          "stripeAccountId" = ${update.stripeAccountId !== undefined ? update.stripeAccountId : user.stripeAccountId},
+          "profilbild" = ${update.profilbild !== undefined ? update.profilbild : (user.profilbild || null)},
+          "updatedAt" = ${now}
+        WHERE "id" = ${user.id}
+      `;
     }
+
+    // 5. Response
+    const reload = userType === "segler"
+      ? await sql`SELECT * FROM "Segler" WHERE "id" = ${user.id} LIMIT 1`
+      : await sql`SELECT * FROM "Verein" WHERE "id" = ${user.id} LIMIT 1`;
+    
+    const updatedUser = reload[0];
+    const { passwort: _, ...userResponse } = updatedUser;
+    
+    console.log(`>>> UPDATE ERFOLGREICH: ${userType} ${updatedUser.id} <<<`);
+    return NextResponse.json({ success: true, user: userResponse });
 
   } catch (error: any) {
-    console.error("Detaillierter Update-Fehler:", error);
-    // P2002 ist der Prisma-Code für Unique-Constraint-Verletzung (z.B. Email schon vergeben)
-    if (error.code === 'P2002') {
-      return NextResponse.json({ success: false, message: "Die neue E-Mail wird bereits verwendet." }, { status: 400 });
-    }
-    return NextResponse.json({ success: false, message: "Fehler beim Aktualisieren der Daten" }, { status: 500 });
+    console.error("KRITISCHER FEHLER BEIM UPDATE:", error);
+    return NextResponse.json({ success: false, message: "Serverfehler" }, { status: 500 });
   }
 }

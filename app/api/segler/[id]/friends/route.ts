@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from 'fs';
-import path from 'path';
+import sql from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
@@ -9,49 +8,40 @@ export async function GET(
   try {
     const { id: seglerId } = await params;
 
-    const accountsPath = path.join(
-      process.cwd(),
-      "app/api/accounts/accounts.json"
-    );
-
-    if (!fs.existsSync(accountsPath)) {
-      return NextResponse.json([]);
-    }
-
-    const accounts = JSON.parse(
-      fs.readFileSync(accountsPath, "utf8")
-    );
-
-    // 1️⃣ aktuellen Segler finden
-    const myAccount = accounts.find(
-      (a: any) => String(a.id) === String(seglerId)
-    );
-
-    if (!myAccount || !myAccount.friends) {
-      return NextResponse.json([]);
-    }
- 
-    // 2️⃣ Freunde auflösen
-    const friends = myAccount.friends
-      .map((friendId: string) =>
-        accounts.find((a: any) => String(a.id) === String(friendId))
+    // Wir holen alle Accounts, die mit dem seglerId befreundet sind.
+    // Ein JOIN zwischen 'accounts' und 'invitations' findet die passenden Profile.
+    const friends = await sql`
+      SELECT 
+        a.id, 
+        a.vorname, 
+        a.nachname, 
+        a.email,
+        a.name as account_name -- Falls du ein allgemeines Namensfeld hast
+      FROM accounts a
+      JOIN invitations i ON (
+        (i.sender_id = a.id AND i.receiver_id = ${seglerId}) OR
+        (i.receiver_id = a.id AND i.sender_id = ${seglerId})
       )
-      .filter(Boolean)
-      .map((friend: any) => ({
-        id: friend.id,
-        name:
-          `${friend.vorname ?? ""} ${friend.nachname ?? ""}`.trim() ||
-          friend.email ||
-          "Unbekannt",
-        email: friend.email,
-      }));
+      WHERE i.status = 'accepted'
+    `;
 
-    return NextResponse.json(friends);
+    // Daten für das Frontend formatieren (CamelCase und Namens-Logik)
+    const formattedFriends = friends.map((friend: any) => {
+      const fullName = `${friend.vorname ?? ""} ${friend.nachname ?? ""}`.trim();
+      
+      return {
+        id: friend.id,
+        name: fullName || friend.account_name || friend.email || "Unbekannt",
+        email: friend.email,
+      };
+    });
+
+    return NextResponse.json(formattedFriends);
 
   } catch (error) {
-    console.error("API Error [Friends GET]:", error);
+    console.error("API Error [Friends GET SQL]:", error);
     return NextResponse.json(
-      { message: "Fehler beim Laden der Freunde" },
+      { message: "Fehler beim Laden der Freunde aus der Datenbank" },
       { status: 500 }
     );
   }

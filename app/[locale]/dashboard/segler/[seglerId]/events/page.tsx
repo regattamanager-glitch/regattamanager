@@ -75,18 +75,25 @@ export default function RegattaÜbersicht({ currentUser }: { currentUser: any })
   }, [t]);
 
   const filtered = useMemo(() => {
+    // Heute auf den Beginn des Tages setzen (00:00:00)
     const heute = dayjs().startOf('day');
+
     return events.filter((e) => {
-      const eventDate = dayjs(e.datumVon);
+      // Datum vom Event ebenfalls auf den Beginn des Tages setzen für fairen Vergleich
+      const eventDate = dayjs(e.datumVon).startOf('day');
+      
       if (e.privat === true) return false;
 
       const matchesMap = mapFilter 
         ? (e.lat?.toFixed(4) === mapFilter.lat.toFixed(4) && e.lng?.toFixed(4) === mapFilter.lng.toFixed(4))
         : true;
 
+      // Logik: Zeige Events, die HEUTE oder in der ZUKUNFT liegen
+      const isUpcomingOrToday = eventDate.isSame(heute) || eventDate.isAfter(heute);
+
       return (
         matchesMap &&
-        eventDate.isAfter(heute) &&
+        isUpcomingOrToday &&
         e.name.toLowerCase().includes(search.toLowerCase()) &&
         (filterLand ? e.land?.toLowerCase().includes(filterLand.toLowerCase()) : true) &&
         (filterYear ? eventDate.year().toString() === filterYear : true) &&

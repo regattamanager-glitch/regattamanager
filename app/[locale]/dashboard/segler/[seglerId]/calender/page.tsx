@@ -41,29 +41,41 @@ export default function SeglerCalendarPage() {
       const { friends, invitations } = await resInfo.json();
 
       if (Array.isArray(allEvents)) {
-        const processed = allEvents.map(event => {
-          let status = 'neutral';
-          const istAngemeldet = event.segler && Object.values(event.segler).some((liste: any) => 
-            liste.some((anm: any) => String(anm.skipper?.seglerId) === String(seglerId))
-          );
+        // ... innerhalb von if (Array.isArray(allEvents))
+const processed = allEvents.map(event => {
+  let status = 'neutral';
+  
+  // 1. Check: Bin ich selbst angemeldet?
+  // Wir prüfen, ob die seglerId irgendwo in den Bootsklassen-Listen auftaucht
+  const istAngemeldet = event.segler && typeof event.segler === 'object' && 
+    Object.values(event.segler).some((liste: any) => 
+      Array.isArray(liste) && liste.some((anm: any) => 
+        String(anm.skipper?.seglerId) === String(seglerId)
+      )
+    );
 
-          const istEingeladen = invitations?.some((inv: any) => {
-            const targetId = inv.eventId || inv.eventID || inv.regattaId;
-            return String(targetId) === String(event.id);
-          });
+  // 2. Check: Bin ich eingeladen?
+  const istEingeladen = invitations?.some((inv: any) => {
+    const targetId = inv.eventId || inv.eventID || inv.regattaId;
+    return String(targetId) === String(event.id);
+  });
 
-          const freundeDabei = event.segler && Object.values(event.segler).some((liste: any) => 
-            liste.some((anm: any) => friends.includes(anm.skipper?.seglerId))
-          );
+  // 3. Check: Sind Freunde dabei?
+  const freundeDabei = event.segler && typeof event.segler === 'object' &&
+    Object.values(event.segler).some((liste: any) => 
+      Array.isArray(liste) && liste.some((anm: any) => 
+        friends?.includes(anm.skipper?.seglerId)
+      )
+    );
 
-          if (istAngemeldet) status = 'angemeldet';
-          else if (istEingeladen) status = 'eingeladen';
-          else if (freundeDabei) status = 'freunde';
+  if (istAngemeldet) status = 'angemeldet';
+  else if (istEingeladen) status = 'eingeladen';
+  else if (freundeDabei) status = 'freunde';
 
-          return { ...event, status };
-        }).filter(event => event.status !== 'neutral');
+  return { ...event, status };
+}).filter(event => event.status !== 'neutral');
 
-        setEvents(processed);
+setEvents(processed);
       }
     } catch (err) {
       console.error("Kalender-Fehler:", err);
@@ -98,12 +110,18 @@ export default function SeglerCalendarPage() {
   }, [currentDate, locale]);
 
   const getEventsForDay = (cellDate: dayjs.Dayjs) => {
-    return events.filter(e => {
-      const start = dayjs(e.datumVon).startOf('day');
-      const end = dayjs(e.datumBis).startOf('day');
-      return (cellDate.isSame(start, 'day') || cellDate.isSame(end, 'day') || (cellDate.isAfter(start) && cellDate.isBefore(end)));
-    });
-  };
+  const targetDay = cellDate.startOf('day');
+  
+  return events.filter(e => {
+    const start = dayjs(e.datumVon).startOf('day');
+    const end = dayjs(e.datumBis).startOf('day');
+    return (
+      targetDay.isSame(start) || 
+      targetDay.isSame(end) || 
+      (targetDay.isAfter(start) && targetDay.isBefore(end))
+    );
+  });
+};
 
   if (loading) return (
     <div className="h-screen bg-[#1e3a8a] flex items-center justify-center text-white font-black italic">

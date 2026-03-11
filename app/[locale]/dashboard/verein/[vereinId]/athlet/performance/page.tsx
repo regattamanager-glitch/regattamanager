@@ -76,95 +76,114 @@ export default function VereinAthletPerformancePage() {
   }
 
   async function loadPerformanceData() {
-    try {
-      setLoading(true);
-      const [resResults, resEvents, resAccounts] = await Promise.all([
-        fetch('/api/events/results'),
-        fetch('/api/events'),
-        fetch('/api/accounts')
-      ]);
+  try {
+    setLoading(true);
+    
+    // 1. Alle notwendigen Daten parallel abrufen
+    const responses = await Promise.all([
+  fetch('/api/events/results'),
+  fetch('/api/events'),
+  fetch('/api/accounts'),
+  fetch('/api/registrations')
+]);
 
-      const allResultsObj = await resResults.json(); 
-      const allEvents = await resEvents.json();     
-      const allAccounts = await resAccounts.json();
-
-      const clubMembers = allAccounts.filter((acc: any) => {
-        const memberOf = acc.vereine || acc.vereinId || [];
-        return Array.isArray(memberOf) 
-          ? memberOf.some(id => String(id).toLowerCase() === vereinId.toLowerCase())
-          : String(memberOf).toLowerCase() === vereinId.toLowerCase();
-      });
-
-      const memberIds = clubMembers.map((m: any) => String(m.id).trim());
-      const processed: any[] = [];
-
-      allEvents.forEach((event: any) => {
-        if (!event.segler) return;
-
-        Object.entries(event.segler).forEach(([klasse, participants]: [string, any]) => {
-          const partArray = participants as any[];
-          
-          const clubParticipantsInClass = partArray.filter(p => {
-            const sId = String(p.skipper?.seglerId || p.seglerId || "").trim();
-            return memberIds.includes(sId);
-          });
-
-          if (clubParticipantsInClass.length > 0) {
-            const eventResultsInClass = allResultsObj[event.id]?.[klasse];
-
-            clubParticipantsInClass.forEach(memberEntry => {
-              const currentId = String(memberEntry.skipper?.seglerId || memberEntry.seglerId || "").trim();
-              const athlete = clubMembers.find((m: any) => String(m.id).trim() === currentId);
-            
-              let rank: number | string = t('statusRegistered');
-              let status = t('statusUpcoming');
-            
-              if (eventResultsInClass) {
-                const calculatedRank = calculatePlacement(partArray, eventResultsInClass, currentId);
-                if (calculatedRank !== null) {
-                  rank = calculatedRank;
-                  status = t('statusFinished');
-                }
-              }
-            
-              const fullName = athlete 
-                ? `${athlete.vorname} ${athlete.nachname}`.trim() 
-                : `ID: ${currentId}`;
-            
-              processed.push({
-                athleteId: currentId,
-                athleteName: fullName,
-                athleteImage: athlete?.profilbild || null, 
-                eventName: event.name || event.titel,
-                eventId: event.id,
-                datum: event.datumVon,
-                location: event.location,
-                klasse,
-                rank,
-                totalParticipants: partArray.length,
-                status
-              });
-            });
-          }
-        });
-      });
-
-      const sorted = processed.sort((a, b) => dayjs(b.datum).diff(dayjs(a.datum)));
-      
-      setStats({
-        totalStarts: sorted.length,
-        podiums: sorted.filter(r => typeof r.rank === 'number' && r.rank <= 3).length,
-        wins: sorted.filter(r => r.rank === 1).length,
-        activeAthletes: new Set(sorted.map(r => r.athleteId)).size
-      });
-      
-      setPerformanceData(sorted);
-    } catch (err) {
-      console.error("Fehler:", err);
-    } finally {
-      setLoading(false);
-    }
+// Überprüfung der einzelnen Responses
+for (const res of responses) {
+  if (!res.ok) {
+    console.error(`Fehler in API: ${res.url} - Status: ${res.status}`);
   }
+}
+
+const allResultsObj = await responses[0].json(); 
+const allEvents = await responses[1].json();     
+const allAccounts = await responses[2].json();
+const allRegistrations = await responses[3].json();
+
+    // 2. Vereinsmitglieder filtern
+    const clubMembers = allAccounts.filter((acc: any) => {
+      if (acc.type !== "segler" || !acc.vereine) return false;
+      return acc.vereine.some((v: any) => 
+        String(v.id).toLowerCase() === String(vereinId).toLowerCase()
+      );
+    });
+
+    const memberIds = clubMembers.map((m: any) => String(m.id).trim());
+    const processed: any[] = [];
+
+    // 3. Durch alle Registrierungen gehen
+    // Wir suchen in 'allRegistrations' nach 'seglerId'
+    allRegistrations.forEach((reg: any) => {
+      const sId = String(reg.seglerId).trim();
+      
+      // Prüfen, ob dieser Segler zu unserem Verein gehört
+      if (memberIds.includes(sId)) {
+        const event = allEvents.find((e: any) => String(e.id) === String(reg.eventId));
+        if (!event) return;
+
+        const athlete = clubMembers.find((m: any) => String(m.id).trim() === sId);
+        const klasse = reg.klasse || "Standard";
+
+        // 4. Prüfen, ob Ergebnisse in der 'results' Tabelle (allResultsObj) vorliegen
+        // Die 'results' API nutzt 'segler_id' (im allResultsObj als Key)
+        const eventResultsInClass = allResultsObj[event.id]?.[klasse];
+        
+        let rank: number | string = t('statusRegistered');
+        let status = t('statusUpcoming');
+
+        if (eventResultsInClass && eventResultsInClass[sId]) {
+          // Platzierung berechnen, da Ergebnisse vorhanden sind
+          // Wir brauchen alle Teilnehmer dieser Klasse für die Berechnung
+          const participantsInClass = allRegistrations
+            .filter((r: any) => String(r.eventId) === String(event.id) && r.klasse === klasse)
+            .map((r: any) => ({ seglerId: r.seglerId }));
+
+          const calculatedRank = calculatePlacement(participantsInClass, eventResultsInClass, sId);
+          
+          if (calculatedRank !== null) {
+            rank = calculatedRank;
+            status = t('statusFinished');
+          }
+        }
+
+        // Doppelte Einträge verhindern (falls ein Segler mehrfach gelistet ist)
+        const exists = processed.find(p => p.athleteId === sId && p.eventId === event.id && p.klasse === klasse);
+        if (!exists) {
+          processed.push({
+            athleteId: sId,
+            athleteName: athlete ? `${athlete.vorname} ${athlete.nachname}` : `ID: ${sId}`,
+            athleteImage: athlete?.profilbild || null, 
+            eventName: event.name || event.titel,
+            eventId: event.id,
+            datum: event.datum_von || event.datumVon,
+            location: event.location,
+            klasse,
+            rank,
+            // Anzahl der Leute in der Registrierungsliste für diese Klasse
+            totalParticipants: allRegistrations.filter((r: any) => String(r.eventId) === String(event.id) && r.klasse === klasse).length,
+            status
+          });
+        }
+      }
+    });
+
+    // 5. Sortieren und Statistiken setzen
+    const sorted = processed.sort((a, b) => dayjs(b.datum).diff(dayjs(a.datum)));
+    
+    setStats({
+      totalStarts: sorted.length,
+      podiums: sorted.filter(r => typeof r.rank === 'number' && r.rank <= 3).length,
+      wins: sorted.filter(r => r.rank === 1).length,
+      activeAthletes: new Set(sorted.map(r => r.athleteId)).size
+    });
+    
+    setPerformanceData(sorted);
+
+  } catch (err) {
+    console.error("Performance Load Error:", err);
+  } finally {
+    setLoading(false);
+  }
+}
 
   useEffect(() => {
     if (vereinId) loadPerformanceData();

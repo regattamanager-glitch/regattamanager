@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/prisma"; // Umgestellt auf direkten Prisma 7 Export
+import sql from '@/lib/db';
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -12,21 +12,14 @@ export async function POST() {
 
     // 1. Session in der Neon-Datenbank löschen
     if (sessionId) {
-      try {
-        await prisma.session.delete({
-          where: { id: sessionId },
-        });
-      } catch (e) {
-        // Falls die Session bereits abgelaufen oder gelöscht war, 
-        // fangen wir den Fehler ab, damit der Logout-Prozess weiterläuft.
-        console.log("Session war in der Datenbank bereits nicht mehr vorhanden.");
-      }
+      // DELETE in SQL wirft keinen Fehler, wenn die ID nicht gefunden wird.
+      // Es werden dann einfach 0 Zeilen gelöscht.
+      await sql`DELETE FROM "Session" WHERE id = ${sessionId}`;
     }
 
     const response = NextResponse.json({ success: true });
 
     // 2. Cookies im Browser ungültig machen
-    // Wir setzen das Ablaufdatum auf den 01.01.1970
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

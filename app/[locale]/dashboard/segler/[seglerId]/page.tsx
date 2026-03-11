@@ -125,76 +125,78 @@ const copyIdToClipboard = () => {
   };
 
   useEffect(() => {
-  if (!account) return;
+    if (!account || !effectiveId) return;
 
-  
+    const loadData = async () => {
+      setLoading(true); // Sicherstellen, dass Loading-State aktiv ist
+      try {
+        // 1. Beide Requests parallel starten
+        const [eventsRes, resultsRes] = await Promise.all([
+          fetch(`/api/events/my-registrations?seglerId=${effectiveId}`),
+          fetch('/api/events/results')
+        ]);
 
-  const loadData = async () => {
-  try {
-    const [eventsRes, resultsRes] = await Promise.all([
-      fetch('/api/events'),
-      fetch('/api/events/results')
-    ]);
+        if (!eventsRes.ok || !resultsRes.ok) throw new Error("Fehler beim Laden der API");
 
-    const allEvents = await eventsRes.json();
-    const allResults = await resultsRes.json(); 
+        const myEvents = await eventsRes.json();
+        const allResults = await resultsRes.json();
 
-    let podiumCount = 0;
-    const tempClasses = new Set<string>();
-    const upcoming: Event[] = [];
-    const myId = String(account.id).trim();
+        let podiumCount = 0;
+        const tempClasses = new Set<string>();
+        const upcoming: Event[] = [];
+        const myId = String(effectiveId).trim();
 
-    allEvents.forEach((event: any) => {
-      if (!event.segler) return;
+        // 2. Da 'my-registrations' uns bereits NUR unsere Events gibt, 
+        // müssen wir nicht mehr das riesige 'allEvents' filtern.
+        myEvents.forEach((event: any) => {
+          if (!event.segler) return;
 
-      Object.entries(event.segler).forEach(([klasseName, participants]: [string, any]) => {
-        const participantsArray = participants as any[];
-        
-        const isMe = participantsArray.some((p: any) => {
-          const pId = String(p.skipper?.seglerId || p.seglerId || "").trim();
-          return pId === myId;
+          Object.entries(event.segler).forEach(([klasseName, participants]: [string, any]) => {
+            const participantsArray = participants as any[];
+            
+            // Wir prüfen, ob wir in dieser Klasse gemeldet sind
+            const isMeInThisClass = participantsArray.some((p: any) => {
+              const pId = String(p.skipper?.seglerId || p.seglerId || "").trim();
+              return pId === myId;
+            });
+
+            if (isMeInThisClass) {
+              const cleanKlasse = klasseName.trim();
+              tempClasses.add(cleanKlasse);
+
+              // Podiums-Check
+              const eventClassResults = allResults[event.id]?.[klasseName];
+              if (eventClassResults) {
+                const rank = calculatePlacement(participantsArray, eventClassResults, myId);
+                if (rank !== null && rank >= 1 && rank <= 3) {
+                  podiumCount++;
+                }
+              }
+
+              // Nur zukünftige Events für die Liste (Dashboard-Logik)
+              const eventDate = dayjs(event.datumVon);
+              if (eventDate.isAfter(dayjs().subtract(1, 'day'))) {
+                if (!upcoming.find(e => e.id === event.id)) {
+                  upcoming.push(event);
+                }
+              }
+            }
+          });
         });
 
-        if (isMe) {
-          // Normalisierung für die "2 Klassen" Problematik
-          const cleanKlasse = klasseName.trim();
-          tempClasses.add(cleanKlasse);
+        // States setzen
+        setEvents(upcoming);
+        setPodiums(podiumCount);
+        setActiveClasses(tempClasses);
+      } catch (err) {
+        console.error("Dashboard Load Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-          // Zugriff auf results.json Struktur
-          // allResults[eventId] -> { "Optimist": { "ID": [1,2] } }
-          const eventClassResults = allResults[event.id]?.[klasseName];
-          
-          if (eventClassResults) {
-            const rank = calculatePlacement(participantsArray, eventClassResults, myId);
-            
-            // Debugging in der Konsole
-            console.log(`Match! Event: ${event.name}, Rang: ${rank}`);
-            
-            if (rank !== null && rank >= 1 && rank <= 3) {
-              podiumCount++;
-            }
-          }
-
-          const eventDate = dayjs(event.datumVon);
-          if (eventDate.isAfter(dayjs().subtract(1, 'day'))) {
-            if (!upcoming.find(e => e.id === event.id)) upcoming.push(event);
-          }
-        }
-      });
-    });
-
-    setEvents(upcoming);
-    setPodiums(podiumCount);
-    setActiveClasses(tempClasses);
-  } catch (err) {
-    console.error("Dashboard Load Error:", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
-  loadData();
-}, [account]);
+    loadData();
+  }, [account, effectiveId]); // Wichtig: effectiveId als Dependency
 
   const logout = () => {
     localStorage.removeItem('user');

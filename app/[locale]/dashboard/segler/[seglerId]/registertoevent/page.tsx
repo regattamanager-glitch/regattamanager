@@ -152,31 +152,45 @@ export default function RegisterToEventPage() {
   };
 
   const handleSubmit = async () => {
-    setSubmitting(true);
-    const usedKlasse = decodeURIComponent(klasseFromUrl || "");
-  
-    try {
-      const sessionRes = await fetch("/api/payment/create-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: event.id,
-          seglerId: seglerIdFromPath,
-          klasse: usedKlasse === "GLOBAL" ? customKlasse : usedKlasse,
-          skipper,
-          boot,
-          crew,
-          extras: selectedExtras,
-        }),
-      });
-      const session = await sessionRes.json();
-      if (session.url) window.location.href = session.url;
-    } catch (err) {
-      alert(t('errorPayment'));
-    } finally {
-      setSubmitting(false);
+  setSubmitting(true);
+  const usedKlasse = decodeURIComponent(klasseFromUrl || "");
+
+  try {
+    const response = await fetch("/api/payment/create-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventId: event.id,
+        seglerId: seglerIdFromPath,
+        klasse: usedKlasse === "GLOBAL" ? customKlasse : usedKlasse,
+        skipper,
+        boot,
+        crew,
+        extras: selectedExtras,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Wenn der Server einen Fehler meldet (z.B. 400 oder 500)
+      throw new Error(data.error || "Fehler beim Erstellen der Session");
     }
-  };
+
+    if (data.url) {
+      console.log("Redirecting to Stripe:", data.url);
+      window.location.href = data.url;
+    } else {
+      console.error("Keine URL in der Antwort erhalten:", data);
+      alert("Fehler: Stripe-URL konnte nicht generiert werden.");
+    }
+  } catch (err: any) {
+    console.error("Zahlungsfehler:", err);
+    alert(`${t('errorPayment')}: ${err.message}`);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center">

@@ -1,36 +1,34 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { sql } from '@vercel/postgres';
 
 export async function POST(request: Request) {
   try {
     const { clubId, userId } = await request.json();
 
-    const accountsPath = path.join(process.cwd(), 'app', 'api', 'accounts', 'accounts.json');
+    if (!clubId || !userId) {
+      return NextResponse.json({ error: 'Club-ID oder User-ID fehlt' }, { status: 400 });
+    }
 
-    // 1. ACCOUNTS LADEN
-    const accountsData = await fs.readFile(accountsPath, 'utf-8');
-    let accounts = JSON.parse(accountsData);
+    // Im Regatta Manager liegen Mitgliedschaften in der Tabelle _SeglerVereine
+    // "A" ist die Segler-ID (userId), "B" ist die Vereins-ID (clubId)
+    const result = await sql`
+      DELETE FROM "_SeglerVereine"
+      WHERE "A"::text = ${userId}::text 
+      AND "B"::text = ${clubId}::text
+    `;
 
-    // 2. DATEN AKTUALISIEREN (IDs entfernen)
-    accounts = accounts.map((acc: any) => {
-      // Beim Segler: Verein aus der Liste löschen
-      if (acc.id === userId && acc.vereine) {
-        acc.vereine = acc.vereine.filter((id: string) => id !== clubId);
-      }
-      // Beim Verein: Segler aus der Liste löschen
-      if (acc.id === clubId && acc.mitglieder) {
-        acc.mitglieder = acc.mitglieder.filter((id: string) => id !== userId);
-      }
-      return acc;
+    console.log(`✅ Mitgliedschaft zwischen User ${userId} und Club ${clubId} im Regatta Manager beendet.`);
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "Mitglied erfolgreich entfernt" 
     });
 
-    // 3. SPEICHERN
-    await fs.writeFile(accountsPath, JSON.stringify(accounts, null, 2), 'utf-8');
- 
-    return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Fehler beim Entfernen des Mitglieds:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Datenbank-Fehler beim Entfernen des Mitglieds:", error);
+    return NextResponse.json(
+      { error: `Fehler beim Datenbank-Update: ${error.message}` }, 
+      { status: 500 }
+    );
   }
 }

@@ -1,73 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import fs from "fs/promises";
-import path from "path";
+import sql from "@/lib/db";
 
-// Stripe initialisieren
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2022-11-15",
+  apiVersion: "2024-12-18.acacia" as any,
 });
-
-// Pfad zur JSON-Datei mit Vereinsdaten
-const accountsPath = path.join(process.cwd(), "app/api/accounts/accounts.json");
 
 export async function POST(req: NextRequest) {
   try {
     const { vereinId } = await req.json();
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
     if (!vereinId) {
-      return NextResponse.json({ error: "vereinId fehlt" }, { status: 400 });
+      return NextResponse.json({ error: "Keine vereinId übermittelt" }, { status: 400 });
     }
 
-    // JSON-Datei einlesen
-    const data = await fs.readFile(accountsPath, "utf-8");
-    const accounts = JSON.parse(data);
+    // 1. Verein laden - Wichtig: Spaltenname in Anführungszeichen wegen Case-Sensitivity
+    const vereine = await sql`
+      SELECT id, name, email, "stripeAccountId" 
+      FROM "Verein" 
+      WHERE id = ${vereinId}
+    `;
+    
+    const verein = vereine[0];
 
-    // Verein suchen
-    const verein = accounts.find((a: any) => a.id === vereinId); 
     if (!verein) {
       return NextResponse.json({ error: "Verein nicht gefunden" }, { status: 404 });
     }
 
-    // Wenn bereits Stripe-Konto existiert → neuen AccountLink erstellen
-    if (verein.stripeAccountId) {
-      const link = await stripe.accountLinks.create({
-        account: verein.stripeAccountId,
-        refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/verein`,
-        return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/verein`,
-        type: "account_onboarding",
-      });
+    let stripeAccountId = verein.stripeAccountId;
 
-      return NextResponse.json({ url: link.url, stripeAccountId: verein.stripeAccountId });
+    // 2. Falls kein Konto vorhanden -> Erstellen
+    if (!stripeAccountId) {
+      try {
+        const account = await stripe.accounts.create({
+          type: "express",
+          country: "LU", 
+          email: verein.email,
+          business_type: "non_profit",
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+        });
+
+        stripeAccountId = account.id;
+
+        // Wir entfernen "updated_at = NOW()", da die Spalte in deiner DB fehlt
+        await sql`
+          UPDATE "Verein" 
+          SET "stripeAccountId" = ${stripeAccountId} 
+          WHERE id = ${vereinId}
+        `;
+      } catch (stripeErr: any) {
+        return NextResponse.json(
+          { error: `Stripe-Konfiguration: ${stripeErr.message}` }, 
+          { status: 400 }
+        );
+      }
     }
 
-    // Neues Stripe Express Konto erstellen
-    const account = await stripe.accounts.create({
-      type: "express",
-      country: "LU",
-      business_type: "non_profit",
-      capabilities: { transfers: { requested: true } },
-    });
-
-    // Daten im JSON-File speichern
-    verein.stripeAccountId = account.id;
-    verein.stripeStatus = "pending";
-
-    await fs.writeFile(accountsPath, JSON.stringify(accounts, null, 2));
-
-    // AccountLink erzeugen, um Onboarding durchzuführen
-    const link = await stripe.accountLinks.create({
-      account: account.id,
-      refresh_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/verein`,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/verein`,
+    // 3. Onboarding-Link generieren
+    const accountLink = await stripe.accountLinks.create({
+      account: stripeAccountId,
+      refresh_url: `${baseUrl}/dashboard/verein/${vereinId}/profil`,
+      return_url: `${baseUrl}/dashboard/verein/${vereinId}/profil?stripe_success=true`,
       type: "account_onboarding",
     });
 
-    // Erfolgreiche Antwort zurückgeben
-    return NextResponse.json({ url: link.url, stripeAccountId: account.id });
-  } catch (err) {
-    console.error("Stripe Connect Fehler:", err);
+    return NextResponse.json({ url: accountLink.url });
+
+  } catch (err: any) {
+    console.error("BACKEND ERROR:", err);
+
+    // Hilfreiche Fehlermeldung bei Datenbank-Problemen
+    if (err.message.includes('column "stripeAccountId" does not exist')) {
+      return NextResponse.json({ error: "Die Spalte 'stripeAccountId' wurde in der Tabelle 'Verein' nicht gefunden." }, { status: 500 });
+    }
+
     return NextResponse.json(
-      { error: "Fehler beim Erstellen oder Verbinden des Stripe-Kontos" },
+      { error: "Interner Serverfehler im Backend." },
       { status: 500 }
     );
   }

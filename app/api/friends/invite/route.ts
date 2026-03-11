@@ -1,45 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-
-const invitationsPath = path.join(process.cwd(), "app/api/accounts/invitations.json");
+import sql from "@/lib/db";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { senderId, friendIds, eventId, eventName } = body;
 
-    if (!senderId || !friendIds || !Array.isArray(friendIds)) {
+    // Validierung
+    if (!senderId || !friendIds || !Array.isArray(friendIds) || !eventId) {
       return NextResponse.json({ message: "Ungültige Daten" }, { status: 400 });
     }
 
-    // 1. Existierende Einladungen laden (falls Datei existiert)
-    let invitations: any[] = [];
-    if (fs.existsSync(invitationsPath)) {
-      invitations = JSON.parse(fs.readFileSync(invitationsPath, "utf8"));
-    }
+    // Wir erstellen die Einladungen parallel in der Datenbank
+    // Promise.all ist hier sehr effizient für mehrere Inserts
+    const newInvitations = await Promise.all(
+      friendIds.map(async (receiverId: string) => {
+        const id = crypto.randomUUID();
+        
+        await sql`
+          INSERT INTO event_invitations (id, sender_id, receiver_id, event_id, event_name, status, created_at)
+          VALUES (
+            ${id}, 
+            ${senderId}, 
+            ${receiverId}, 
+            ${eventId}, 
+            ${eventName}, 
+            'pending', 
+            NOW()
+          )
+        `;
+        
+        return id;
+      })
+    );
 
-    // 2. Neue Einladungen erstellen
-    const timestamp = new Date().toISOString();
-    const newInvitations = friendIds.map((receiverId: string) => ({
-      id: `${senderId}_${receiverId}_${timestamp}`, // eindeutige ID
-      senderId,
-      receiverId,
-      eventId,
-      eventName,
-      status: "pending", // noch nicht angenommen
-      createdAt: timestamp
-    }));
- 
-    // 3. Anhängen an bestehende Einladungen
-    invitations.push(...newInvitations);
+    return NextResponse.json({ 
+      success: true, 
+      message: `${newInvitations.length} Einladungen erfolgreich verschickt` 
+    });
 
-    // 4. Zurückschreiben in die JSON-Datei
-    fs.writeFileSync(invitationsPath, JSON.stringify(invitations, null, 2), "utf8");
-
-    return NextResponse.json({ success: true, added: newInvitations.length });
   } catch (error) {
-    console.error("API Error [Friends POST]:", error);
-    return NextResponse.json({ message: "Fehler beim Speichern der Einladung" }, { status: 500 });
+    console.error("API Error [Event Invite POST]:", error);
+    return NextResponse.json({ 
+      message: "Fehler beim Speichern der Einladungen in der Datenbank" 
+    }, { status: 500 });
   }
 }

@@ -339,7 +339,8 @@
   "saving": "Saving...",
   "confirmPasswordAlert": "Please enter your current password to confirm",
   "successAlert": "Profile updated successfully!",
-  "errorAlert": "Error saving profile."
+  "errorAlert": "Error saving profile.",
+  "createStripeAccount": "Create account"
 },
 "ClubPerformance": {
   "loading": "Loading performance...",

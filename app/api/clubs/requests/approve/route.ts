@@ -1,63 +1,40 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { createPool, sql } from '@vercel/postgres';
+
+const pool = createPool({
+  connectionString: process.env.POSTGRES_URL 
+});
 
 export async function POST(request: Request) {
   try {
     const { requestId, clubId, userId } = await request.json();
 
-    const accountsPath = path.join(process.cwd(), 'app', 'api', 'accounts', 'accounts.json');
-    const requestsPath = path.join(process.cwd(), 'app', 'api', 'clubs', 'anfragen.json');
-
-    // 1. ACCOUNTS LADEN
-    const accountsData = await fs.readFile(accountsPath, 'utf-8');
-    let accounts = JSON.parse(accountsData);
-
-    // 2. DATEN AKTUALISIEREN
-    accounts = accounts.map((acc: any) => {
-      // FALL A: Der Segler (bekommt den Verein eingetragen)
-      if (acc.id === userId) {
-        // Falls "vereine" fehlt oder null ist, erstelle leeres Array
-        if (!acc.vereine || !Array.isArray(acc.vereine)) {
-          acc.vereine = [];
-        }
-        if (!acc.vereine.includes(clubId)) {
-          acc.vereine.push(clubId);
-        }
-      }
- 
-      // FALL B: Der Verein (bekommt das Mitglied eingetragen)
-      if (acc.id === clubId) {
-        // Falls "mitglieder" fehlt (wichtig für neue Vereine!), erstelle leeres Array
-        if (!acc.mitglieder || !Array.isArray(acc.mitglieder)) {
-          acc.mitglieder = [];
-        }
-        if (!acc.mitglieder.includes(userId)) {
-          acc.mitglieder.push(userId);
-        }
-      }
-      return acc;
-    });
-
-    // 3. ANFRAGE AUS DER JSON ENTFERNEN
-    let requests = [];
-    try {
-      const requestsData = await fs.readFile(requestsPath, 'utf-8');
-      requests = JSON.parse(requestsData);
-      requests = requests.filter((req: any) => req.id !== requestId);
-    } catch (e) {
-      console.log("Keine Anfragen-Datei gefunden oder leer.");
+    if (!requestId || !clubId || !userId) {
+      return NextResponse.json({ error: "Fehlende Daten" }, { status: 400 });
     }
 
-    // 4. ALLES SPEICHERN
-    await fs.writeFile(accountsPath, JSON.stringify(accounts, null, 2), 'utf-8');
-    await fs.writeFile(requestsPath, JSON.stringify(requests, null, 2), 'utf-8');
+    // 1. In die Verknüpfungstabelle _SeglerVereine eintragen
+    // "A" ist die Segler-ID (userId), "B" ist die Vereins-ID (clubId)
+    await pool.query(`
+      INSERT INTO "_SeglerVereine" ("A", "B") 
+      VALUES ($1::uuid, $2::uuid)
+      ON CONFLICT DO NOTHING
+    `, [userId, clubId]);
 
-    console.log(`✅ Mitgliedschaft besiegelt: User ${userId} <-> Club ${clubId}`);
+    // 2. Die Anfrage aus der club_requests Tabelle löschen
+    // Da sie akzeptiert wurde, wird sie dort nicht mehr benötigt
+    await sql`
+      DELETE FROM club_requests 
+      WHERE id = ${requestId};
+    `;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Mitglied hinzugefügt und Anfrage gelöscht" 
+    });
+
   } catch (error: any) {
-    console.error("KRITISCHER FEHLER BEIM AKZEPTIEREN:", error);
+    console.error("❌ Fehler beim Verarbeiten der Anfrage:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

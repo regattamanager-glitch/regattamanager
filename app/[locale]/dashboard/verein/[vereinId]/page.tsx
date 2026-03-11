@@ -82,8 +82,20 @@ export default function VereinsDashboard() {
     router.push('/login');
   };
 
-  const kommende = events.filter(e => dayjs(e.datumVon).isAfter(dayjs()));
-  const vergangene = events.filter(e => dayjs(e.datumBis).isBefore(dayjs()));
+  // NEU: Präziser Vergleich auf Tagesbasis
+const heute = dayjs().startOf('day');
+
+const kommende = events.filter(ev => {
+  const start = dayjs(ev.datumVon).startOf('day');
+  // Event ist kommend, wenn es heute oder in der Zukunft startet
+  return start.isSame(heute) || start.isAfter(heute);
+});
+
+const vergangene = events.filter(ev => {
+  const ende = dayjs(ev.datumBis).startOf('day');
+  // Event ist vergangen, wenn das Ende-Datum vor heute liegt
+  return ende.isBefore(heute);
+});
 
   return (
     <div className="min-h-screen p-0 md:p-4"> 

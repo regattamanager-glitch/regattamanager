@@ -168,13 +168,21 @@ export default function CreateEventPage() {
   };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer.files);
-    setForm(f => ({
-      ...f,
-      documents: [...f.documents, ...files.map(file => ({ name: file.name, file }))]
-    }));
-  };
+  e.preventDefault();
+  const files = Array.from(e.dataTransfer.files);
+  setForm(f => ({
+    ...f,
+    documents: [
+      ...f.documents, 
+      ...files.map(file => ({ 
+        name: file.name, 
+        file, 
+        url: "#", 
+        file_url: "#" 
+      }))
+    ]
+  }));
+};
 
   const addExtra = () => setForm(f => ({ ...f, extras: [...f.extras, { name: "", price: "" }] }));
   const updateExtra = (i: number, field: keyof Extra, value: string) => {
@@ -218,7 +226,12 @@ export default function CreateEventPage() {
         bis: form.anmeldungBis
       },
       extras: form.extras,
-      documents: form.documents 
+      documents: form.documents.map(doc => ({
+        name: doc.name,
+        url: "#",        // Platzhalter für DB
+        file_url: "#",   // Wichtig für den NeonDb NOT NULL Constraint
+        title: doc.name
+      }))
     };
 
     try {

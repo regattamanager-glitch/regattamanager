@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { createPool } from '@vercel/postgres';
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ clubId: string }> }
 ) {
-  // NEUER PFAD: Wir navigieren vom Root in den spezifischen Ordner
-  const filePath = path.join(
-    process.cwd(), 
-    'app', 'api', 'clubs', 'anfragen.json'
-  );
+  // Wir holen uns die URL direkt aus der Umgebung
+  const connectionString = process.env.POSTGRES_URL;
+
+  if (!connectionString) {
+    console.error("❌ KRITISCH: POSTGRES_URL ist nicht definiert!");
+    return NextResponse.json({ error: "Datenbank-Verbindung nicht konfiguriert" }, { status: 500 });
+  }
+
+  const pool = createPool({ connectionString });
 
   try {
     const { clubId } = await params;
@@ -19,42 +22,38 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: 'User-ID fehlt' }, { status: 401 });
     }
- 
-    // --- DATEI LESEN ---
-    let requests = [];
-    try {
-      const fileData = await fs.readFile(filePath, 'utf-8');
-      requests = JSON.parse(fileData || '[]');
-    } catch (e) {
-      // Falls die Datei nicht existiert oder Pfad falsch ist
-      console.log("Datei nicht gefunden oder leer, starte neues Array.");
-      requests = [];
-    }
 
-    // --- NEUEN EINTRAG ERSTELLEN ---
-    const newEntry = {
-      id: `req_${Date.now()}`,
-      clubId,
-      userId,
-      message: message || 'Beitrittsanfrage',
-      status: 'PENDING',
-      timestamp: new Date().toISOString()
-    };
+    // Eine eindeutige ID für die Anfrage generieren
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
-    requests.push(newEntry);
+    // DATENBANK-SPEICHERUNG:
+    // Wir schreiben direkt in die Tabelle 'club_requests' auf Neon
+    await pool.query(`
+      INSERT INTO club_requests (
+        id, 
+        club_id, 
+        user_id, 
+        message, 
+        status, 
+        timestamp
+      ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+    `, [
+      requestId, 
+      clubId, 
+      userId, 
+      message || 'Beitrittsanfrage via Regatta Manager', 
+      'PENDING'
+    ]);
 
-    // --- SPEICHERN ---
-    await fs.writeFile(filePath, JSON.stringify(requests, null, 2), 'utf-8');
+    console.log(`✅ Erfolg: Bewerbung ${requestId} für Club ${clubId} in Neon gespeichert.`);
 
-    console.log(`✅ Gespeichert in app/api/clubs/anfragen.json`);
-
-    return NextResponse.json({ success: true }, { status: 201 });
+    return NextResponse.json({ success: true, requestId }, { status: 201 });
 
   } catch (error: any) {
-    console.error("SERVER-FEHLER:", error);
-    return NextResponse.json(
-      { error: `Speicherfehler: ${error.message}` },
-      { status: 500 }
-    );
+    console.error("❌ DATENBANK-FEHLER BEIM SPEICHERN:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  } finally {
+    // Wichtig: Pool-Verbindung wieder freigeben
+    await pool.end();
   }
 }

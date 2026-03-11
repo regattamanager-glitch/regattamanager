@@ -1,25 +1,49 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import sql from "@/lib/db";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
-  const data = await req.json();
-  
-  // Pfad zu deiner JSON-Datenbank (falls du lokal speicherst)
-  const filePath = path.join(process.cwd(), 'data', 'notifications.json');
-  
-  const fileData = fs.readFileSync(filePath, 'utf8');
-  const notifications = JSON.parse(fileData);
+  try {
+    const data = await req.json();
+    const { userId, type, title, message, payload } = data;
 
-  const newRequest = {
-    id: Date.now().toString(),
-    ...data,
-    status: 'pending',
-    createdAt: new Date().toISOString()
-  };
+    // Validierung
+    if (!userId || !title) {
+      return NextResponse.json({ error: "UserId und Titel sind erforderlich" }, { status: 400 });
+    }
 
-  notifications.push(newRequest);
-  fs.writeFileSync(filePath, JSON.stringify(notifications, null, 2));
+    const id = crypto.randomUUID();
 
-  return NextResponse.json({ success: true, request: newRequest });
-} 
+    // In die Neon Datenbank speichern
+    await sql`
+      INSERT INTO notifications (id, user_id, type, title, message, payload, status, created_at)
+      VALUES (
+        ${id}, 
+        ${userId}, 
+        ${type || 'info'}, 
+        ${title}, 
+        ${message || null}, 
+        ${JSON.stringify(payload || {})}, 
+        'pending', 
+        NOW()
+      )
+    `;
+
+    const newRequest = {
+      id,
+      userId,
+      type: type || 'info',
+      title,
+      message,
+      payload,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    return NextResponse.json({ success: true, request: newRequest });
+
+  } catch (error) {
+    console.error("Notification Request Error:", error);
+    return NextResponse.json({ error: "Fehler beim Erstellen der Benachrichtigung" }, { status: 500 });
+  }
+}

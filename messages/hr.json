@@ -339,7 +339,8 @@
   "saving": "Učitavanje...",
   "confirmPasswordAlert": "Molimo unesite trenutnu lozinku za potvrdu",
   "successAlert": "Profil uspješno ažuriran!",
-  "errorAlert": "Pogreška pri spremanju."
+  "errorAlert": "Pogreška pri spremanju.",
+  "createStripeAccount": "Izradi račun"
 },
 "ClubPerformance": {
   "loading": "Učitavanje performansi...",

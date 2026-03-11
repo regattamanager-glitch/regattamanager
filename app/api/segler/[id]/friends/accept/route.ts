@@ -1,50 +1,55 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import sql from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
     const { userId, friendId } = await req.json();
-    const filePath = path.join(process.cwd(), 'app/api/accounts/accounts.json');
-    
-    // 1. Datei einlesen
-    const fileData = fs.readFileSync(filePath, 'utf8');
-    let accounts = JSON.parse(fileData);
 
-    // 2. Beide Segler in der Liste finden
-    const userIndex = accounts.findIndex((a: any) => a.id === userId);
-    const friendIndex = accounts.findIndex((a: any) => a.id === friendId);
-
-    if (userIndex === -1 || friendIndex === -1) {
-      return NextResponse.json({ error: "Einer der Segler wurde nicht gefunden" }, { status: 404 });
+    if (!userId || !friendId) {
+      return NextResponse.json({ error: "IDs fehlen" }, { status: 400 });
     }
 
-    // 3. Feld "freunde" initialisieren, falls es noch nicht existiert (Beidseitig)
-    if (!accounts[userIndex].freunde) {
-      accounts[userIndex].freunde = [];
-    }
-    if (!accounts[friendIndex].freunde) {
-      accounts[friendIndex].freunde = [];
-    } 
+    // In SQL ist die "gegenseitige" Freundschaft durch den Status in der invitations-Tabelle definiert.
+    // Wir suchen die Anfrage (egal wer Sender/Empfänger war) und setzen sie auf 'accepted'.
+    const result = await sql`
+      UPDATE invitations 
+      SET 
+        status = 'accepted',
+        timestamp = NOW()
+      WHERE 
+        ((sender_id = ${friendId} AND receiver_id = ${userId}) 
+        OR 
+        (sender_id = ${userId} AND receiver_id = ${friendId}))
+        AND status = 'pending'
+      RETURNING id
+    `;
 
-    // 4. IDs gegenseitig hinzufügen (nur wenn sie nicht schon drin sind)
-    if (!accounts[userIndex].freunde.includes(friendId)) {
-      accounts[userIndex].freunde.push(friendId);
-    }
-    if (!accounts[friendIndex].freunde.includes(userId)) {
-      accounts[friendIndex].freunde.push(userId);
-    }
+    if (result.length === 0) {
+      // Prüfen, ob sie vielleicht schon befreundet sind
+      const alreadyFriends = await sql`
+        SELECT id FROM invitations 
+        WHERE ((sender_id = ${friendId} AND receiver_id = ${userId}) 
+           OR (sender_id = ${userId} AND receiver_id = ${friendId}))
+          AND status = 'accepted'
+      `;
 
-    // 5. Zurück in die JSON-Datei schreiben
-    fs.writeFileSync(filePath, JSON.stringify(accounts, null, 2));
+      if (alreadyFriends.length > 0) {
+        return NextResponse.json({ 
+          success: true, 
+          message: "Ihr seid bereits im Logbuch befreundet" 
+        });
+      }
+
+      return NextResponse.json({ error: "Keine offene Anfrage gefunden" }, { status: 404 });
+    }
 
     return NextResponse.json({ 
       success: true, 
-      message: "Freundschaft im Logbuch eingetragen" 
+      message: "Freundschaft im Regatta Manager Logbuch eingetragen" 
     });
 
   } catch (error) {
-    console.error("Fehler beim Verarbeiten der Freundschaft:", error);
+    console.error("Fehler beim Verarbeiten der Freundschaft (SQL):", error);
     return NextResponse.json({ error: "Server Fehler" }, { status: 500 });
   }
 }

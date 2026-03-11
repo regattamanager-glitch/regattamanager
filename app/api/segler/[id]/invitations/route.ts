@@ -1,33 +1,40 @@
-// app/api/segler/[id]/invitations/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import sql from "@/lib/db";
 
 export const GET = async (
   req: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ Promise
+  context: { params: Promise<{ id: string }> }
 ) => {
-  const { id: userId } = await context.params; // ✅ Promise auflösen
+  try {
+    const { id: userId } = await context.params;
 
-  const invPath = path.join(process.cwd(), 'app/api/accounts/invitations.json');
-  const eventsPath = path.join(process.cwd(), 'app/api/events/events.json');
+    // Wir holen alle Event-Einladungen für diesen User,
+    // aber nur wenn das Event-Enddatum (datum_bis) noch nicht in der Vergangenheit liegt.
+    const validInvitations = await sql`
+      SELECT 
+        ei.*, 
+        e.datum_bis as event_datum_bis
+      FROM event_invitations ei
+      JOIN events e ON ei.event_id = e.id
+      WHERE ei.receiver_id = ${userId}
+        AND e.datum_bis >= CURRENT_DATE
+    `;
 
-  if (!fs.existsSync(invPath)) return NextResponse.json([]);
+    // Mapping auf die CamelCase-Struktur deines Frontends
+    const formatted = validInvitations.map((inv: any) => ({
+      id: inv.id,
+      senderId: inv.sender_id,
+      receiverId: inv.receiver_id,
+      eventId: inv.event_id,
+      eventName: inv.event_name,
+      status: inv.status,
+      sentAt: inv.created_at || inv.timestamp
+    }));
 
-  const invitations = JSON.parse(fs.readFileSync(invPath, 'utf8'));
-  const events = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
+    return NextResponse.json(formatted);
 
-  const now = new Date();
-
-  const validInvitations = invitations.filter((inv: any) => {
-    const event = events.find((e: any) => e.id === inv.eventId);
-    if (!event) return false;
-    return new Date(event.datumBis) >= now;
-  });
-
-  if (validInvitations.length !== invitations.length) {
-    fs.writeFileSync(invPath, JSON.stringify(validInvitations, null, 2));
+  } catch (error) {
+    console.error("API Error [Invitations GET SQL]:", error);
+    return NextResponse.json([], { status: 500 });
   }
-
-  return NextResponse.json(validInvitations.filter((inv: any) => inv.to === userId));
 };

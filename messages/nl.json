@@ -339,7 +339,8 @@
   "saving": "Laden...",
   "confirmPasswordAlert": "Voer het huidige wachtwoord in ter bevestiging",
   "successAlert": "Profiel succesvol bijgewerkt!",
-  "errorAlert": "Fout bij opslaan."
+  "errorAlert": "Fout bij opslaan.",
+  "createStripeAccount": "Account aanmaken"
 },
 "ClubPerformance": {
   "loading": "Prestaties laden...",

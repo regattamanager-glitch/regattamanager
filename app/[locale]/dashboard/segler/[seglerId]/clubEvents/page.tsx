@@ -50,54 +50,88 @@ export default function ClubEventsPage() {
       setLoading(true);
       setError(null);
       
-      const [resAcc, resClubs, resBroadcasts] = await Promise.all([
-        fetch('/api/accounts'),
+      const [resSession, resClubs, resBroadcasts] = await Promise.all([
+        fetch('/api/accounts/session'), 
         fetch('/api/content/clubs'),
         fetch('/api/clubs/broadcasts')
       ]);
       
-      if (!resAcc.ok || !resClubs.ok) throw new Error("Basisdaten fehlen");
+      if (!resSession.ok || !resClubs.ok) throw new Error("Basisdaten fehlen");
 
-      const accounts = await resAcc.json();
-      const clubs = await resClubs.json();
+      const me = await resSession.json(); 
+      const allClubsData = await resClubs.json();
       const allBroadcasts = resBroadcasts.ok ? await resBroadcasts.json() : [];
       
-      const me = accounts.find((a: any) => String(a.id) === String(seglerId));
-      const myClubIds = me?.vereine || [];
+      // 2. Extrahiere die Vereins-IDs (Sicherer Fix für [object Object])
+      const myClubIds: string[] = Array.isArray(me?.vereine) 
+        ? me.vereine.map((v: any) => { // Hier wird 'v' explizit als any oder besser ein Interface typisiert
+            // Wenn v ein Objekt ist (z.B. { id: '...' } oder { clubId: '...' }), extrahiere den String
+            if (v && typeof v === 'object') {
+              return String(v.id || v.clubId || '');
+            }
+            // Ansonsten ist es bereits ein String/ID
+            return String(v || '');
+          }).filter((id: string) => id.length > 0) // Hier war vermutlich der Fehler: id muss als string deklariert sein
+        : [];
 
-      const joined = clubs.filter((c: any) => myClubIds.includes(c.id));
-      const others = clubs.filter((c: any) => !myClubIds.includes(c.id));
+      console.log("Bereinigte Vereins-IDs:", myClubIds);
+
+      // 3. Filterung der Vereine (Joined vs. Others)
+      const joined = allClubsData.filter((c: any) => 
+        myClubIds.includes(String(c.id))
+      );
+      
+      const others = allClubsData.filter((c: any) => 
+        !myClubIds.includes(String(c.id))
+      );
       
       setMyClubs(joined);
       setAllClubs(others);
 
+      // 4. Nachrichten filtern
       const myMessages = allBroadcasts
-        .filter((b: any) => myClubIds.includes(b.clubId))
+        .filter((b: any) => myClubIds.includes(String(b.clubId)))
         .map((b: any) => {
-          const club = joined.find((c: any) => c.id === b.clubId);
+          const club = joined.find((c: any) => String(c.id) === String(b.clubId));
           return {
             id: b.id,
-            clubName: club?.name || t('fallbackClubName'),
+            clubName: club?.name || "Verein",
             datum: new Date(b.timestamp).toLocaleDateString(),
-            titel: b.message
+            titel: b.message,
+            timestamp: b.timestamp
           };
         })
         .sort((a: any, b: any) => b.timestamp - a.timestamp);
 
+      // 5. Zusätzlichen Content laden
       if (myClubIds.length > 0) {
-        const resContent = await fetch(`/api/clubs/content?ids=${myClubIds.join(',')}`);
-        if (resContent.ok) {
-          const data = await resContent.json();
-          setContent({
-            events: data.events || [],
-            nachrichten: [...myMessages, ...(data.nachrichten || [])]
-          });
-        } else {
-          setContent(prev => ({ ...prev, nachrichten: myMessages }));
+        // Hier geben wir explizit an, dass id ein string ist
+        const idsQuery = myClubIds
+          .filter((id: string) => {
+            return id && id !== 'undefined' && id !== 'null';
+          })
+          .join(',');
+        
+        if (idsQuery) {
+          console.log("Fetch Content für IDs:", idsQuery);
+          const resContent = await fetch(`/api/clubs/content?ids=${idsQuery}`);
+          
+          if (resContent.ok) {
+            const data = await resContent.json();
+            setContent({
+              events: data.events || [],
+              nachrichten: [...myMessages, ...(data.nachrichten || [])]
+            });
+          } else {
+            setContent({ events: [], nachrichten: myMessages });
+          }
         }
+      } else {
+        setContent({ events: [], nachrichten: [] });
       }
+
     } catch (err) {
-      console.error("Fehler beim Laden:", err);
+      console.error("❌ Fehler im Regatta Manager:", err);
       setError(t('errorLoading'));
     } finally {
       setLoading(false);

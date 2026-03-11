@@ -1,40 +1,48 @@
-// app/api/clubs/content/route.ts
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { sql } from '@vercel/postgres';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const clubIds = searchParams.get('ids')?.split(',') || [];
 
-  try {
-    const eventsPath = path.join(process.cwd(), 'app/api/events/events.json');
-    
-    if (!fs.existsSync(eventsPath)) {
-      return NextResponse.json({ events: [], nachrichten: [] });
-    }
+  // Falls keine Club-IDs übergeben wurden, direkt leere Listen zurückgeben
+  if (clubIds.length === 0) {
+    return NextResponse.json({ events: [], nachrichten: [] });
+  }
 
-    const eventsData = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
+  const clubIdsParam = `{${clubIds.join(',')}}`;
 
-    // 1. Filtern nach Verein
-    const myClubEvents = eventsData.filter((e: any) => 
-      clubIds.includes(e.vereinId)
-    );
+try {
+  const { rows: events } = await sql`
+    SELECT 
+      id, 
+      name as titel, 
+      datum_von as datum, 
+      location as ort, 
+      privat,
+      verein_id
+    FROM events 
+    WHERE verein_id = ANY(${clubIdsParam})
+    ORDER BY datum_von ASC;
+  `;
 
-    // 2. Mapping: Wir übersetzen die Felder für das Frontend
-    const mappedEvents = myClubEvents.map((e: any) => ({
+    // 2. Mapping für das Frontend (falls noch SQL-spezifische Formate angepasst werden müssen)
+    const mappedEvents = events.map((e: any) => ({
       id: e.id,
-      titel: e.name,           // 'name' wird zu 'titel'
-      datum: e.datumVon,       // 'datumVon' wird zu 'datum'
-      ort: e.location || e.land, // 'location' wird zu 'ort'
+      titel: e.titel,
+      datum: e.datum ? new Date(e.datum).toLocaleDateString('de-DE') : 'TBA',
+      ort: e.ort || 'Vereinsgelände',
       privat: e.privat
     }));
- 
+
     return NextResponse.json({
       events: mappedEvents,
-      nachrichten: [] 
+      nachrichten: [] // Nachrichten werden separat über die Broadcast-Route geladen
     });
-  } catch (error) {
+
+  } catch (error: any) {
+    console.error("Content GET Fehler:", error);
+    // Bei Fehlern (z.B. Tabelle noch nicht migriert) leeres Ergebnis liefern
     return NextResponse.json({ events: [], nachrichten: [] });
   }
 }

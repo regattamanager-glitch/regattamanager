@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Umgestellt auf direkten Prisma 7 Export
-import { Verein } from "@prisma/client";
+import sql from '@/lib/db';
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -13,25 +12,35 @@ export async function GET(req: Request) {
 
     // FALL 1: Spezifischen Nutzer laden
     if (id) {
-      const segler = await prisma.segler.findUnique({
-        where: { id },
-        include: { vereine: true }
-      });
+      // Segler suchen inkl. verknüpfter Vereine über die Tabelle "_SeglerVereine"
+      const seglerRows = await sql`
+        SELECT s.*, 
+               json_agg(v.*) FILTER (WHERE v.id IS NOT NULL) as vereine
+        FROM "Segler" s
+        LEFT JOIN "_SeglerVereine" sv ON s.id = sv."A"
+        LEFT JOIN "Verein" v ON sv."B" = v.id
+        WHERE s.id = ${id}
+        GROUP BY s.id
+        LIMIT 1
+      `;
+      
+      const segler = seglerRows[0];
 
       if (segler) {
+        const vereine = segler.vereine || [];
         return NextResponse.json({
           ...segler,
           type: "segler",
-          vereinsNamen: segler.vereine.map((v: Verein) => v.kuerzel || v.name),
-          verein: segler.vereine.length > 0 
-            ? (segler.vereine[0].kuerzel || segler.vereine[0].name) 
+          vereinsNamen: vereine.map((v: any) => v.kuerzel || v.name),
+          verein: vereine.length > 0 
+            ? (vereine[0].kuerzel || vereine[0].name) 
             : "",
         });
       }
 
-      const verein = await prisma.verein.findUnique({
-        where: { id }
-      });
+      // Falls kein Segler, als Verein suchen
+      const vereinRows = await sql`SELECT * FROM "Verein" WHERE id = ${id} LIMIT 1`;
+      const verein = vereinRows[0];
 
       if (verein) {
         return NextResponse.json({
@@ -43,19 +52,26 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Nutzer nicht gefunden" }, { status: 404 });
     }
 
-    // FALL 2: Alle Nutzer laden (z. B. für Admin-Übersichten)
-    const allSegler = await prisma.segler.findMany({ include: { vereine: true } });
-    const allVereine = await prisma.verein.findMany();
+    // FALL 2: Alle Nutzer laden
+    const allSegler = await sql`
+      SELECT s.*, json_agg(v.*) FILTER (WHERE v.id IS NOT NULL) as vereine
+      FROM "Segler" s
+      LEFT JOIN "_SeglerVereine" sv ON s.id = sv."A"
+      LEFT JOIN "Verein" v ON sv."B" = v.id
+      GROUP BY s.id
+    `;
+    
+    const allVereine = await sql`SELECT * FROM "Verein"`;
 
     const combined = [
-      ...allSegler.map(s => ({ ...s, type: "segler" })),
-      ...allVereine.map(v => ({ ...v, type: "verein" }))
+      ...allSegler.map((s: any) => ({ ...s, type: "segler" })),
+      ...allVereine.map((v: any) => ({ ...v, type: "verein" }))
     ];
 
     return NextResponse.json(combined);
 
   } catch (error) {
-    console.error("Fehler in /api/accounts:", error);
+    console.error("Fehler in /api/accounts (SQL):", error);
     return NextResponse.json({ error: "Serverfehler beim Abrufen der Accounts" }, { status: 500 });
   }
 }

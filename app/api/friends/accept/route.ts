@@ -1,38 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from 'fs';
-import path from 'path';
+import sql from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
     const { userId, friendId } = await req.json();
-    const filePath = path.join(process.cwd(), 'app/api/accounts/invitations.json');
 
-    if (!fs.existsSync(filePath)) {
-      return NextResponse.json({ message: "Datenbank nicht gefunden" }, { status: 404 });
+    if (!userId || !friendId) {
+      return NextResponse.json({ message: "Fehlende IDs" }, { status: 400 });
     }
 
-    const invitations = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    // Wir aktualisieren den Status der Einladung in der Datenbank.
+    // WICHTIG: Der userId ist hier der receiver_id (derjenige, der annimmt).
+    const result = await sql`
+      UPDATE invitations 
+      SET 
+        status = 'accepted',
+        timestamp = NOW() -- Hier könnte man auch eine separate Spalte 'accepted_at' nutzen
+      WHERE 
+        sender_id = ${friendId} AND 
+        receiver_id = ${userId} AND 
+        status = 'pending'
+      RETURNING id
+    `;
 
-    // Suche die Einladung, wo DU der Empfänger bist und der ANDERE der Absender
-    const inviteIndex = invitations.findIndex((inv: any) => 
-      inv.senderId === friendId && 
-      inv.receiverId === userId && 
-      inv.status === 'pending'
-    );
-
-    if (inviteIndex === -1) {
-      return NextResponse.json({ message: "Anfrage nicht gefunden" }, { status: 404 });
+    // Falls kein Datensatz gefunden wurde (z.B. schon angenommen oder existiert nicht)
+    if (result.length === 0) {
+      return NextResponse.json({ message: "Anfrage nicht gefunden oder bereits bearbeitet" }, { status: 404 });
     }
-
-    // Status aktualisieren
-    invitations[inviteIndex].status = 'accepted';
-    invitations[inviteIndex].acceptedAt = new Date().toISOString(); 
-
-    fs.writeFileSync(filePath, JSON.stringify(invitations, null, 2));
 
     return NextResponse.json({ success: true });
+
   } catch (error) {
-    console.error("Accept Friend Error:", error);
-    return NextResponse.json({ message: "Server Fehler" }, { status: 500 });
+    console.error("Accept Friend Error [SQL]:", error);
+    return NextResponse.json({ message: "Server Fehler beim Annehmen der Anfrage" }, { status: 500 });
   }
 }

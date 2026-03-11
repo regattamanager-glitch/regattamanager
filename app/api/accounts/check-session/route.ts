@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Umgestellt auf direkten Export
+import sql from '@/lib/db';
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -16,25 +16,23 @@ export async function POST(req: Request) {
     }
 
     // 2. Session in der Neon-Datenbank suchen
-    const session = await prisma.session.findUnique({
-      where: { id: sessionId },
-    });
+    // Wir nutzen Anführungszeichen bei "Session", da PostgreSQL Großschreibung oft so erzwingt
+    const sessions = await sql`SELECT * FROM "Session" WHERE id = ${sessionId} LIMIT 1`;
+    const session = sessions[0];
 
-    // 3. Gültigkeit prüfen (In deinem Schema heißt das Feld 'expires')
-    if (!session || session.expires < new Date()) {
+    // 3. Gültigkeit prüfen
+    if (!session || new Date(session.expires) < new Date()) {
       return NextResponse.json({ ok: false, error: "Session abgelaufen" }, { status: 401 });
     }
 
     // 4. User-Daten laden basierend auf userType
     let user = null;
     if (session.userType === "verein") {
-      user = await prisma.verein.findUnique({ 
-        where: { id: session.userId } 
-      });
+      const users = await sql`SELECT * FROM "Verein" WHERE id = ${session.userId} LIMIT 1`;
+      user = users[0];
     } else {
-      user = await prisma.segler.findUnique({ 
-        where: { id: session.userId } 
-      });
+      const users = await sql`SELECT * FROM "Segler" WHERE id = ${session.userId} LIMIT 1`;
+      user = users[0];
     }
 
     // 5. Falls Session existiert, aber User gelöscht wurde
@@ -47,10 +45,9 @@ export async function POST(req: Request) {
       ok: true, 
       user: { 
         id: user.id, 
-        // Dynamische Namensbildung für Verein vs. Segler
         name: session.userType === "verein" 
-          ? (user as any).name 
-          : `${(user as any).vorname} ${(user as any).nachname}`,
+          ? user.name 
+          : `${user.vorname} ${user.nachname}`,
         role: session.userType 
       } 
     });
