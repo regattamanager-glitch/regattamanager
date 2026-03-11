@@ -114,7 +114,6 @@ export default function VereinsProfilPage() {
       setCurrentPassword("");
         router.push(`/dashboard/verein/${vereinId}`);
     } catch (err) {
-      alert(t('errorAlert'));
     } finally {
       setSaving(false);
     }

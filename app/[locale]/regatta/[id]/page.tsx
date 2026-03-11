@@ -273,11 +273,9 @@ const sendInvitations = async () => {
       // Optional: Freundesliste neu laden, falls Status sich ändern soll
       // fetchFriends(); → diese Funktion musst du ggf. selbst implementieren
     } else {
-      alert(t("inviteError"));
     }
   } catch (error) {
     console.error(t("inviteError"), error);
-    alert(t("inviteError"));
   } finally {
     setIsSending(false);
   }

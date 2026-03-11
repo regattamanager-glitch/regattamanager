@@ -25,7 +25,6 @@ export default function ProfilPage() {
     e.preventDefault();
     if (user && codeConfirm === user.passwort) {
       setVerified(true);
-      alert("Code verifiziert. Sie können nun Änderungen vornehmen.");
     } else {
       alert("Falscher Code!");
     } 
@@ -42,13 +41,11 @@ export default function ProfilPage() {
 
     const data = await res.json();
     if (data.success) {
-      alert("Profil erfolgreich aktualisiert!");
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
       setPasswort(""); // Passwort zurücksetzen
       setVerified(false); // erneute Verifikation nötig
     } else {
-      alert("Fehler beim Speichern!");
     }
   }
 

@@ -95,7 +95,6 @@ export default function SeglerProfilPage() {
         setCurrentPassword("");
         router.push(`/dashboard/segler/${seglerId}`);
       } else {
-        alert(t('alertError'));
       }
     } finally {
       setSaving(false);

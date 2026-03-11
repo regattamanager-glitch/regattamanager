@@ -123,7 +123,6 @@ export default function PublishResultsPage() {
         setShowRanking(true);
         setSavedResults([...results]);
       } else {
-        alert(`${t('error')}: ${data.error}`);
       }
     } catch (err) {
       console.error(err);

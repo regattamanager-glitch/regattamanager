@@ -245,11 +245,9 @@ export default function CreateEventPage() {
         router.push(`/dashboard/verein/${account.id}`);
       } else {
         const data = await res.json();
-        alert(data.message || t("eventCreateError"));
       }
     } catch (err) {
       console.error(err);
-      alert(t("eventCreateError"));
     }
   };
 

@@ -26,11 +26,6 @@ export default function LoginPage() {
     const data = await res.json();
     setLoading(false);
 
-    if (!data.success) {
-      alert(data.message || t("errorLoginFailed"));
-      return;
-    }
-
     // ➜ Wechsel zur Code-Eingabe 
     setStep("code");
   }
@@ -47,11 +42,6 @@ export default function LoginPage() {
 
     const data = await res.json();
     setLoading(false);
-
-    if (!data.success) {
-      alert(t("errorInvalidCode"));
-      return;
-    }
 
     // ➜ Weiterleitung nach Account-Typ
     if (data.type === "segler") {

@@ -43,7 +43,6 @@ export default function CreateRegattaPage() {
     });
 
     localStorage.setItem("regattas", JSON.stringify(regattas));
-    alert("Regatta erstellt!");
     setName("");
     setDate("");
   };

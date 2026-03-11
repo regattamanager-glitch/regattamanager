@@ -65,7 +65,7 @@ export default function VereinsMitgliederPage() {
       if (res.ok) {
         alert(t('broadcastSuccess'));
         setMessage("");
-      } else alert(t('broadcastError'));
+      }
     } catch (err) {
       console.error("Broadcast failed:", err);
     }
