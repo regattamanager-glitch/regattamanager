@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import sql from "@/lib/db";
 import { v4 as uuidv4 } from 'uuid';
 
 // 1. POST: Eine neue Nachricht für einen Club speichern
@@ -38,16 +38,16 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     // Nur Nachrichten abrufen, die jünger als 30 Tage sind
-    const { rows } = await sql`
-      SELECT 
-        id, 
-        club_id as "clubId", 
-        message, 
-        timestamp 
-      FROM club_broadcasts
-      WHERE timestamp > NOW() - INTERVAL '30 days'
-      ORDER BY timestamp DESC;
-    `;
+    const rows = await sql`
+  SELECT 
+    id, 
+    club_id as "clubId", 
+    message, 
+    timestamp 
+  FROM club_broadcasts
+  WHERE timestamp > NOW() - INTERVAL '30 days'
+  ORDER BY timestamp DESC;
+`;
 
     return NextResponse.json(rows);
   } catch (error: any) {

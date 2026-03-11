@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import sql from "@/lib/db";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,18 +13,18 @@ export async function GET(request: Request) {
   const clubIdsParam = `{${clubIds.join(',')}}`;
 
 try {
-  const { rows: events } = await sql`
-    SELECT 
-      id, 
-      name as titel, 
-      datum_von as datum, 
-      location as ort, 
-      privat,
-      verein_id
-    FROM events 
-    WHERE verein_id = ANY(${clubIdsParam})
-    ORDER BY datum_von ASC;
-  `;
+  const events = await sql`
+  SELECT 
+    id, 
+    name as titel, 
+    datum_von as datum, 
+    location as ort, 
+    privat,
+    verein_id
+  FROM events 
+  WHERE verein_id = ANY(${clubIdsParam})
+  ORDER BY datum_von ASC;
+`;
 
     // 2. Mapping für das Frontend (falls noch SQL-spezifische Formate angepasst werden müssen)
     const mappedEvents = events.map((e: any) => ({

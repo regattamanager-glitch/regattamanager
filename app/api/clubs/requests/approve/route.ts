@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createPool, sql } from '@vercel/postgres';
-
-const pool = createPool({
-  connectionString: process.env.POSTGRES_URL 
-});
+import sql from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
@@ -13,28 +9,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Fehlende Daten" }, { status: 400 });
     }
 
-    // 1. In die Verknüpfungstabelle _SeglerVereine eintragen
-    // "A" ist die Segler-ID (userId), "B" ist die Vereins-ID (clubId)
-    await pool.query(`
-      INSERT INTO "_SeglerVereine" ("A", "B") 
-      VALUES ($1::uuid, $2::uuid)
-      ON CONFLICT DO NOTHING
-    `, [userId, clubId]);
-
-    // 2. Die Anfrage aus der club_requests Tabelle löschen
-    // Da sie akzeptiert wurde, wird sie dort nicht mehr benötigt
+    // 1. Mitglied zum Verein hinzufügen
     await sql`
-      DELETE FROM club_requests 
+      INSERT INTO "_SeglerVereine" ("A", "B")
+      VALUES (${userId}::uuid, ${clubId}::uuid)
+      ON CONFLICT DO NOTHING
+    `;
+
+    // 2. Anfrage aus club_requests löschen
+    await sql`
+      DELETE FROM club_requests
       WHERE id = ${requestId};
     `;
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Mitglied hinzugefügt und Anfrage gelöscht" 
+    return NextResponse.json({
+      success: true,
+      message: "Mitglied hinzugefügt und Anfrage gelöscht"
     });
 
   } catch (error: any) {
-    console.error("❌ Fehler beim Verarbeiten der Anfrage:", error.message);
+    console.error("❌ Fehler beim Verarbeiten der Anfrage:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
