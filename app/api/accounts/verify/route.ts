@@ -62,31 +62,30 @@ export async function POST(req: Request) {
       VALUES (${sessionId}, ${user.id}, ${userType}, ${ua}, ${ip}, ${expires})
     `;
 
-    // ... (dein Code bis Schritt 5 bleibt gleich)
+    // 6. Cookies & Response vorbereiten
+    const isProd = process.env.NODE_ENV === "production";
+    
+    // Wir erstellen zuerst das Response-Objekt
+    const response = NextResponse.json({ 
+      success: true, 
+      type: userType, 
+      id: user.id 
+    });
 
-// 6. Cookies & Response vorbereiten
-const response = NextResponse.json({ 
-  success: true, 
-  type: userType, 
-  id: user.id 
-});
+    const cookieOptions = { 
+      httpOnly: true, 
+      secure: isProd, // WICHTIG: Muss auf Vercel (HTTPS) true sein
+      sameSite: "lax" as const, 
+      path: "/", 
+      maxAge: 7 * 24 * 60 * 60 // 7 Tage
+    };
 
-const isProd = process.env.NODE_ENV === "production";
+    // Wir hängen die Cookies direkt an dieses spezifische Response-Objekt
+    response.cookies.set("session_id", sessionId, cookieOptions);
+    response.cookies.set("session", sessionId, cookieOptions);
 
-const cookieOptions = { 
-  httpOnly: true, 
-  secure: isProd, // Auf Vercel (HTTPS) wird dies true sein
-  sameSite: "lax" as const, 
-  path: "/", 
-  maxAge: 7 * 24 * 60 * 60 
-};
-
-// Wir setzen die Cookies direkt auf dem Response-Objekt
-response.cookies.set("session_id", sessionId, cookieOptions);
-response.cookies.set("session", sessionId, cookieOptions);
-
-return response;
-
+    // Erst jetzt geben wir die Response inklusive der Set-Cookie-Header zurück
+    return response;
 
   } catch (error) {
     console.error("Detaillierter Verifizierungsfehler (SQL):", error);
