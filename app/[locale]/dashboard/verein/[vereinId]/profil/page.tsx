@@ -42,6 +42,7 @@ export default function VereinsProfilPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [stripeId, setStripeId] = useState("");
   const [stripeError, setStripeError] = useState("");
+  const [isOpeningDashboard, setIsOpeningDashboard] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -147,6 +148,28 @@ async function handleStripeConnect() {
     setStripeError(err.message);
   } finally {
     setIsConnectingStripe(false);
+  }
+}
+
+async function handleOpenStripeDashboard() {
+  setIsOpeningDashboard(true);
+  try {
+    const res = await fetch("/api/stripe/connect/login-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vereinId }),
+    });
+
+    const data = await res.json();
+    if (data.url) {
+      window.open(data.url, "_blank"); // Öffnet Stripe in einem neuen Tab
+    } else {
+      throw new Error(data.error);
+    }
+  } catch (err: any) {
+    setStripeError(err.message || "Dashboard konnte nicht geöffnet werden");
+  } finally {
+    setIsOpeningDashboard(false);
   }
 }
 
@@ -257,24 +280,33 @@ async function handleStripeConnect() {
                     onChange={(v) => {setStripeId(v); setStripeError("");}} 
                   />
                   
-                  {stripeError ? (
-                    <p className="text-red-500 text-[10px] font-bold uppercase px-1">
-                      {stripeError}
-                    </p>
-                  ) : (
-                    <div className="pt-2">
+                  {stripeError && <p className="text-red-500 text-[10px] font-bold uppercase px-1">{stripeError}</p>}
+              
+                  <div className="flex flex-col gap-3 pt-2">
+                    {/* Button zum Dashboard - Nur anzeigen wenn ID vorhanden */}
+                    {stripeId.startsWith("acct_") && (
+                      <button
+                        type="button"
+                        onClick={handleOpenStripeDashboard}
+                        disabled={isOpeningDashboard}
+                        className="inline-flex items-center justify-center w-full px-6 py-3 bg-white text-blue-600 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-50 transition-all shadow-lg"
+                      >
+                        {isOpeningDashboard ? t('loading') : (t('openStripeDashboard') || 'Auszahlungen & Stripe Dashboard')}
+                      </button>
+                    )}
+              
+                    {/* Button zum Erstellen - Nur anzeigen wenn noch keine ID da ist */}
+                    {!stripeId && (
                       <button
                         type="button"
                         onClick={handleStripeConnect}
                         disabled={isConnectingStripe}
-                        className="inline-flex items-center justify-center w-full sm:w-auto px-6 py-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-50 hover:text-white transition-all shadow-sm disabled:opacity-50"
+                        className="inline-flex items-center justify-center w-full px-6 py-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50"
                       >
-                        {isConnectingStripe 
-                          ? (t('loading') || 'Wird geladen...') 
-                          : (t('createStripeAccount') || 'Account erstellen')}
+                        {isConnectingStripe ? t('loading') : (t('createStripeAccount') || 'Stripe Konto erstellen')}
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </section>
               <section className="bg-[#1e293b] rounded-[2.5rem] p-8 border border-slate-700/50">

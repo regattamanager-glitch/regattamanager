@@ -61,9 +61,7 @@ export default function CreateEventPage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
   const [ibanPopupOpen, setIbanPopupOpen] = useState(false);
-  const [iban1, setIban1] = useState("");
-  const [iban2, setIban2] = useState("");
-  const [ibanError, setIbanError] = useState("");
+  const [stripePassword, setStripePassword] = useState(""); // Neu hinzufügen
 
   const [form, setForm] = useState({
     name: "",
@@ -140,32 +138,44 @@ export default function CreateEventPage() {
   }, []);
 
   const saveStripeAccountId = async (): Promise<boolean> => {
-    if (!account) return false;
-    if (!stripeId.startsWith("acct_")) {
-      setStripeError(t("invalidStripe"));
-      return false;
+  if (!account) return false;
+  if (!stripeId.startsWith("acct_")) {
+    setStripeError(t("invalidStripe"));
+    return false;
+  }
+  if (!stripePassword) {
+    setStripeError(t("passwordRequired") || "Passwort erforderlich");
+    return false;
+  }
+
+  try {
+    const res = await fetch("/api/accounts/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: account.id,             // Korrigiert von verein.id zu account.id
+        currentPassword: stripePassword, // Nutzt den neuen Password-State
+        update: { 
+          stripeAccountId: stripeId 
+        },
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      // Wenn das Passwort falsch ist, kommt hier der Status 401 vom Backend
+      throw new Error(data.message || t("saveStripeError"));
     }
-    try {
-      const res = await fetch("/api/accounts/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: account.email,
-          currentPassword: form.currentPassword,
-          update: { stripeAccountId: stripeId }
-        })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || t("saveStripeError"));
-      setAccount(a => a ? { ...a, stripeAccountId: stripeId } : null);
-      setStripePopupOpen(false);
-      return true;
-    } catch (err) {
-      console.error(err);
-      setStripeError(t("saveStripeError"));
-      return false;
-    }
-  };
+
+    setAccount(a => a ? { ...a, stripeAccountId: stripeId } : null);
+    setIbanPopupOpen(false); // Schließt das richtige Popup
+    return true;
+  } catch (err: any) {
+    console.error(err);
+    setStripeError(err.message || t("saveStripeError"));
+    return false;
+  }
+};
 
   const handleDrop = (e: React.DragEvent) => {
   e.preventDefault();
@@ -248,6 +258,32 @@ export default function CreateEventPage() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleCreateStripeAccount = async () => {
+    // Guard: Falls account null ist, Funktion abbrechen
+    if (!account) {
+      setStripeError(t("accountNotLoaded"));
+      return;
+    }
+  
+    try {
+      const res = await fetch("/api/stripe/connect/create-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vereinId: account.id }), // account.id ist jetzt sicher
+      });
+  
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setStripeError(data.error || t("stripeError"));
+      }
+    } catch (err) {
+      console.error("Stripe Error:", err);
+      setStripeError(t("stripeError"));
     }
   };
 
@@ -512,15 +548,64 @@ export default function CreateEventPage() {
           </ul>
           
           {ibanPopupOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-gray-900 p-6 rounded-2xl w-96 space-y-4">
-                <h2 className="text-white text-xl font-bold">{t('enterIban')}</h2>
-                <input type="text" placeholder={t('iban')} className={inputStyle} value={iban1} onChange={e => setIban1(e.target.value.toUpperCase())} />
-                <input type="text" placeholder={t('repeatIban')} className={inputStyle} value={iban2} onChange={e => setIban2(e.target.value.toUpperCase())} />
-                {ibanError && <p className="text-red-400">{ibanError}</p>}
-                <div className="flex justify-end space-x-2">
-                  <button type="button" className="bg-gray-700 px-4 py-2 rounded text-white" onClick={() => setIbanPopupOpen(false)}>{t('cancel')}</button>
-                  <button type="button" className="bg-blue-600 px-4 py-2 rounded text-white" onClick={async () => { const success = await saveStripeAccountId(); if (success) await submitFormData(); }}>{t('saveAndContinue')}</button>
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-[#0f172a] border border-white/10 p-8 rounded-3xl w-full max-w-md space-y-6 shadow-2xl">
+                <div className="text-center space-y-2">
+                  <h2 className="text-white text-2xl font-bold">{t('stripeSetupTitle') || "Zahlungen einrichten"}</h2>
+                  <p className="text-gray-400 text-sm">
+                    {t('stripeSetupDesc') || "Um Anmeldegebühren zu empfangen, benötigst du ein Stripe-Konto."}
+                  </p>
+                </div>
+          
+                {/* OPTION 1: Automatisches Onboarding */}
+                <button 
+                  type="button"
+                  onClick={handleCreateStripeAccount}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-600/20 flex flex-col items-center gap-1"
+                >
+                  <span>{t('createStripeAccount') || "Stripe-Konto erstellen"}</span>
+                  <span className="text-[10px] opacity-80 font-normal">{t('recommended') || "(Empfohlen)"}</span>
+                </button>
+          
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-white/10"></div>
+                  <span className="flex-shrink mx-4 text-gray-500 text-xs uppercase">{t('or') || "oder"}</span>
+                  <div className="flex-grow border-t border-white/10"></div>
+                </div>
+          
+                {/* OPTION 2: Manuelle Eingabe */}
+                <div className="space-y-3">
+                  <label className="text-xs font-bold text-gray-400 uppercase ml-1">
+                    {t('existingStripeId') || "Bestehende Stripe-ID (acct_...)"}
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="acct_xxxxxxxxxxxx" 
+                    className={inputStyle} 
+                    value={stripeId} 
+                    onChange={e => setStripeId(e.target.value)} 
+                  />
+                  {stripeError && <p className="text-red-400 text-xs mt-1">{stripeError}</p>}
+                </div>
+          
+                <div className="flex flex-col gap-2 pt-2">
+                  <button 
+                    type="button" 
+                    className="w-full bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl transition-all" 
+                    onClick={async () => { 
+                      const success = await saveStripeAccountId(); 
+                      if (success) await submitFormData(); 
+                    }}
+                  >
+                    {t('saveAndContinue') || "ID speichern & Regatta erstellen"}
+                  </button>
+                  <button 
+                    type="button" 
+                    className="w-full text-gray-500 text-sm hover:text-gray-300 transition-colors" 
+                    onClick={() => setIbanPopupOpen(false)}
+                  >
+                    {t('cancel')}
+                  </button>
                 </div>
               </div>
             </div>

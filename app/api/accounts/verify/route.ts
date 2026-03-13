@@ -62,24 +62,30 @@ export async function POST(req: Request) {
       VALUES (${sessionId}, ${user.id}, ${userType}, ${ua}, ${ip}, ${expires})
     `;
 
-    // 6. Cookies setzen
-    const cookieStore = await cookies();
-    const cookieOptions = { 
-      httpOnly: true, 
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax" as const, 
-      path: "/", 
-      maxAge: 7 * 24 * 60 * 60 
-    };
-
-    cookieStore.set("session_id", sessionId, cookieOptions);
-    cookieStore.set("session", sessionId, cookieOptions);
-
-    return NextResponse.json({ 
+    // 6. Cookies & Response vorbereiten
+    const isProd = process.env.NODE_ENV === "production";
+    
+    // Wir erstellen zuerst das Response-Objekt
+    const response = NextResponse.json({ 
       success: true, 
       type: userType, 
       id: user.id 
     });
+
+    const cookieOptions = { 
+      httpOnly: true, 
+      secure: isProd, // WICHTIG: Muss auf Vercel (HTTPS) true sein
+      sameSite: "lax" as const, 
+      path: "/", 
+      maxAge: 7 * 24 * 60 * 60 // 7 Tage
+    };
+
+    // Wir hängen die Cookies direkt an dieses spezifische Response-Objekt
+    response.cookies.set("session_id", sessionId, cookieOptions);
+    response.cookies.set("session", sessionId, cookieOptions);
+
+    // Erst jetzt geben wir die Response inklusive der Set-Cookie-Header zurück
+    return response;
 
   } catch (error) {
     console.error("Detaillierter Verifizierungsfehler (SQL):", error);
