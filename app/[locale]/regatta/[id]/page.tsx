@@ -41,18 +41,14 @@ type Event = {
 
 type Meldung = {
   id: string;
-
   skipperName: string;
   skipperCountry: string;
-
   sailCountry: string;
   sailNumber: string | number;
-
   bootName?: string;
-
   bezahlt?: boolean;
-
   bootsklasse?: string;
+  crew?: string; 
 };
 
 type Person = {
@@ -93,7 +89,7 @@ type Friend = {
 
 
 export default function RegattaDetailPage() {
-  const t = useTranslations("regattaDetail");
+  const t = useTranslations("");
   const { id } = useParams<{ id: string }>();
   const [openId, setOpenId] = useState<string | null>(null);
   const [event, setEvent] = useState<Event | null>(null);
@@ -123,7 +119,7 @@ const sailCountryToFlag: Record<string, string> = {
   CAN: "ca",CAY: "ky",CHI: "cl",CHN: "cn",COL: "co",
   COK: "ck",CRO: "hr",CUB: "cu",CYP: "cy",CZE: "cz",
   DEN: "dk",DJI: "dj",DOM: "do",ECU: "ec",EGY: "eg",
-  ESA: "sv",EST: "ee",FIJ: "fj",FIN: "fi",FRA: "fr",
+  ESA: "sv",EST: "ee",ESP : "es",FIJ: "fj",FIN: "fi",FRA: "fr",
   GEO: "ge",GER: "de",GBR: "gb",GRE: "gr",GRN: "gd",
   GUM: "gu",GUA: "gt",HKG: "hk",HUN: "hu",ISL: "is",
   IND: "in",INA: "id",IRL: "ie",ISR: "il",ITA: "it",
@@ -267,7 +263,7 @@ const sendInvitations = async () => {
     });
 
     if (res.ok) {
-      alert(t("inviteSuccess"));
+      alert(t("regattaDetail.inviteSuccess"));
       setIsInviteModalOpen(false);
       setSelectedFriends([]);
       // Optional: Freundesliste neu laden, falls Status sich ändern soll
@@ -275,7 +271,7 @@ const sendInvitations = async () => {
     } else {
     }
   } catch (error) {
-    console.error(t("inviteError"), error);
+    console.error(t("regattaDetail.inviteError"), error);
   } finally {
     setIsSending(false);
   }
@@ -294,42 +290,85 @@ const sendInvitations = async () => {
   }
 
   useEffect(() => {
-  if (activeTab !== "meldungen") return;
-  if (!event) return;
+  if (activeTab !== "meldungen" || !event?.id) return;
 
-  const currentClass = event.alleKlassen ? "GLOBAL" : selectedClass || event.bootsklassen[0];
-  setSelectedClass(currentClass); // optional, falls du die UI aktualisieren willst
+  // Fix für Fehler 1: Sicherstellen, dass currentClass immer ein string ist
+  const currentClass: string = event.alleKlassen 
+    ? "GLOBAL" 
+    : (selectedClass || event.bootsklassen?.[0] || "Unknown");
+
+  // Lokale Kopie der ID für Typsicherheit in async Funktionen
+  const eventId = event.id;
 
   async function loadMeldungen() {
-    if (meldungen[currentClass]) return;
-      if (!event) return;
+    // Sicherheits-Check: Verhindert Zugriff auf undefined Keys
+    if (!currentClass || meldungen[currentClass]) return;
 
-    const updatedEvent: Event = await fetch(`/api/events?eventId=${event.id}`)
-      .then(r => r.json());
+    try {
+      // Nutze die lokale eventId Konstante
+      const response = await fetch(`/api/registrations?eventid=${eventId}`);
+      const data = await response.json();
 
-    let seglerList: SeglerAnmeldung[] = [];
-    if (currentClass === "GLOBAL" || event.alleKlassen) {
-      seglerList = Object.values(updatedEvent.segler ?? {}).flat();
-    } else {
-      seglerList = updatedEvent.segler?.[currentClass] ?? [];
+      const allRegistrations = Array.isArray(data) ? data : (data.registrations || []);
+
+      const filteredList = allRegistrations.filter((reg: any) => {
+        if (currentClass === "GLOBAL" || event?.alleKlassen) return true;
+        return reg.klasse === currentClass;
+      });
+
+      const mapped = filteredList.map((entry: any) => {
+        const safeParse = (data: any) => {
+          if (!data) return [];
+          if (typeof data === 'string') {
+            try { return JSON.parse(data); } catch { return []; }
+          }
+          return data;
+        };
+      
+        const skipperData = safeParse(entry.skipper);
+        const bootData = safeParse(entry.boot);
+        
+        // Da deine Daten exakt so aussehen wie im JSON oben:
+        const rawCrew = entry.crew || skipperData.crew || [];
+        
+        // Wir mappen durch das Array und holen nur den "name"
+        const crewNames = Array.isArray(rawCrew) 
+          ? rawCrew.map((person: any) => person.name).filter(Boolean).join(", ")
+          : "";
+      
+        return {
+          id: entry.id,
+          skipperName: skipperData.name || "Unbekannt",
+          skipperCountry: skipperData.nation || "??",
+          sailCountry: bootData.countryCode || "??",
+          sailNumber: bootData.segelnummer || "0",
+          bootName: bootData.bootName || "",
+          // Hier ist jetzt die saubere Liste: "Pablo Sanz, Luis Navarro, Ana Castro"
+          crew: crewNames, 
+          bezahlt: !!entry.paidAt,
+          bootsklasse: entry.klasse || currentClass,
+        };
+      });
+
+      // Fix für Fehler 2: Computed Property Name sicherstellen
+      setMeldungen(prev => ({ 
+        ...prev, 
+        [currentClass]: mapped 
+      }));
+    } catch (err) {
+      console.error("Fehler beim Laden der Segler:", err);
     }
-
-    const res: Meldung[] = seglerList.map((entry, index) => ({
-      id: `${entry.skipper.seglerId}-${index}`,
-      skipperName: entry.skipper.name,
-      skipperCountry: entry.skipper.countryCode,
-      sailCountry: entry.boot.countryCode,
-      sailNumber: entry.boot.segelnummer,
-      bootName: entry.boot.bootName,
-      bezahlt: entry.bezahlt,
-      bootsklasse: entry.boot.bootsklasse ?? currentClass,
-    }));
-
-    setMeldungen(prev => ({ ...prev, [currentClass]: res }));
   }
 
   loadMeldungen();
-}, [activeTab, event, selectedClass]);
+  
+  // Nur setSelectedClass aufrufen, wenn sich der Wert tatsächlich ändert, 
+  // um unnötige Re-Renders zu vermeiden.
+  if (selectedClass !== currentClass) {
+    setSelectedClass(currentClass);
+  }
+
+}, [activeTab, event, selectedClass, event?.id]);
 
 useEffect(() => {
   // Wir laden die Ergebnisse, sobald der Tab aktiv ist
@@ -363,7 +402,7 @@ useEffect(() => {
 }, [activeTab, event, selectedClass]);
 
   if (!event) {
-    return <div className="min-h-screen flex items-center justify-center text-white">{t("loading")}</div>;
+    return <div className="min-h-screen flex items-center justify-center text-white">{t("regattaDetail.loading")}</div>;
   }
 
 return (
@@ -371,31 +410,42 @@ return (
     <div className="max-w-7xl mx-auto space-y-10">
   
       {/* HEADER */}
-<section className="bg-blue-900/50 p-10 rounded-3xl border border-white/10 flex justify-between items-center">
-  <div>
-    <h1 className="text-4xl font-bold text-white">{event!.name}</h1>
-    <p className="text-white/80 mt-2">
-      {event!.datumVon} – {event!.datumBis} · {event!.location}
-    </p>
-    <p className="text-white/60 mt-1">
-      {t("details.organizer")}: {verein?.name || t("fallback")}
-    </p>
-  </div>
-
-  {/* Dashboard Button */}
+      <section className="bg-blue-900/50 p-10 rounded-3xl border border-white/10 flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold text-white">{event!.name}</h1>
+          <p className="text-white/80 mt-2">
+            {event!.datumVon} – {event!.datumBis} · {event!.location}
+          </p>
+          <p className="text-white/60 mt-1">
+            {t("regattaDetail.details.organizer")}: {verein?.name || t("regattaDetail.fallback")}
+          </p>
+        </div>
+      
+        {/* Dashboard / Back Buttons */}
         <div className="flex gap-3">
-          <button
-            onClick={() => setIsInviteModalOpen(true)}
-            className="bg-indigo-600/80 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl transition flex items-center gap-2 border border-indigo-500/30"
-          >
-            <span>👋</span> {t("inviteFriends")}
-          </button>
-          <button
-            onClick={() => router.push(`/dashboard/segler/${seglerId}`)}
-            className="bg-blue-600/50 text-white px-4 py-2 rounded hover:bg-blue-800/90 transition font-medium"
-          >
-            {t("backToDashboard")}
-          </button>
+          {seglerId ? (
+            <>
+              <button
+                onClick={() => setIsInviteModalOpen(true)}
+                className="bg-indigo-600/80 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl transition flex items-center gap-2 border border-indigo-500/30"
+              >
+                <span>👋</span> {t("regattaDetail.inviteFriends")}
+              </button>
+              <button
+                onClick={() => router.push(`/dashboard/segler/${seglerId}`)}
+                className="bg-blue-600/50 text-white px-4 py-2 rounded hover:bg-blue-800/90 transition font-medium"
+              >
+                {t("regattaDetail.backToDashboard")}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => router.back()}
+              className="bg-slate-700/50 text-white px-6 py-2 rounded-xl hover:bg-slate-600 transition font-medium border border-white/10"
+            >
+              ← {t("Common.back")}
+            </button>
+          )}
         </div>
         {isInviteModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -403,10 +453,10 @@ return (
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">
-                    {t("inviteTitle.part1")} <span className="text-indigo-500">{t("inviteTitle.part2")}</span>
+                    {t("regattaDetail.inviteTitle.part1")} <span className="text-indigo-500">{t("regattaDetail.inviteTitle.part2")}</span>
                   </h2>
                   <p className="text-xs text-slate-400 uppercase font-bold tracking-widest mt-1">
-                    {t("selectFriends", { event: event?.name })}
+                    {t("regattaDetail.selectFriends", { event: event?.name })}
                   </p>
                 </div>
                 <button onClick={() => setIsInviteModalOpen(false)} className="text-white/40 hover:text-white">✕</button>
@@ -437,13 +487,13 @@ return (
                           {friend.name?.substring(0,2).toUpperCase() ?? "??"}
                         </div>
                         <span className="font-bold uppercase italic text-sm">
-                          {friend.name ?? t("unknown")}
+                          {friend.name ?? t("regattaDetail.unknown")}
                         </span>
                         {selectedFriends.includes(friend.id) && <span className="ml-auto text-indigo-400 font-bold">✓</span>}
                       </div>
                     ))
                 ) : (
-                  <p className="text-center text-slate-500 py-10 text-xs font-bold uppercase italic">{t("noFriends")}</p>
+                  <p className="text-center text-slate-500 py-10 text-xs font-bold uppercase italic">{t("regattaDetail.noFriends")}</p>
                 )}
               </div>
         
@@ -452,7 +502,7 @@ return (
                 disabled={selectedFriends.length === 0 || isSending}
                 className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50 w-full"
               >
-                {isSending ? t("sending") : t("sendInvite")}
+                {isSending ? t("regattaDetail.sending") : t("regattaDetail.sendInvite")}
               </button>
 
             </div>
@@ -475,7 +525,7 @@ return (
                 : "bg-blue-900/40 text-white/60"
             }`}
           >
-            {t(`tabs.${tab}`)}
+            {t(`regattaDetail.tabs.${tab}`)}
           </button>
         ))}
       </div>
@@ -491,7 +541,7 @@ return (
       <div className="space-y-4">
         <p className="flex gap-1.5 items-baseline">
           <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("details.eventPeriod")}:
+            {t("regattaDetail.details.eventPeriod")}:
           </span> 
           <span className="font-semibold text-white">
             {event?.datumVon ? new Date(event.datumVon).toLocaleDateString("de-DE") : "—"} 
@@ -502,7 +552,7 @@ return (
 
         <p className="flex gap-1.5 items-baseline">
           <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("details.registrationPeriod")}:
+            {t("regattaDetail.details.registrationPeriod")}:
           </span> 
           <span className="font-semibold text-white">
             {event?.anmeldungVon ? new Date(event.anmeldungVon).toLocaleDateString("de-DE") : "—"} 
@@ -513,7 +563,7 @@ return (
 
         <p className="flex gap-1.5 items-baseline">
           <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("details.organizer")}:
+            {t("regattaDetail.details.organizer")}:
           </span> 
           <span className="font-semibold text-white">{verein?.name || "—"}</span>
         </p>
@@ -523,13 +573,13 @@ return (
       <div className="space-y-4">
         <p className="flex gap-1.5 items-baseline">
           <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("details.email")}:
+            {t("regattaDetail.details.email")}:
           </span> 
           <span className="font-semibold text-blue-400">{verein?.email || "—"}</span>
         </p>
         <p className="flex gap-1.5 items-baseline">
           <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("details.address")}:
+            {t("regattaDetail.details.address")}:
           </span> 
           <span className="font-semibold text-white">{verein?.adresse || event!.location}</span>
         </p>
@@ -547,7 +597,7 @@ return (
       </div>
     ) : (
       <div className="h-80 flex items-center justify-center rounded-2xl border border-white/10 text-white/60">
-        {t("details.noCoordinates")}
+        {t("regattaDetail.details.noCoordinates")}
       </div>
     )}
   </div>
@@ -558,12 +608,12 @@ return (
           <div className="space-y-4">
             {event!.alleKlassen ? (
               <div className="flex justify-between bg-blue-800/40 p-4 rounded-xl">
-                <span>{t("classes.openForAll")}</span>
+                <span>{t("regattaDetail.classes.openForAll")}</span>
                 <button
                   onClick={() => goToRegister(event!.id, "GLOBAL")}
                   className="bg-blue-700 px-5 py-2 rounded-lg"
                 >
-                  {t("classes.registerNow")}
+                  {t("regattaDetail.classes.registerNow")}
                 </button>
               </div>
             ) : (
@@ -577,7 +627,7 @@ return (
                     onClick={() => goToRegister(event!.id, cls)}
                     className="bg-blue-700 px-5 py-2 rounded-lg"
                   >
-                    {t("classes.register")}
+                    {t("regattaDetail.classes.register")}
                   </button>
                 </div>
               ))
@@ -612,12 +662,12 @@ return (
       {/* HEADER mit Anzahl Segler */}
       <div className="flex justify-between items-center border-b border-white/20 pb-3">
         <h3 className="text-xl font-semibold">
-          {t("entries.header", {
+          {t("regattaDetail.entries.header", {
             klasse: selectedClass ?? event!.bootsklassen[0]
           })}
         </h3>
         <span className="text-white/70">
-          {t('entries.sailors', { count: meldungen[selectedClass ?? event!.bootsklassen[0]]?.length ?? 0 })}
+          {t('regattaDetail.entries.sailors', { count: meldungen[selectedClass ?? event!.bootsklassen[0]]?.length ?? 0 })}
         </span>
       </div>
 
@@ -627,7 +677,7 @@ return (
         const list = meldungen[activeClass] ?? [];
 
         if (!list.length) {
-          return <p className="text-white/60">{t("entries.none")}</p>;
+          return <p className="text-white/60">{t("regattaDetail.entries.none")}</p>;
         }
 
         return (
@@ -672,32 +722,37 @@ return (
                       {/* Detail-Gitter analog zu den Ergebnissen */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-sm text-white/80">
                         
-                        {/* Linke Spalte: Personen */}
+                        {/* Suche diese Stelle in deinem Accordion-Content */}
                         <div className="space-y-1">
-                          <p className="text-white/40 text-[10px] uppercase font-bold mb-1 tracking-widest">{t("entries.people")}</p>
-                          <p><strong>{t("entries.skipper")}</strong> :  {m.skipperName}</p>
-                          {/* Platzhalter für Crew, falls im Meldung-Typ vorhanden oder geplant */}
-                          <p><strong>{t("entries.crew")}</strong> : {(m as any).crew || "—"}</p>
+                          <p className="text-white/40 text-[10px] uppercase font-bold mb-1 tracking-widest">
+                            {t("regattaDetail.entries.people")}
+                          </p>
+                          <p><strong>{t("regattaDetail.entries.skipper")}</strong> : {m.skipperName}</p>
+                          
+                          {/* Crew-Anzeige: Nur anzeigen, wenn auch eine Crew vorhanden ist */}
+                          <p>
+                            <strong>{t("regattaDetail.entries.crew")}</strong> : {m.crew && m.crew !== "" ? m.crew : "Einhand"}
+                          </p>
                         </div>
                   
                         {/* Rechte Spalte: Boot & Status */}
                         <div className="space-y-1">
-                          <p className="text-white/40 text-[10px] uppercase font-bold mb-1 tracking-widest">{t("entries.boatStatus")}</p>
-                          <p><strong>{t("entries.nation")}</strong> : {m.sailCountry || "—"}</p>
-                          <p><strong>{t("entries.sailNumber")}</strong> : {m.sailCountry} {m.sailNumber}</p>
-                          {m.bootName && <p><strong>{t("entries.boat")}</strong> : {m.bootName}</p>}
+                          <p className="text-white/40 text-[10px] uppercase font-bold mb-1 tracking-widest">{t("regattaDetail.entries.boatStatus")}</p>
+                          <p><strong>{t("regattaDetail.entries.nation")}</strong> : {m.sailCountry || "—"}</p>
+                          <p><strong>{t("regattaDetail.entries.sailNumber")}</strong> : {m.sailCountry} {m.sailNumber}</p>
+                          {m.bootName && <p><strong>{t("regattaDetail.entries.boat")}</strong> : {m.bootName}</p>}
                           
                           {/* Bootsklasse nur bei GLOBAL oder alleKlassen anzeigen */}
                           {(selectedClass === "GLOBAL" || event.alleKlassen) && m.bootsklasse && (
-                            <p><strong>{t("entries.class")}</strong> : {m.bootsklasse}</p>
+                            <p><strong>{t("regattaDetail.entries.class")}</strong> : {m.bootsklasse}</p>
                           )}
                           
                           <p className="mt-2 flex items-center gap-2">
-                            <strong>{t("entries.status")}</strong> :
+                            <strong>{t("regattaDetail.entries.status")}</strong> :
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                               m.bezahlt ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
                             }`}>
-                              {m.bezahlt ? t("entries.paid") : t("entries.paymentOpen")}
+                              {m.bezahlt ? t("regattaDetail.entries.paid") : t("regattaDetail.entries.paymentOpen")}
                             </span>
                           </p>
                         </div>
@@ -750,7 +805,7 @@ return (
                 const eventResults = resultsData[event!.id]?.[activeClass] || {};
         
                 if (seglerList.length === 0) {
-                  return <p className="text-white/60 text-center py-10">{t("results.none")}</p>;
+                  return <p className="text-white/60 text-center py-10">{t("regattaDetail.results.none")}</p>;
                 }
         
                 // Berechnung & Sortierung
@@ -823,16 +878,16 @@ return (
                             <div className="p-5 bg-blue-950/60 border-t border-white/10">
                               {/* Detail-Gitter */}
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-8 text-sm text-white/80 mb-6">
-                                <p><strong>{t("results.skipper")}:</strong> {s.skipper.name}</p>
-                                <p><strong>{t("results.nation")}:</strong> {s.boot.countryCode || "—"}</p>
-                                <p><strong>{t("results.sailNumber")}:</strong> {s.boot.countryCode} {s.boot.segelnummer}</p>
-                                {s.boot.bootName && <p><strong>{t("results.boat")}:</strong> {s.boot.bootName}</p>}
-                                {isGlobal && <p><strong>{t("results.class")}:</strong> {s.boot.bootsklasse || activeClass}</p>}
+                                <p><strong>{t("regattaDetail.results.skipper")}:</strong> {s.skipper.name}</p>
+                                <p><strong>{t("regattaDetail.results.nation")}:</strong> {s.boot.countryCode || "—"}</p>
+                                <p><strong>{t("regattaDetail.results.sailNumber")}:</strong> {s.boot.countryCode} {s.boot.segelnummer}</p>
+                                {s.boot.bootName && <p><strong>{t("regattaDetail.results.boat")}:</strong> {s.boot.bootName}</p>}
+                                {isGlobal && <p><strong>{t("regattaDetail.results.class")}:</strong> {s.boot.bootsklasse || activeClass}</p>}
                               </div>
         
                               {/* Renn-Einzelergebnisse */}
                               <div className="space-y-2">
-                                <p className="text-[10px] uppercase font-bold text-white/40 tracking-widest">{t("results.races")}</p>
+                                <p className="text-[10px] uppercase font-bold text-white/40 tracking-widest">{t("regattaDetail.results.races")}</p>
                                 <div className="flex flex-wrap gap-2">
                                   {scoresRaw.map((sc, i) => (
                                     <div key={i} className="flex flex-col items-center">
@@ -846,7 +901,7 @@ return (
                                     </div>
                                   ))}
                                   {scoresRaw.length === 0 && (
-                                    <span className="text-white/30 italic text-xs">{t("results.noResults")}</span>
+                                    <span className="text-white/30 italic text-xs">{t("regattaDetail.results.noResults")}</span>
                                   )}
                                 </div>
                               </div>
@@ -869,10 +924,10 @@ return (
             {/* Linke Seite: Liste der Dokumente */}
             <div className="space-y-3">
               <h3 className="text-white/40 text-[10px] uppercase font-bold tracking-widest mb-4">
-                {t("documents.available")}
+                {t("regattaDetail.documents.available")}
               </h3>
               {event!.documents.length === 0 && (
-                <p className="text-white/40 italic text-sm">{t("documents.none")}</p>
+                <p className="text-white/40 italic text-sm">{t("regattaDetail.documents.none")}</p>
               )}
               <ul className="space-y-2">
                 {event!.documents.map(doc => (
@@ -890,7 +945,7 @@ return (
                       </span>
                       <div className="flex-1 overflow-hidden">
                         <div className="font-semibold truncate">{doc.name}</div>
-                        <div className="text-[10px] opacity-50 uppercase">{t("documents.viewDownload")}</div>
+                        <div className="text-[10px] opacity-50 uppercase">{t("regattaDetail.documents.viewDownload")}</div>
                       </div>
                     </button>
                   </li>
@@ -911,19 +966,19 @@ return (
                         rel="noreferrer"
                         className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-md transition"
                       >
-                        {t("documents.openExternal")}
+                        {t("regattaDetail.documents.openExternal")}
                       </a>
                     </div>
                     <iframe
                       src={selectedDoc}
                       className="w-full h-full bg-white"
-                      title={t("documents.previewTitle")}
+                      title={t("regattaDetail.documents.previewTitle")}
                     />
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-white/30 space-y-4">
                     <span className="text-5xl opacity-20">🔎</span>
-                    <p className="text-sm">{t("documents.selectToPreview")}</p>
+                    <p className="text-sm">{t("regattaDetail.documents.selectToPreview")}</p>
                   </div>
                 )}
               </div>

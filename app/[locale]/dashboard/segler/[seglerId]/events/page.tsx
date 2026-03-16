@@ -28,7 +28,7 @@ const RegattaMap = dynamic<RegattaMapProps>( () => import('@/components/RegattaM
 dayjs.locale('de');
 
 const BOOTSKLASSEN = [
-  "ILCA","ILCA 4","ILCA 6","ILCA 7","Optimist","420","470","49er","49erFX",
+  "ILCA","ILCA 4","ILCA 6","ILCA 7","Optimist","420","470","49er","49erFX","29er",
   "Finn","Europe","RS:X","iQFoil","Nacra 17","Nacra 15","Vaurien","FJ","Fireball","505",
   "Hobie Cat 16","RS Aero","OK Dinghy","Topper","Dragon","Star","Soling", 
   "Flying Dutchman","Tornado","J70","J80","Snipe","RS200","RS400","RS500",
@@ -51,6 +51,7 @@ export default function RegattaÜbersicht({ currentUser }: { currentUser: any })
   const [filterYear, setFilterYear] = useState("");
   const [filterBootsklasse, setFilterBootsklasse] = useState("");
   const [mapFilter, setMapFilter] = useState<{lat: number, lng: number} | null>(null);
+  const [registeredEventIds, setRegisteredEventIds] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchEvents() {
@@ -74,33 +75,75 @@ export default function RegattaÜbersicht({ currentUser }: { currentUser: any })
     fetchEvents();
   }, [t]);
 
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Alle Daten parallel laden
+        const [resEvents, resAccounts, resRegistrations] = await Promise.all([
+          fetch("/api/events"),
+          fetch("/api/accounts"),
+          fetch("/api/registrations")
+        ]);
+
+        const eventsData = await resEvents.json();
+        const accounts = await resAccounts.json();
+        const registrationsRaw = await resRegistrations.json();
+
+        // 1. Registrierungen des Seglers sicher extrahieren
+        // Falls die API kein Array liefert, nutzen wir ein leeres Array
+        const registrations = Array.isArray(registrationsRaw) ? registrationsRaw : [];
+        
+        const myRegs = registrations
+          .filter((reg: any) => (reg.seglerId || reg.seglerid) === seglerId)
+          .map((reg: any) => reg.eventId || reg.eventid);
+
+        setRegisteredEventIds(myRegs);
+
+        // 2. Events mappen und Vereinsnamen zuordnen
+        const mappedEvents = eventsData.map((e: any) => ({
+          ...e,
+          lat: e.latitude, 
+          lng: e.longitude,
+          verein: accounts.find((acc: any) => acc.id === e.vereinId)?.name ?? t('noClubFallback'),
+        }));
+
+        setEvents(mappedEvents);
+      } catch (err) { 
+        console.error("Fehler beim Laden der Daten:", err); 
+      }
+    }
+    
+    if (seglerId) fetchData();
+  }, [t, seglerId]);
+
   const filtered = useMemo(() => {
-    // Heute auf den Beginn des Tages setzen (00:00:00)
-    const heute = dayjs().startOf('day');
+  const heute = dayjs().startOf('day');
 
-    return events.filter((e) => {
-      // Datum vom Event ebenfalls auf den Beginn des Tages setzen für fairen Vergleich
-      const eventDate = dayjs(e.datumVon).startOf('day');
-      
-      if (e.privat === true) return false;
+  return events.filter((e) => {
+    const eventDate = dayjs(e.datumVon).startOf('day');
+    
+    if (e.privat === true) return false;
 
-      const matchesMap = mapFilter 
-        ? (e.lat?.toFixed(4) === mapFilter.lat.toFixed(4) && e.lng?.toFixed(4) === mapFilter.lng.toFixed(4))
-        : true;
+    // NEU: Wenn der Segler schon registriert ist, aussortieren
+    const isAlreadyRegistered = registeredEventIds.includes(e.id);
 
-      // Logik: Zeige Events, die HEUTE oder in der ZUKUNFT liegen
-      const isUpcomingOrToday = eventDate.isSame(heute) || eventDate.isAfter(heute);
+    const matchesMap = mapFilter 
+      ? (e.lat?.toFixed(4) === mapFilter.lat.toFixed(4) && e.lng?.toFixed(4) === mapFilter.lng.toFixed(4))
+      : true;
 
-      return (
-        matchesMap &&
-        isUpcomingOrToday &&
-        e.name.toLowerCase().includes(search.toLowerCase()) &&
-        (filterLand ? e.land?.toLowerCase().includes(filterLand.toLowerCase()) : true) &&
-        (filterYear ? eventDate.year().toString() === filterYear : true) &&
-        (filterBootsklasse ? e.bootsklassen?.includes(filterBootsklasse) : true)
-      );
-    });
-  }, [events, search, filterLand, filterYear, filterBootsklasse, mapFilter]);
+    const isUpcomingOrToday = eventDate.isSame(heute) || eventDate.isAfter(heute);
+
+    return (
+      !isAlreadyRegistered && // Hier wird aussortiert
+      matchesMap &&
+      isUpcomingOrToday &&
+      e.name.toLowerCase().includes(search.toLowerCase()) &&
+      (filterLand ? e.land?.toLowerCase().includes(filterLand.toLowerCase()) : true) &&
+      (filterYear ? eventDate.year().toString() === filterYear : true) &&
+      (filterBootsklasse ? e.bootsklassen?.includes(filterBootsklasse) : true)
+    );
+  });
+}, [events, search, filterLand, filterYear, filterBootsklasse, mapFilter, registeredEventIds]);
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-200 rounded-[2.5rem] pb-20 overflow-x-hidden">

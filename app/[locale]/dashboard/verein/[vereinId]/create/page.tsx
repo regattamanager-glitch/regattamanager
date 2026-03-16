@@ -5,7 +5,7 @@ import { useRouter } from "@/navigation";
 import { useTranslations } from 'next-intl';
 
 const BOOTSKLASSEN = [
-  "ILCA","ILCA 4","ILCA 6","ILCA 7","Optimist","420","470","49er","49erFX",
+  "ILCA","ILCA 4","ILCA 6","ILCA 7","Optimist","420","470","49er","49erFX","29er",
   "Finn","Europe","RS:X","iQFoil","Nacra 17","Nacra 15","Vaurien","FJ","Fireball","505",
   "Hobie Cat 16","RS Aero","OK Dinghy","Topper","Dragon","Star","Soling",
   "Flying Dutchman","Tornado","J70","J80","Snipe","RS200","RS400","RS500",

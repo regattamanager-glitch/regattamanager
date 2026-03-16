@@ -33,6 +33,18 @@ if (!verein.stripeAccountId) { // Vorher: stripe_account_id
   throw new Error("Dieser Verein hat noch kein Stripe-Konto im Regatta Manager hinterlegt.");
 }
 
+// 2.5 Check if Stripe Account is ready
+try {
+  const account = await stripe.accounts.retrieve(verein.stripeAccountId);
+  if (!account.details_submitted || account.capabilities?.transfers !== 'active') {
+    return NextResponse.json({ 
+      error: "Der Verein ist noch nicht für Zahlungen freigeschaltet. Bitte kontaktieren Sie den Veranstalter." 
+    }, { status: 400 });
+  }
+} catch (e) {
+  return NextResponse.json({ error: "Stripe-Konto des Vereins konnte nicht verifiziert werden." }, { status: 400 });
+}
+
     // 3. Preisberechnung
     const gebuehren = typeof event.gebuehren_pro_klasse === 'string' 
       ? JSON.parse(event.gebuehren_pro_klasse) 

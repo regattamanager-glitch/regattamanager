@@ -1,25 +1,28 @@
 import { NextResponse } from 'next/server';
 import query from '@/lib/db'; 
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // 1. Wir laden erst mal alles, um einen Spaltenfehler auszuschließen
-    // 2. Wir nutzen try-catch, um den Fehler im Log zu sehen
-    const result = await query`SELECT * FROM registrations`;
-    
-    // Falls das Frontend spezifische Namen erwartet, mappen wir sie hier sicherheitshalber
-    const mappedResult = result.map((reg: any) => ({
-      id: reg.id,
-      seglerId: reg.seglerId || reg.segler_id, // fängt beides ab
-      eventId: reg.eventId || reg.event_id,     // fängt beides ab
-      klasse: reg.klasse,
-      status: reg.status
-    }));
+    const { searchParams } = new URL(request.url);
+    // Wir versuchen beide Varianten zu lesen, falls das Frontend mal so oder so schickt
+    const eventId = searchParams.get('eventid') || searchParams.get('eventId');
 
-    return NextResponse.json(mappedResult);
+    if (!eventId) {
+      console.error("API Error: No eventId provided in URL");
+      return NextResponse.json({ error: 'Missing eventid' }, { status: 400 });
+    }
+
+    // Nutze doppelte Anführungszeichen für den Spaltennamen "eventId"
+    const result = await query`
+      SELECT * FROM registrations 
+      WHERE "eventId" = ${eventId}
+    `;
+    
+    console.log(`Gefundene Meldungen für ${eventId}:`, result.length);
+
+    return NextResponse.json(result);
   } catch (error: any) {
-    // WICHTIG: Das hier im Terminal lesen!
-    console.error('DB-ERROR DETAILS:', error.message); 
+    console.error('DB-QUERY FAILED:', error.message); 
     return NextResponse.json([], { status: 500 });
   }
 }
