@@ -824,7 +824,8 @@
     "registrationPeriod": "Registratieperiode",
     "email": "E-mail",
     "address": "Adres",
-    "noCoordinates": "Geen kaartcoördinaten beschikbaar voor dit evenement"
+    "noCoordinates": "Geen kaartcoördinaten beschikbaar voor dit evenement",
+    "notes": "Event notities"
   },
   "classes": {
     "openForAll": "Open voor alle klassen",

@@ -824,7 +824,8 @@
     "registrationPeriod": "Kayıt dönemi",
     "email": "E-posta",
     "address": "Adres",
-    "noCoordinates": "Bu etkinlik için harita koordinatı bulunmamaktadır"
+    "noCoordinates": "Bu etkinlik için harita koordinatı bulunmamaktadır",
+    "notes": "Etkinlik Notları"
   },
   "classes": {
     "openForAll": "Tüm sınıflara açık",

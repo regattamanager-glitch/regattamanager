@@ -824,7 +824,8 @@
     "registrationPeriod": "Periodo de registro",
     "email": "Correo electrónico",
     "address": "Dirección",
-    "noCoordinates": "No hay coordenadas de mapa disponibles para este evento"
+    "noCoordinates": "No hay coordenadas de mapa disponibles para este evento",
+    "notes": "Notas del evento"
   },
   "classes": {
     "openForAll": "Abierto a todas las clases",

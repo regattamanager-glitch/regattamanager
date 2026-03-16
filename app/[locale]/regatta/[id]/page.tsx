@@ -34,6 +34,7 @@ type Event = {
   anmeldungBis: string; 
   latitude?: number;
   longitude?: number;
+  notizen?: string;
 
   segler?: Record<string, SeglerAnmeldung[]>; // ← WICHTIG
 };
@@ -198,17 +199,19 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
       const found: any = events.find(e => e.id === id);
 if (!found) return;
 
-// ... im useEffect nach const found = ...
 const vId = found.vereinId || found.verein_id;
 
 setEvent({
   ...found,
   vereinId: vId,
-  // Hier mappen wir die Felder mit dem "s" aus der DB auf deine State-Variablen
-  anmeldungVon: found.anmeldungVon || found.anmeldungs_von, 
-  anmeldungBis: found.anmeldungBis || found.anmeldungs_bis,
-  datumVon: found.datumVon || found.datum_von,
-  datumBis: found.datumBis || found.datum_bis,
+  // WICHTIG: Die API liefert 'notiz', dein State braucht 'notizen'
+  notizen: found.notiz || "", 
+  
+  // Die anderen Felder mappen (falls nötig)
+  anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
+  anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
+  datumVon: found.datumVon,
+  datumBis: found.datumBis,
 });
 
       // 2. Vereinsdaten laden (NICHT alle Accounts laden!)
@@ -585,6 +588,18 @@ return (
         </p>
       </div>
     </div>
+
+    {/* NEU: NOTIZEN / BESCHREIBUNG */}
+    {event?.notizen && (
+      <div className="bg-white/5 p-6 rounded-2xl border border-white/5 space-y-3">
+        <h3 className="text-white/40 text-sm uppercase font-bold tracking-wider flex items-center gap-2">
+          <span>📝</span> {t("regattaDetail.details.notes")}
+        </h3>
+        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+          {event.notizen}
+        </div>
+      </div>
+    )}
 
     {/* MAP Bereich ... */}
     {isInviteModalOpen !== true && Number.isFinite(event!.latitude) && Number.isFinite(event!.longitude) ? (

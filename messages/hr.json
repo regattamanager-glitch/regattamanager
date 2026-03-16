@@ -824,7 +824,8 @@
     "registrationPeriod": "Razdoblje prijave",
     "email": "E-pošta",
     "address": "Adresa",
-    "noCoordinates": "Nema koordinata karte za ovaj događaj"
+    "noCoordinates": "Nema koordinata karte za ovaj događaj",
+    "notes": "Bilješke o događaju"
   },
   "classes": {
     "openForAll": "Otvoreno za sve klase",
