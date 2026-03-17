@@ -3,6 +3,7 @@ import 'leaflet/dist/leaflet.css'
 import BackgroundWrapper from '@/components/BackgroundWrapper'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { neon } from '@neondatabase/serverless';
 
 import { cookies } from "next/headers"
 import fs from "fs"
@@ -13,6 +14,9 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/navigation';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 type Session = {
   id: string
@@ -30,59 +34,63 @@ export default async function RootLayout({
   params
 }: {
   children: React.ReactNode
-  params: Promise<{ locale: string }> // In neueren Next-Versionen ist params ein Promise
+  params: Promise<{ locale: string }>
 }) {
-  // 1. Locale aus params holen und validieren
   const { locale } = await params;
-
-  // Nutze die Locales aus deiner zentralen navigation.ts
-  if (!routing.locales.includes(locale as any)) {
-    notFound();
-  }
-
-  // 2. Übersetzungen laden
   const messages = await getMessages();
 
-  // 3. Bestehende Session-Logik
-  const cookieStore = await cookies()
-  const sessionId = cookieStore.get("session")?.value
-  let userType: "verein" | "segler" | undefined = undefined
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get("session")?.value;
+
+  // Variablen außerhalb des Blocks definieren, damit sie unten beim <Header /> verfügbar sind
+  let userType: "verein" | "segler" | undefined = undefined;
+  let userId: string | undefined = undefined;
 
   if (sessionId) {
-    const sessionsFile = path.join(process.cwd(), "app/api/accounts/sessions.json")
-    const accountsFile = path.join(process.cwd(), "app/api/accounts/accounts.json")
+    const sql = neon(process.env.DATABASE_URL!);
+    
+    try {
+      const currentTimeInSeconds = Date.now() / 1000;
 
-    if (fs.existsSync(sessionsFile) && fs.existsSync(accountsFile)) {
-      const sessions: Session[] = JSON.parse(fs.readFileSync(sessionsFile, "utf-8"))
-      const session = sessions.find((s) => s.id === sessionId && s.expires > Date.now())
+      // Wir fügen "v.id" zur Abfrage hinzu, damit wir die userId erhalten
+      const result = await sql`
+        SELECT v.id as "userId", 'verein' as type
+        FROM "Verein" v
+        JOIN "Session" s ON v.id = s."userId"
+        WHERE s.id = ${sessionId} AND s.expires > to_timestamp(${currentTimeInSeconds})
+        
+        UNION ALL
+        
+        SELECT v.id as "userId", 'segler' as type
+        FROM "Segler" v
+        JOIN "Session" s ON v.id = s."userId"
+        WHERE s.id = ${sessionId} AND s.expires > to_timestamp(${currentTimeInSeconds})
+        
+        LIMIT 1
+      `;
 
-      if (session) {
-        const accounts: Account[] = JSON.parse(fs.readFileSync(accountsFile, "utf-8"))
-        const user = accounts.find((u) => u.id === session.userId)
-        if (user) {
-          userType = user.type
-        }
+      if (result.length > 0) {
+        userType = result[0].type as "verein" | "segler";
+        userId = result[0].userId; // Die ID aus der DB zuweisen
       }
+    } catch (error) {
+      console.error("Datenbank-Fehler im Layout:", error);
     }
   }
 
   return (
     <html lang={locale}>
       <body className="relative min-h-screen overflow-x-hidden flex flex-col">
-        {/* Den Provider um den gesamten Inhalt legen */}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <BackgroundWrapper />
-
           <div className="relative z-10 flex-grow">
-            <Header userType={userType} />
+            {/* Jetzt sind beide Variablen hier bekannt */}
+            <Header userType={userType} userId={userId} />
             <main className="px-6 py-8 text-white">{children}</main>
           </div>
-
-          <div className="relative z-10">
-            <Footer />
-          </div>
+          <Footer />
         </NextIntlClientProvider>
       </body>
     </html>
-  )
+  );
 }

@@ -475,7 +475,6 @@
   "nationPlaceholder": "Nation (ex. GER)",
   "emailPlaceholder": "Email",
   "passwordPlaceholder": "Mot de passe",
-  "confirmPasswordPlaceholder": "Répéter le mot de passe",
   "createAccountButton": "Créer un compte",
   "creatingAccountLoading": "Création du compte…",
   "verifyCodeTitle": "Code de sécurité",
@@ -498,7 +497,22 @@
   "registerVereinTitle": "Créer un compte Club",
   "vereinNamePlaceholder": "Nom du club",
   "kuerzelPlaceholder": "Abréviation",
-  "addressPlaceholder": "Adresse"
+  "addressPlaceholder": "Adresse",
+  "resetPasswordTitle": "Nouveau mot de passe",
+  "resetPasswordInstructions": "Veuillez saisir votre nouveau mot de passe.",
+  "newPasswordPlaceholder": "Nouveau mot de passe",
+  "confirmPasswordPlaceholder": "Confirmer le mot de passe",
+  "savePasswordButton": "Enregistrer le mot de passe",
+  "savingLoading": "Enregistrement...",
+  "resetPasswordSuccessMessage": "Mot de passe modifié avec succès ! Redirection vers la page de connexion...",
+  "resetPasswordTokenError": "Le lien est invalide ou a expiré.",
+  "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+  "forgotPasswordLink": "Mot de passe oublié ?",
+  "forgotPasswordTitle": "Réinitialiser le mot de passe",
+  "forgotPasswordDescription": "Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.",
+  "sendResetLink": "Envoyer le lien",
+  "sendingLoading": "Envoi en cours...",
+  "backToLogin": "Retour à la connexion"
 },
 "CreateEvent": {
   "back": "Retour",
@@ -794,9 +808,10 @@
   }
 },
 "Header": {
-    "login": "Se connecter",
-    "register": "Créer un compte"
-},
+    "login": "Connexion",
+    "register": "S'inscrire",
+    "logout": "Déconnexion"
+  },
 "regattaDetail": {
   "loading": "Chargement…",
   "fallback": "—",

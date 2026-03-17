@@ -475,7 +475,6 @@
   "nationPlaceholder": "Χώρα (π.χ. GER)",
   "emailPlaceholder": "E-mail",
   "passwordPlaceholder": "Κωδικός",
-  "confirmPasswordPlaceholder": "Επανάληψη κωδικού",
   "createAccountButton": "Δημιουργία λογαριασμού",
   "creatingAccountLoading": "Δημιουργία λογαριασμού…",
   "verifyCodeTitle": "Κωδικός ασφαλείας",
@@ -498,7 +497,22 @@
   "registerVereinTitle": "Δημιουργία λογαριασμού συλλόγου",
   "vereinNamePlaceholder": "Όνομα συλλόγου",
   "kuerzelPlaceholder": "Συντομογραφία",
-  "addressPlaceholder": "Διεύθυνση"
+  "addressPlaceholder": "Διεύθυνση",
+  "resetPasswordTitle": "Νέος Κωδικός",
+  "resetPasswordInstructions": "Παρακαλώ εισάγετε το νέο σας κωδικό πρόσβασης.",
+  "newPasswordPlaceholder": "Νέος κωδικός",
+  "confirmPasswordPlaceholder": "Επιβεβαίωση κωδικού",
+  "savePasswordButton": "Αποθήκευση κωδικού",
+  "savingLoading": "Αποθήκευση...",
+  "resetPasswordSuccessMessage": "Ο κωδικός άλλαξε επιτυχώς! Μεταφέρεστε στη σελίδα σύνδεσης...",
+  "resetPasswordTokenError": "Ο σύνδεσμος δεν είναι έγκυρος ή έχει λήξει.",
+  "passwordsDoNotMatch": "Οι κωδικοί δεν ταιριάζουν",
+  "forgotPasswordLink": "Ξεχάσατε τον κωδικό σας;",
+  "forgotPasswordTitle": "Επαναφορά κωδικού",
+  "forgotPasswordDescription": "Εισάγετε το e-mail σας για να λάβετε έναν σύνδεσμο επαναφοράς.",
+  "sendResetLink": "Αποστολή συνδέσμου",
+  "sendingLoading": "Αποστολή...",
+  "backToLogin": "Επιστροφή στη σύνδεση"
 },
 "CreateEvent": {
   "back": "Πίσω",
@@ -792,9 +806,10 @@
   }
 },
 "Header": {
-  "login": "Σύνδεση",
-  "register": "Δημιουργία Λογαριασμού"
-},
+    "login": "Είσοδος",
+    "register": "Εγγραφή",
+    "logout": "Αποσύνδεση"
+  },
 "regattaDetail": {
   "loading": "Φόρτωση…",
   "fallback": "—",

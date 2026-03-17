@@ -475,7 +475,6 @@
   "nationPlaceholder": "Land (bijv. GER)",
   "emailPlaceholder": "E-mail",
   "passwordPlaceholder": "Wachtwoord",
-  "confirmPasswordPlaceholder": "Herhaal wachtwoord",
   "createAccountButton": "Account aanmaken",
   "creatingAccountLoading": "Account aanmaken…",
   "verifyCodeTitle": "Beveiligingscode",
@@ -498,7 +497,22 @@
   "registerVereinTitle": "Clubaccount aanmaken",
   "vereinNamePlaceholder": "Clubnaam",
   "kuerzelPlaceholder": "Afkorting",
-  "addressPlaceholder": "Adres"
+  "addressPlaceholder": "Adres",
+  "resetPasswordTitle": "Nieuw wachtwoord",
+  "resetPasswordInstructions": "Voer uw nieuwe wachtwoord in.",
+  "newPasswordPlaceholder": "Nieuw wachtwoord",
+  "confirmPasswordPlaceholder": "Wachtwoord bevestigen",
+  "savePasswordButton": "Wachtwoord opslaan",
+  "savingLoading": "Opslaan...",
+  "resetPasswordSuccessMessage": "Wachtwoord succesvol gewijzigd! U wordt doorgestuurd naar de login...",
+  "resetPasswordTokenError": "De link is ongeldig of verlopen.",
+  "passwordsDoNotMatch": "Wachtwoorden komen niet overeen",
+  "forgotPasswordLink": "Wachtwoord vergeten?",
+  "forgotPasswordTitle": "Wachtwoord herstellen",
+  "forgotPasswordDescription": "Voer uw e-mailadres in om een herstelkoppeling te ontvangen.",
+  "sendResetLink": "Link verzenden",
+  "sendingLoading": "Verzenden...",
+  "backToLogin": "Terug naar login"
 },
 "CreateEvent": {
   "back": "Terug",
@@ -792,9 +806,10 @@
   }
 },
 "Header": {
-  "login": "Inloggen",
-  "register": "Account aanmaken"
-},
+    "login": "Inloggen",
+    "register": "Registreren",
+    "logout": "Uitloggen"
+  },
 "regattaDetail": {
   "loading": "Laden…",
   "fallback": "—",

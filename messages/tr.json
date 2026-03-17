@@ -475,7 +475,6 @@
   "nationPlaceholder": "Ülke (örn. GER)",
   "emailPlaceholder": "E-posta",
   "passwordPlaceholder": "Şifre",
-  "confirmPasswordPlaceholder": "Şifreyi tekrar gir",
   "createAccountButton": "Hesap Oluştur",
   "creatingAccountLoading": "Hesap oluşturuluyor…",
   "verifyCodeTitle": "Güvenlik Kodu",
@@ -498,7 +497,22 @@
   "registerVereinTitle": "Kulüp Hesabı Oluştur",
   "vereinNamePlaceholder": "Kulüp Adı",
   "kuerzelPlaceholder": "Kısaltma",
-  "addressPlaceholder": "Adres"
+  "addressPlaceholder": "Adres",
+  "resetPasswordTitle": "Yeni Şifre",
+  "resetPasswordInstructions": "Lütfen yeni şifrenizi giriniz.",
+  "newPasswordPlaceholder": "Yeni şifre",
+  "confirmPasswordPlaceholder": "Şifreyi onayla",
+  "savePasswordButton": "Şifreyi kaydet",
+  "savingLoading": "Kaydediliyor...",
+  "resetPasswordSuccessMessage": "Şifre başarıyla değiştirildi! Giriş sayfasına yönlendiriliyorsunuz...",
+  "resetPasswordTokenError": "Bağlantı geçersiz veya süresi dolmuş.",
+  "passwordsDoNotMatch": "Şifreler eşleşmiyor",
+  "forgotPasswordLink": "Şifrenizi mi unuttunuz?",
+  "forgotPasswordTitle": "Şifreyi sıfırla",
+  "forgotPasswordDescription": "Sıfırlama bağlantısı almak için e-posta adresinizi girin.",
+  "sendResetLink": "Bağlantı gönder",
+  "sendingLoading": "Gönderiliyor...",
+  "backToLogin": "Giriş sayfasına dön"
 },
 "CreateEvent": {
   "back": "Geri",
@@ -792,9 +806,10 @@
   }
 },
 "Header": {
-  "login": "Giriş Yap",
-  "register": "Hesap Oluştur"
-},
+    "login": "Giriş yap",
+    "register": "Kayıt ol",
+    "logout": "Çıkış yap"
+  },
 "regattaDetail": {
   "loading": "Yükleniyor…",
   "fallback": "—",

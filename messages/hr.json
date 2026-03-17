@@ -475,7 +475,6 @@
   "nationPlaceholder": "Zemlja (npr. GER)",
   "emailPlaceholder": "E-mail",
   "passwordPlaceholder": "Lozinka",
-  "confirmPasswordPlaceholder": "Ponovi lozinku",
   "createAccountButton": "Kreiraj račun",
   "creatingAccountLoading": "Kreiranje računa…",
   "verifyCodeTitle": "Sigurnosni kod",
@@ -498,7 +497,22 @@
   "registerVereinTitle": "Kreiraj račun kluba",
   "vereinNamePlaceholder": "Naziv kluba",
   "kuerzelPlaceholder": "Skraćenica",
-  "addressPlaceholder": "Adresa"
+  "addressPlaceholder": "Adresa",
+  "resetPasswordTitle": "Nova lozinka",
+  "resetPasswordInstructions": "Molimo unesite svoju novu lozinku.",
+  "newPasswordPlaceholder": "Nova lozinka",
+  "confirmPasswordPlaceholder": "Potvrdite lozinku",
+  "savePasswordButton": "Spremi lozinku",
+  "savingLoading": "Spremanje...",
+  "resetPasswordSuccessMessage": "Lozinka je uspješno promijenjena! Preusmjeravamo vas na prijavu...",
+  "resetPasswordTokenError": "Poveznica je nevažeća ili je istekla.",
+  "passwordsDoNotMatch": "Lozinke se ne podudaraju",
+  "forgotPasswordLink": "Zaboravili ste lozinku?",
+  "forgotPasswordTitle": "Ponovno postavljanje lozinke",
+  "forgotPasswordDescription": "Unesite svoju e-mail adresu kako biste primili poveznicu za oporavak.",
+  "sendResetLink": "Pošalji poveznicu",
+  "sendingLoading": "Slanje...",
+  "backToLogin": "Povratak na prijavu"
 },
 "CreateEvent": {
   "back": "Natrag",
@@ -792,9 +806,10 @@
   }
 },
 "Header": {
-  "login": "Prijava",
-  "register": "Kreiraj račun"
-},
+    "login": "Prijava",
+    "register": "Registracija",
+    "logout": "Odjava"
+  },
 "regattaDetail": {
   "loading": "Učitavanje…",
   "fallback": "—",

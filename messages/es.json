@@ -475,7 +475,6 @@
   "nationPlaceholder": "Nación (ej. GER)",
   "emailPlaceholder": "Correo electrónico",
   "passwordPlaceholder": "Contraseña",
-  "confirmPasswordPlaceholder": "Repetir contraseña",
   "createAccountButton": "Crear cuenta",
   "creatingAccountLoading": "Creando cuenta…",
   "verifyCodeTitle": "Código de seguridad",
@@ -498,7 +497,22 @@
   "registerVereinTitle": "Crear cuenta de club",
   "vereinNamePlaceholder": "Nombre del club",
   "kuerzelPlaceholder": "Siglas",
-  "addressPlaceholder": "Dirección"
+  "addressPlaceholder": "Dirección",
+  "resetPasswordTitle": "Nueva contraseña",
+  "resetPasswordInstructions": "Por favor, introduce tu nueva contraseña.",
+  "newPasswordPlaceholder": "Nueva contraseña",
+  "confirmPasswordPlaceholder": "Confirmar contraseña",
+  "savePasswordButton": "Guardar contraseña",
+  "savingLoading": "Guardando...",
+  "resetPasswordSuccessMessage": "¡Contraseña cambiada con éxito! Reenviando al inicio de sesión...",
+  "resetPasswordTokenError": "El enlace no es válido o ha caducado.",
+  "passwordsDoNotMatch": "Las contraseñas no coinciden",
+  "forgotPasswordLink": "¿Has olvidado tu contraseña?",
+  "forgotPasswordTitle": "Restablecer contraseña",
+  "forgotPasswordDescription": "Introduce tu correo electrónico para recibir un enlace de restablecimiento.",
+  "sendResetLink": "Enviar enlace",
+  "sendingLoading": "Enviando...",
+  "backToLogin": "Volver al inicio de sesión"
 },
 "CreateEvent": {
   "back": "Volver",
@@ -792,9 +806,10 @@
   }
 },
 "Header": {
-  "login": "Iniciar sesión",
-  "register": "Crear cuenta"
-},
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "logout": "Cerrar sesión"
+  },
 "regattaDetail": {
   "loading": "Cargando…",
   "fallback": "—",

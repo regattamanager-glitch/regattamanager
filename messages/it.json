@@ -475,7 +475,6 @@
   "nationPlaceholder": "Nazione (es. GER)",
   "emailPlaceholder": "Email",
   "passwordPlaceholder": "Password",
-  "confirmPasswordPlaceholder": "Ripeti password",
   "createAccountButton": "Crea account",
   "creatingAccountLoading": "Creazione account…",
   "verifyCodeTitle": "Codice di sicurezza",
@@ -498,7 +497,22 @@
   "registerVereinTitle": "Crea account Club",
   "vereinNamePlaceholder": "Nome club",
   "kuerzelPlaceholder": "Abbreviazione",
-  "addressPlaceholder": "Indirizzo"
+  "addressPlaceholder": "Indirizzo",
+  "resetPasswordTitle": "Nuova password",
+  "resetPasswordInstructions": "Inserisci la tua nuova password.",
+  "newPasswordPlaceholder": "Nuova password",
+  "confirmPasswordPlaceholder": "Conferma password",
+  "savePasswordButton": "Salva password",
+  "savingLoading": "Salvataggio...",
+  "resetPasswordSuccessMessage": "Password modificata con successo! Verrai reindirizzato al login...",
+  "resetPasswordTokenError": "Il link non è valido o è scaduto.",
+  "passwordsDoNotMatch": "Le password non corrispondono",
+  "forgotPasswordLink": "Password dimenticata?",
+  "forgotPasswordTitle": "Reimposta password",
+  "forgotPasswordDescription": "Inserisci il tuo indirizzo email per ricevere un link di ripristino.",
+  "sendResetLink": "Invia link",
+  "sendingLoading": "Invio in corso...",
+  "backToLogin": "Torna al login"
 },
 "CreateEvent": {
   "back": "Indietro",
@@ -795,8 +809,9 @@
 },
 "Header": {
     "login": "Accedi",
-    "register": "Crea un account"
-},
+    "register": "Registrati",
+    "logout": "Esci"
+  },
 "regattaDetail": {
   "loading": "Caricamento…",
   "fallback": "—",

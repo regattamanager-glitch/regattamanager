@@ -475,7 +475,6 @@
     "nationPlaceholder": "Nation (z.B. GER)",
     "emailPlaceholder": "E-Mail",
     "passwordPlaceholder": "Passwort",
-    "confirmPasswordPlaceholder": "Passwort wiederholen",
     "createAccountButton": "Account erstellen",
     "creatingAccountLoading": "Erstelle Account…",
     "verifyCodeTitle": "Sicherheitscode",
@@ -498,7 +497,22 @@
     "registerVereinTitle": "Vereins-Account erstellen",
     "vereinNamePlaceholder": "Vereinsname",
     "kuerzelPlaceholder": "Kürzel",
-    "addressPlaceholder": "Adresse"
+    "addressPlaceholder": "Adresse",
+    "resetPasswordTitle": "Neues Passwort",
+    "resetPasswordInstructions": "Gib bitte dein neues Passwort ein.",
+    "newPasswordPlaceholder": "Neues Passwort",
+    "confirmPasswordPlaceholder": "Passwort bestätigen",
+    "savePasswordButton": "Passwort speichern",
+    "savingLoading": "Wird gespeichert...",
+    "resetPasswordSuccessMessage": "Passwort erfolgreich geändert! Du wirst zum Login weitergeleitet...",
+    "resetPasswordTokenError": "Der Link ist ungültig oder abgelaufen.",
+    "passwordsDoNotMatch": "Passwörter stimmen nicht überein",
+    "forgotPasswordLink": "Passwort vergessen?",
+  "forgotPasswordTitle": "Passwort zurücksetzen",
+  "forgotPasswordDescription": "Gib deine E-Mail-Adresse ein, um einen Link zum Zurücksetzen zu erhalten.",
+  "sendResetLink": "Link senden",
+  "sendingLoading": "Wird gesendet...",
+  "backToLogin": "Zurück zum Login"
   },
   "CreateEvent": {
     "back": "Zurück",
@@ -795,7 +809,8 @@
   },
   "Header": {
     "login": "Anmelden",
-    "register": "Konto erstellen"
+    "register": "Konto erstellen",
+    "logout": "Abmelden" 
   },
   "regattaDetail": {
     "loading": "Lädt…",

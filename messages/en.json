@@ -475,7 +475,6 @@
   "nationPlaceholder": "Nation (e.g. GER)",
   "emailPlaceholder": "Email",
   "passwordPlaceholder": "Password",
-  "confirmPasswordPlaceholder": "Repeat Password",
   "createAccountButton": "Create Account",
   "creatingAccountLoading": "Creating account…",
   "verifyCodeTitle": "Security Code",
@@ -498,7 +497,22 @@
   "registerVereinTitle": "Create Club Account",
   "vereinNamePlaceholder": "Club Name",
   "kuerzelPlaceholder": "Abbreviation",
-  "addressPlaceholder": "Address"
+  "addressPlaceholder": "Address",
+  "resetPasswordTitle": "New Password",
+  "resetPasswordInstructions": "Please enter your new password.",
+  "newPasswordPlaceholder": "New password",
+  "confirmPasswordPlaceholder": "Confirm password",
+  "savePasswordButton": "Save password",
+  "savingLoading": "Saving...",
+  "resetPasswordSuccessMessage": "Password changed successfully! You are being redirected to login...",
+  "resetPasswordTokenError": "The link is invalid or has expired.",
+  "passwordsDoNotMatch": "Passwords do not match",
+  "forgotPasswordLink": "Forgot password?",
+  "forgotPasswordTitle": "Reset password",
+  "forgotPasswordDescription": "Enter your email address to receive a password reset link.",
+  "sendResetLink": "Send link",
+  "sendingLoading": "Sending...",
+  "backToLogin": "Back to login"
 },
 "CreateEvent": {
   "back": "Back",
@@ -794,8 +808,9 @@
   }
 },
 "Header": {
-    "login": "Sign In",
-    "register": "Create Account"
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
   },
   "regattaDetail": {
   "loading": "Loading…",
