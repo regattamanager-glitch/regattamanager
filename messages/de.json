@@ -327,7 +327,6 @@
     "podium": "Podiumsplatzierungen"
   },
   "ProfileSettings": {
-    "loading": "Lade Vereinsprofil...",
     "notFound": "Verein nicht gefunden.",
     "back": "Zurück",
     "accountBadge": "Vereins-Account",
@@ -354,7 +353,9 @@
     "confirmPasswordAlert": "Bitte aktuelles Passwort zur Bestätigung eingeben",
     "successAlert": "Profil erfolgreich aktualisiert!",
     "errorAlert": "Fehler beim Speichern.",
-    "createStripeAccount": "Account erstellen"
+    "createStripeAccount": "Account erstellen",
+    "openStripeDashboard": "Auszahlungen & Stripe Dashboard",
+    "loading": "Wird geladen..."
   },
   "ClubPerformance": {
     "loading": "Lade Performance...",
@@ -615,6 +616,7 @@
       "470": "470er",
       "49er": "49er",
       "49erFX": "49erFX",
+      "29er": "29er",
       "5,5m-R-Klasse": "5,5m-R-Klasse",
       "505": "505er",
       "6m-R-Klasse": "6m-R-Klasse",
@@ -675,7 +677,40 @@
       "Vaurien": "Vaurien",
       "Yngling": "Yngling",
       "Zoom8": "Zoom8"
-    }
+    },
+    "legal": {
+      "title": "DIENSTLEISTUNGS- UND NUTZUNGSVEREINBARUNG (DNV)",
+      "parties": "Zwischen: Regatta Manager (Provider) und dem im Registrierungsprozess verifizierten Verein / Veranstalter (Partner)",
+      "accept": "Ich akzeptiere die DNV & Event veröffentlichen",
+      "cancel": "Abbrechen",
+      "scrollInstruction": "Bitte lesen Sie den Vertrag bis zum Ende, um fortzufahren",
+      "sections": {
+        "s1_title": "§ 1 Vertragsgegenstand und Leistungsumfang",
+        "s1_text": "Der Provider stellt dem Partner eine cloudbasierte Plattform zur Organisation, Verwaltung und Abwicklung von Segelregatten zur Verfügung.\nDer Leistungsumfang umfasst die Bereitstellung eines Online-Anmeldeformulars, die Verwaltung von Teilnehmerlisten sowie die technische Schnittstelle zur automatisierten Abwicklung von Meldegeldzahlungen über integrierte Zahlungsdienstleister.\nDer Provider schuldet lediglich die Bereitstellung der technischen Infrastruktur. Die Durchführung der sportlichen Veranstaltung obliegt allein dem Partner.",
+        "s2_title": "§ 2 Registrierung und Account-Pflichten",
+        "s2_text": "Der Partner ist verpflichtet, bei der Erstellung seines Accounts und der Events wahrheitsgemäße Angaben zu machen.\nDer Partner stellt sicher, dass sein verknüpftes Stripe-Konto ordnungsgemäß verifiziert ist. Der Provider haftet nicht für Auszahlungsverzögerungen, die durch fehlende Identitätsnachweise (KYC) des Partners gegenüber dem Zahlungsdienstleister entstehen.",
+        "s3_title": "§ 3 Buchungshoheit und Exklusivität",
+        "s3_text": "Zentralisierung: Zur Gewährleistung einer konsistenten Datenqualität und zur Vermeidung von Dubletten in den Startlisten verpflichtet sich der Partner, die technische Anmeldung ausschließlich über die Plattform des Providers abzuwickeln.\nMarketing-Freiheit: Die Bewerbung der Regatta auf Drittseiten, Verbandsseiten oder sozialen Medien ist ausdrücklich gestattet und erwünscht. Der Partner verpflichtet sich jedoch, bei sämtlichen Werbemaßnahmen ausschließlich auf das Anmeldeportal des Providers zu verlinken.\nExklusivität: Es ist dem Partner untersagt, für die vertragsgegenständliche Regatta parallele digitale Buchungswege (z. B. eigene Webformulare, Drittanbieter-Portale oder E-Mail-Sammellisten) anzubieten oder zu nutzen.\nVor-Ort-Meldungen: Sollten Meldungen am Regattatag vor Ort entgegengenommen werden, sind diese zur Wahrung der Vollständigkeit unverzüglich im System des Providers nachzupflegen.",
+        "s4_title": "§ 4 Gebühren und Zahlungskonditionen",
+        "s4_text": "Für die Bereitstellung der Infrastruktur und die Transaktionsabwicklung erhebt der Provider eine Servicegebühr in Höhe von 8 % des jeweiligen Brutto-Meldegeldes (inkl. MwSt., sofern anwendbar).\nDie Servicegebühr wird direkt bei der Zahlung durch den Teilnehmer einbehalten oder im Rahmen der Abrechnung verrechnet.\nStornierungen: Im Falle einer Stornierung durch einen Teilnehmer verbleibt die Servicegebühr in Höhe von 8 % beim Provider. Diese dient der Deckung der bereits angefallenen Transaktionskosten und Bereitstellungsaufwände. Der Partner ist verpflichtet, Teilnehmer in seiner Ausschreibung (Notice of Race) auf diese Nicht-Erstattbarkeit hinzuweisen.\nGebührenparität: Der Partner sichert zu, dass die auf der Plattform aufgerufenen Preise der günstigsten verfügbaren Rate entsprechen. Die systematische Erhöhung der Gebühren auf der Plattform zum Zwecke der Gebührenumwälzung ist unzulässig.",
+        "s5_title": "§ 5 Tarifdisziplin und Vertragsstrafe",
+        "s5_text": "Der Partner verpflichtet sich zur Einhaltung der im System definierten Preisstufen (insb. die konsequente Anwendung der Late Fee nach Ablauf der regulären Meldefrist).\nEin schuldhafter Verstoß gegen die Exklusivität (§ 3 Abs. 3) oder die Gebührenparität (§ 4 Abs. 4) berechtigt den Provider zur Forderung einer Vertragsstrafe. Diese bemisst sich nach der Höhe der entgangenen Servicegebühren, beträgt jedoch mindestens 250,00 € pro Verstoß, um den entstandenen System- und Reputationsschaden auszugleichen.",
+        "s6_title": "§ 6 Haftung und Freistellung",
+        "s6_text": "Der Partner stellt den Provider von sämtlichen Ansprüchen Dritter frei, die aus der Durchführung der Regatta, Unfällen, Sachschäden oder der Verletzung sportrechtlicher Regeln resultieren.\nDie Haftung des Providers für leichte Fahrlässigkeit bei IT-Ausfällen ist ausgeschlossen, sofern keine wesentlichen Vertragspflichten betroffen sind.",
+        "s7_title": "§ 7 Datenhoheit und Ergebnislisten",
+        "s7_text": "Der Partner bleibt 'Herr der Daten' im Sinne der DSGVO, räumt dem Provider jedoch das Recht ein, die Daten zur Vertragserfüllung zu verarbeiten.\nDer Partner verpflichtet sich, die offiziellen Endergebnisse innerhalb von 48 Stunden nach Veranstaltungsende im System des Providers zu veröffentlichen, um die historische Datenbank der Plattform zu pflegen.",
+        "s8_title": "§ 8 Schlussbestimmungen",
+        "s8_text": "Es gilt das Recht am Sitz des Providers.\nSollten einzelne Bestimmungen dieses Vertrages unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt."
+      }
+    },
+    "stripeSetupTitle": "Zahlungen einrichten",
+    "stripeSetupDesc": "Um Anmeldegebühren zu empfangen, benötigst du ein Stripe-Konto.",
+    "createStripeAccount": "Stripe-Konto erstellen",
+    "recommended": "(Empfohlen)",
+    "or": "oder",
+    "existingStripeId": "Bestehende Stripe-ID (acct_...)",
+    "passwordRequired": "Passwort erforderlich",
+    "stripeError": "Fehler bei der Verbindung mit Stripe"
   },
   "Legal": {
   "agbTitle": "Allgemeine Geschäftsbedingungen",

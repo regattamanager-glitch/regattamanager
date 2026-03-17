@@ -30,7 +30,6 @@ export default function CreateAccountPage() {
       const data = await res.json();
       if (!res.ok) return setError(data.error);
 
-      alert(t("success"));
       router.push("/login");
     } catch (err) {
       setError(t("errorGeneric"));

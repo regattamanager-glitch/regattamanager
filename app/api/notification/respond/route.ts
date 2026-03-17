@@ -4,73 +4,60 @@ import sql from "@/lib/db";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    if (!body || !body.inviteId || !body.action) {
-      return NextResponse.json({ error: "Daten unvollständig" }, { status: 400 });
-    }
-
     const { inviteId, action } = body;
 
-    // 1. Zuerst prüfen: Ist es eine Event-Einladung?
-    const eventInvite = await sql`
-      SELECT * FROM event_invitations WHERE id = ${inviteId}
-    `;
-
-    if (eventInvite.length > 0) {
-      const invite = eventInvite[0];
-
-      if (action === 'accept') {
-        // Status auf 'accepted' setzen
-        await sql`
-          UPDATE event_invitations 
-          SET status = 'accepted' 
-          WHERE id = ${inviteId}
-        `;
-
-        return NextResponse.json({ 
-          success: true, 
-          type: 'event', 
-          redirectTo: `/regatta/${invite.event_id}` 
-        });
-      } else {
-        // Bei Ablehnung: Löschen
-        await sql`DELETE FROM event_invitations WHERE id = ${inviteId}`;
-        return NextResponse.json({ success: true, type: 'event' });
-      }
+    if (!inviteId || !action) {
+      return NextResponse.json({ error: "IDs fehlen" }, { status: 400 });
     }
 
-    // 2. Falls nicht, prüfen: Ist es eine Freundschaftsanfrage?
+    // 1. Die Einladung finden, bevor wir sie löschen (um die IDs zu bekommen)
     const friendInvite = await sql`
-      SELECT * FROM invitations WHERE id = ${inviteId}
+      SELECT sender_id, receiver_id FROM invitations WHERE id = ${inviteId}
     `;
 
-    if (friendInvite.length > 0) {
-      const invite = friendInvite[0];
-
-      if (action === 'accept') {
-        // In einer relationalen DB lösen wir das "Freunde-Array" idealerweise 
-        // über den Status in der 'invitations' Tabelle oder eine 'friends' Tabelle.
-        // Hier setzen wir den Status auf 'accepted'.
-        await sql`
-          UPDATE invitations 
-          SET status = 'accepted', timestamp = NOW() 
-          WHERE id = ${inviteId}
-        `;
-        
-        // HINWEIS: Falls du eine separate 'friends' Tabelle hast, 
-        // müsstest du hier zusätzlich einen INSERT machen. 
-        // Wenn du nur die 'invitations' Tabelle filterst, reicht das Update oben.
-      } else {
-        // Bei Ablehnung oder Löschung nach Bearbeitung:
-        await sql`DELETE FROM invitations WHERE id = ${inviteId}`;
+    if (friendInvite.length === 0) {
+      // Vielleicht ist es eine Event-Einladung?
+      const eventInvite = await sql`SELECT id FROM event_invitations WHERE id = ${inviteId}`;
+      if (eventInvite.length > 0) {
+        if (action === 'accept') {
+          await sql`UPDATE event_invitations SET status = 'accepted' WHERE id = ${inviteId}`;
+        } else {
+          await sql`DELETE FROM event_invitations WHERE id = ${inviteId}`;
+        }
+        return NextResponse.json({ success: true });
       }
-
-      return NextResponse.json({ success: true, type: 'friend' });
+      return NextResponse.json({ error: "Anfrage nicht gefunden" }, { status: 404 });
     }
 
-    return NextResponse.json({ error: "Einladung nicht gefunden" }, { status: 404 });
+    const { sender_id, receiver_id } = friendInvite[0];
 
-  } catch (err) {
-    console.error("Notification Respond Error:", err);
-    return NextResponse.json({ error: "Interner Server Fehler" }, { status: 500 });
+    if (action === 'accept') {
+  // Prisma n:m Tabellen nutzen oft nur "A" und "B"
+  // Wir sortieren, um Konsistenz zu wahren (A < B)
+  const [id1, id2] = [sender_id, receiver_id].sort();
+  
+  try {
+    await sql`
+      INSERT INTO "_SeglerFriends" ("A", "B")
+      VALUES (${id1}, ${id2})
+      ON CONFLICT DO NOTHING
+    `;
+    console.log("Erfolg: Relation in _SeglerFriends mit A und B erstellt.");
+  } catch (dbErr: any) {
+    // Falls das auch fehlschlägt, loggen wir den Fehler, 
+    // aber löschen die Einladung nicht, damit man es erneut versuchen kann.
+    console.error("Datenbankfehler in _SeglerFriends:", dbErr.message);
+    throw new Error(`DB-Fehler: ${dbErr.message}`); 
+  }
+}
+
+    // B) IMMER löschen (egal ob accept oder decline), damit die Notification verschwindet
+    await sql`DELETE FROM invitations WHERE id = ${inviteId}`;
+
+    return NextResponse.json({ success: true });
+
+  } catch (err: any) {
+    console.error("KRITISCHER FEHLER:", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

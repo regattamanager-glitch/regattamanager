@@ -33,27 +33,33 @@ export default function FriendsPage() {
     
     try {
       setLoading(true);
-      const [resAccounts, resInvites] = await Promise.all([
+      
+      // Wir laden Accounts, Notifications (für Invites) und die echte Crew-Liste parallel
+      const [resAccounts, resInvites, resFriends] = await Promise.all([
         fetch('/api/accounts'),
-        fetch('/api/notification')
+        fetch('/api/notification'),
+        fetch(`/api/segler/${seglerId}/friends`)
       ]);
 
-      if (!resAccounts.ok || !resInvites.ok) throw new Error("API Error");
+      if (!resAccounts.ok || !resInvites.ok || !resFriends.ok) throw new Error("API Error");
 
       const accounts = await resAccounts.json();
       const allInvites = await resInvites.json();
+      const actualFriends = await resFriends.json(); // Daten aus _SeglerFriends
 
-      const myAccount = accounts.find((a: any) => String(a.id) === String(seglerId));
-      const myFriendsIds = myAccount?.friends || [];
+      // Erstelle ein Set mit IDs der bereits akzeptierten Freunde für schnellen Abgleich
+      const friendIds = new Set(actualFriends.map((f: any) => String(f.id)));
 
       const formattedUsers = accounts
         .filter((a: any) => String(a.id) !== String(seglerId) && a.type === "segler")
         .map((a: any) => {
           let status: 'accepted' | 'pending_incoming' | 'pending_outgoing' | 'none' = 'none';
 
-          if (myFriendsIds.includes(a.id)) {
+          // 1. Check: Sind sie bereits in der Crew (_SeglerFriends)?
+          if (friendIds.has(String(a.id))) {
             status = 'accepted';
           } else {
+            // 2. Check: Gibt es eine offene Einladung in 'invitations'?
             const invite = allInvites.find((inv: any) => 
               !inv.eventId && (
                 (String(inv.senderId) === String(seglerId) && String(inv.receiverId) === String(a.id)) ||
@@ -69,10 +75,11 @@ export default function FriendsPage() {
         });
       
       setAllUsers(formattedUsers);
+      // 'friends' enthält im State alles, was nicht 'none' ist (Anfragen + Crew)
       setFriends(formattedUsers.filter((u: Friend) => u.status !== 'none'));
 
     } catch (err) {
-      console.error(err);
+      console.error("Fehler beim Laden der Segler-Daten:", err);
     } finally {
       setLoading(false);
     }

@@ -327,7 +327,6 @@
   "podium": "Podiumplaatsen"
 },
 "ProfileSettings": {
-  "loading": "Clubprofiel laden...",
   "notFound": "Club niet gevonden.",
   "back": "Terug",
   "accountBadge": "Clubaccount",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Voer het huidige wachtwoord in ter bevestiging",
   "successAlert": "Profiel succesvol bijgewerkt!",
   "errorAlert": "Fout bij opslaan.",
-  "createStripeAccount": "Account aanmaken"
+  "createStripeAccount": "Account aanmaken",
+  "openStripeDashboard": "Uitbetalingen & Stripe Dashboard",
+"loading": "Laden..."
 },
 "ClubPerformance": {
   "loading": "Prestaties laden...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "5,5mR-klasse",
     "505": "505",
     "6m-R-Klasse": "6mR-klasse",
@@ -675,7 +677,40 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "legal": {
+      "title": "DIENSTVERLENINGS- EN GEBRUIKSOVEREENKOMST (DGO)",
+      "parties": "Tussen: Regatta Manager (Provider) en de in het registratieproces geverifieerde vereniging / organisator (Partner)",
+      "accept": "Ik accepteer de DGO & publiceer evenement",
+      "cancel": "Annuleren",
+      "scrollInstruction": "Lees het contract tot het einde om door te gaan",
+      "sections": {
+        "s1_title": "§ 1 Onderwerp van het contract en omvang van de diensten",
+        "s1_text": "De Provider stelt de Partner een cloudgebaseerd platform ter beschikking voor de organisatie, administratie en afhandeling van zeilregatta's.\nDe omvang van de diensten omvat het verstrekken van een online aanmeldingsformulier, het beheer van deelnemerslijsten en de technische interface voor de geautomatiseerde afhandeling van inschrijfgeldbetalingen via geïntegreerde betalingsdienstaanbieders.\nDe Provider is slechts verantwoordelijk voor het leveren van de technische infrastructuur. De uitvoering van het sportevenement is uitsluitend de verantwoordelijkheid van de Partner.",
+        "s2_title": "§ 2 Registratie en accountverplichtingen",
+        "s2_text": "De Partner is verplicht om bij het aanmaken van zijn account en evenementen naar waarheid gegevens te verstrekken.\nDe Partner zorgt ervoor dat zijn gekoppelde Stripe-account naar behoren is geverifieerd. De Provider is niet aansprakelijk voor vertragingen in de uitbetaling die ontstaan door ontbrekende identiteitsbewijzen (KYC) van de Partner tegenover de betalingsdienstaanbieder.",
+        "s3_title": "§ 3 Boekingssoevereiniteit en exclusiviteit",
+        "s3_text": "Centralisatie: Om een consistente datakwaliteit te waarborgen en duplicaten in de startlijsten te voorkomen, verbindt de Partner zich ertoe de technische aanmelding uitsluitend via het platform van de Provider af te handelen.\nMarketingvrijheid: Promotie van de regatta op websites van derden, verenigingswebsites of sociale media is uitdrukkelijk toegestaan en gewenst. De Partner verbindt zich er echter toe om bij alle reclamemaatregelen uitsluitend naar het aanmeldingsportaal van de Provider te linken.\nExclusiviteit: Het is de Partner verboden om voor de regatta die het onderwerp is van dit contract parallelle digitale boekingswegen (bijv. eigen webformulieren, portalen van derden of e-mailverzamellijsten) aan te bieden of te gebruiken.\nInschrijvingen ter plaatse: Indien inschrijvingen op de dag van de regatta ter plaatse worden aangenomen, moeten deze onmiddellijk in het systeem van de Provider worden ingevoerd om de volledigheid te waarborgen.",
+        "s4_title": "§ 4 Vergoedingen en betalingsvoorwaarden",
+        "s4_text": "Voor de levering van de infrastructuur en de afhandeling van transacties brengt de Provider een servicevergoeding in rekening van 8% van het respectievelijke bruto inschrijfgeld (incl. btw, indien van toepassing).\nDe servicevergoeding wordt rechtstreeks bij de betaling door de deelnemer ingehouden of verrekend in het kader van de afrekening.\nAnnuleringen: In het geval van een annulering door een deelnemer blijft de servicevergoeding van 8% bij de Provider. Deze dient ter dekking van de reeds gemaakte transactiekosten en de kosten voor de terbeschikkingstelling. De Partner is verplicht om deelnemers in zijn aankondiging (Notice of Race) op deze niet-restitueerbaarheid te wijzen.\nTariefpariteit: De Partner garandeert dat de op het platform gehanteerde prijzen overeenkomen met het goedkoopst beschikbare tarief. Het systematisch verhogen van de vergoedingen op het platform met het doel de vergoedingen door te berekenen is ontoelaatbaar.",
+        "s5_title": "§ 5 Tariefdiscipline en contractuele boete",
+        "s5_text": "De Partner verbindt zich tot naleving van de in het systeem gedefinieerde prijsniveaus (met name de consequente toepassing van de Late Fee na het verstrijken van de reguliere aanmeldingstermijn).\nEen verwijtbare schending van de exclusiviteit (§ 3 lid 3) of de tariefpariteit (§ 4 lid 4) geeft de Provider het recht om een contractuele boete te eisen. Deze wordt berekend op basis van de gederfde servicevergoedingen, maar bedraagt ten minste € 250,00 per overtreding om de ontstane systeem- en reputatieschade te compenseren.",
+        "s6_title": "§ 6 Aansprakelijkheid en vrijwaring",
+        "s6_text": "De Partner vrijwaart de Provider van alle claims van derden die voortvloeien uit de uitvoering van de regatta, ongevallen, materiële schade of de schending van sportrechtelijke regels.\nAansprakelijkheid van de Provider voor lichte nalatigheid bij IT-storingen is uitgesloten, mits er geen wezenlijke contractuele verplichtingen zijn aangetast.",
+        "s7_title": "§ 7 Datasoevereiniteit en uitslagenlijsten",
+        "s7_text": "De Partner blijft 'heer van de gegevens' in de zin van de AVG, maar verleent de Provider het recht om de gegevens te verwerken voor de uitvoering van het contract.\nDe Partner verbindt zich ertoe de officiële einduitslagen binnen 48 uur na afloop van het evenement in het systeem van de Provider te publiceren om de historische database van het platform te onderhouden.",
+        "s8_title": "§ 8 Slotbepalingen",
+        "s8_text": "Het recht van de vestigingsplaats van de Provider is van toepassing.\nIndien afzonderlijke bepalingen van dit contract ongeldig zijn, blijft de geldigheid van de overige bepalingen onaangetast."
+      }
+    },
+    "stripeSetupTitle": "Betalingen instellen",
+"stripeSetupDesc": "Om inschrijfgelden te ontvangen, heb je een Stripe-account nodig.",
+"createStripeAccount": "Stripe-account aanmaken",
+"recommended": "(Aanbevolen)",
+"or": "of",
+"existingStripeId": "Bestaande Stripe-ID (acct_...)",
+"passwordRequired": "Wachtwoord vereist",
+"stripeError": "Fout bij verbinding met Stripe"
 },
 "Legal": {
   "agbTitle": "Algemene Voorwaarden",

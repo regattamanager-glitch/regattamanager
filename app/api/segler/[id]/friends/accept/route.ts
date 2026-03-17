@@ -9,13 +9,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "IDs fehlen" }, { status: 400 });
     }
 
-    // In SQL ist die "gegenseitige" Freundschaft durch den Status in der invitations-Tabelle definiert.
-    // Wir suchen die Anfrage (egal wer Sender/Empfänger war) und setzen sie auf 'accepted'.
-    const result = await sql`
+    // 1. Update in der invitations Tabelle
+    const updateResult = await sql`
       UPDATE invitations 
-      SET 
-        status = 'accepted',
-        timestamp = NOW()
+      SET status = 'accepted'
       WHERE 
         ((sender_id = ${friendId} AND receiver_id = ${userId}) 
         OR 
@@ -24,32 +21,34 @@ export async function POST(req: Request) {
       RETURNING id
     `;
 
-    if (result.length === 0) {
-      // Prüfen, ob sie vielleicht schon befreundet sind
-      const alreadyFriends = await sql`
-        SELECT id FROM invitations 
-        WHERE ((sender_id = ${friendId} AND receiver_id = ${userId}) 
-           OR (sender_id = ${userId} AND receiver_id = ${friendId}))
-          AND status = 'accepted'
+    console.log("Einladung aktualisiert:", updateResult.length > 0);
+
+    // 2. Eintrag in _SeglerFriends
+    // Wir sortieren die IDs (A muss oft kleiner sein als B bei Prisma-Tabellen),
+    // um Duplikate und Fehler zu vermeiden.
+    const [id1, id2] = [userId, friendId].sort();
+
+    try {
+      await sql`
+        INSERT INTO "_SeglerFriends" ("A", "B", "A_Segler_id", "B_Segler_id")
+        VALUES (
+          ${id1}, 
+          ${id2}, 
+          ${id1}, 
+          ${id2}
+        )
+        ON CONFLICT DO NOTHING
       `;
-
-      if (alreadyFriends.length > 0) {
-        return NextResponse.json({ 
-          success: true, 
-          message: "Ihr seid bereits im Logbuch befreundet" 
-        });
-      }
-
-      return NextResponse.json({ error: "Keine offene Anfrage gefunden" }, { status: 404 });
+      console.log("Eintrag in _SeglerFriends erfolgreich!");
+    } catch (dbErr: any) {
+      console.error("Fehler beim Schreiben in _SeglerFriends:", dbErr.message);
+      // Wir werfen den Fehler nicht, damit die Einladung trotzdem als 'accepted' gilt
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Freundschaft im Regatta Manager Logbuch eingetragen" 
-    });
+    return NextResponse.json({ success: true });
 
-  } catch (error) {
-    console.error("Fehler beim Verarbeiten der Freundschaft (SQL):", error);
+  } catch (error: any) {
+    console.error("Kritischer Fehler in Accept-Route:", error.message);
     return NextResponse.json({ error: "Server Fehler" }, { status: 500 });
   }
 }

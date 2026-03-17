@@ -327,7 +327,6 @@
   "podium": "Podium finishes"
 },
 "ProfileSettings": {
-  "loading": "Loading club profile...",
   "notFound": "Club not found.",
   "back": "Back",
   "accountBadge": "Club Account",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Please enter your current password to confirm",
   "successAlert": "Profile updated successfully!",
   "errorAlert": "Error saving profile.",
-  "createStripeAccount": "Create account"
+  "createStripeAccount": "Create account",
+  "openStripeDashboard": "Payouts & Stripe Dashboard",
+"loading": "Loading..."
 },
 "ClubPerformance": {
   "loading": "Loading performance...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "5.5m-R Class",
     "505": "505",
     "6m-R-Klasse": "6m-R Class",
@@ -675,7 +677,40 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "legal": {
+      "title": "SERVICE AND USE AGREEMENT (SUA)",
+      "parties": "Between: Regatta Manager (Provider) and the club / organizer verified in the registration process (Partner)",
+      "accept": "I accept the SUA & publish event",
+      "cancel": "Cancel",
+      "scrollInstruction": "Please read the contract to the end to continue",
+      "sections": {
+        "s1_title": "§ 1 Subject of Contract and Scope of Services",
+        "s1_text": "The Provider provides the Partner with a cloud-based platform for the organization, administration, and processing of sailing regattas.\nThe scope of services includes the provision of an online registration form, the management of participant lists, and the technical interface for the automated processing of entry fee payments via integrated payment service providers.\nThe Provider is only responsible for providing the technical infrastructure. The execution of the sporting event is the sole responsibility of the Partner.",
+        "s2_title": "§ 2 Registration and Account Obligations",
+        "s2_text": "The Partner is obliged to provide truthful information when creating their account and events.\nThe Partner ensures that their linked Stripe account is properly verified. The Provider is not liable for payout delays caused by missing identity verification (KYC) of the Partner towards the payment service provider.",
+        "s3_title": "§ 3 Booking Authority and Exclusivity",
+        "s3_text": "Centralization: To ensure consistent data quality and to avoid duplicates in the starting lists, the Partner undertakes to process technical registration exclusively via the Provider's platform.\nMarketing Freedom: Promoting the regatta on third-party sites, association sites, or social media is expressly permitted and encouraged. However, the Partner undertakes to link exclusively to the Provider's registration portal in all advertising measures.\nExclusivity: The Partner is prohibited from offering or using parallel digital booking channels (e.g., own web forms, third-party portals, or email collection lists) for the regatta subject to this contract.\nOn-site registrations: If registrations are accepted on-site on the day of the regatta, they must be promptly entered into the Provider's system to maintain completeness.",
+        "s4_title": "§ 4 Fees and Payment Terms",
+        "s4_text": "For the provision of infrastructure and transaction processing, the Provider charges a service fee of 8% of the respective gross entry fee (incl. VAT, if applicable).\nThe service fee is withheld directly during payment by the participant or offset as part of the settlement.\nCancellations: In the event of a cancellation by a participant, the service fee of 8% remains with the Provider. This serves to cover the transaction costs and provision expenses already incurred. The Partner is obliged to inform participants of this non-refundability in their Notice of Race.\nFee Parity: The Partner guarantees that the prices called up on the platform correspond to the cheapest available rate. Systematic increasing of fees on the platform for the purpose of fee redirection is inadmissible.",
+        "s5_title": "§ 5 Fee Discipline and Contractual Penalty",
+        "s5_text": "The Partner undertakes to comply with the price levels defined in the system (esp. the consistent application of the late fee after the regular registration deadline).\nA culpable breach of exclusivity (§ 3 Para. 3) or fee parity (§ 4 Para. 4) entitles the Provider to claim a contractual penalty. This is based on the amount of lost service fees, but is at least €250.00 per violation to compensate for the resulting system and reputation damage.",
+        "s6_title": "§ 6 Liability and Indemnification",
+        "s6_text": "The Partner indemnifies the Provider against all claims by third parties resulting from the execution of the regatta, accidents, property damage, or the violation of sports law rules.\nThe Provider's liability for slight negligence in the event of IT failures is excluded, provided that no essential contractual obligations are affected.",
+        "s7_title": "§ 7 Data Sovereignty and Result Lists",
+        "s7_text": "The Partner remains the 'controller of the data' within the meaning of the GDPR, but grants the Provider the right to process the data for the fulfillment of the contract.\nThe Partner undertakes to publish the official final results in the Provider's system within 48 hours after the end of the event in order to maintain the platform's historical database.",
+        "s8_title": "§ 8 Final Provisions",
+        "s8_text": "The law at the registered office of the Provider applies.\nShould individual provisions of this contract be invalid, the validity of the remaining provisions remains unaffected."
+      }
+    },
+    "stripeSetupTitle": "Set up payments",
+"stripeSetupDesc": "To receive registration fees, you need a Stripe account.",
+"createStripeAccount": "Create Stripe account",
+"recommended": "(Recommended)",
+"or": "or",
+"existingStripeId": "Existing Stripe ID (acct_...)",
+"passwordRequired": "Password required",
+"stripeError": "Error connecting to Stripe"
 },
 "Legal": {
   "agbTitle": "Terms and Conditions",

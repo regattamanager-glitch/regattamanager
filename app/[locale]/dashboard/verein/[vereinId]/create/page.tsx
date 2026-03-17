@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "@/navigation";
 import { useTranslations } from 'next-intl';
+import { LegalModal } from "@/components/LegalModal";
 
 const BOOTSKLASSEN = [
   "ILCA","ILCA 4","ILCA 6","ILCA 7","Optimist","420","470","49er","49erFX","29er",
@@ -14,8 +15,6 @@ const BOOTSKLASSEN = [
   "Yngling","5,5m-R-Klasse","6m-R-Klasse","J24","8m-R-Klasse","Contender","Splash","Zoom8",
   "Sunfish","B14","Musto Skiff","RS Tera","O’pen BIC","Sonstige"
 ];
-
-
 
 type Account = {
   id: number;
@@ -61,7 +60,8 @@ export default function CreateEventPage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
   const [ibanPopupOpen, setIbanPopupOpen] = useState(false);
-  const [stripePassword, setStripePassword] = useState(""); // Neu hinzufügen
+  const [stripePassword, setStripePassword] = useState("");
+  const [showLegalModal, setShowLegalModal] = useState(false); 
 
   const [form, setForm] = useState({
     name: "",
@@ -103,6 +103,7 @@ export default function CreateEventPage() {
   const [stripeId, setStripeId] = useState(""); 
   const [stripeError, setStripeError] = useState(""); 
   const [stripePopupOpen, setStripePopupOpen] = useState(false); 
+  const [legalModalOpen, setLegalModalOpen] = useState(false);
 
   useEffect(() => {
     const syncSession = async () => {
@@ -143,18 +144,15 @@ export default function CreateEventPage() {
     setStripeError(t("invalidStripe"));
     return false;
   }
-  if (!stripePassword) {
-    setStripeError(t("passwordRequired") || "Passwort erforderlich");
-    return false;
-  }
 
+  // Passwort-Check entfernt, da wir die Session nutzen
   try {
     const res = await fetch("/api/accounts/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        id: account.id,             // Korrigiert von verein.id zu account.id
-        currentPassword: stripePassword, // Nutzt den neuen Password-State
+        id: account.id,
+        // currentPassword entfernt
         update: { 
           stripeAccountId: stripeId 
         },
@@ -162,13 +160,13 @@ export default function CreateEventPage() {
     });
 
     const data = await res.json();
+    
     if (!res.ok || !data.success) {
-      // Wenn das Passwort falsch ist, kommt hier der Status 401 vom Backend
       throw new Error(data.message || t("saveStripeError"));
     }
 
     setAccount(a => a ? { ...a, stripeAccountId: stripeId } : null);
-    setIbanPopupOpen(false); // Schließt das richtige Popup
+    setIbanPopupOpen(false); 
     return true;
   } catch (err: any) {
     console.error(err);
@@ -289,17 +287,33 @@ export default function CreateEventPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 1. Validierungen
     if (activeClasses.length === 0) {
       alert(t("addAtLeastOneClass"));
       return;
     }
+    
     const invalidFees = activeClasses.some(cls => Number(cls.feeLate) < Number(cls.feeRegular) * 1.08);
-    if (invalidFees) alert(t("lateFeeWarning"));
+    if (invalidFees) {
+      alert(t("lateFeeWarning"));
+      // Wir blockieren hier nicht hart, zeigen aber die Warnung
+    }
+    
+    // 2. Vertrag öffnen (Das Modal wird angezeigt)
+    setLegalModalOpen(true);
+  };
+
+  // Diese Funktion wird vom Modal aufgerufen, wenn "Akzeptieren" geklickt wurde
+  const handleFinalSubmitAfterLegal = async () => {
+    setLegalModalOpen(false);
+    
+    // 3. Stripe-Check: Wenn keine ID da ist, Popup zeigen, sonst direkt speichern
     if (!account?.stripeAccountId) {
       setIbanPopupOpen(true);
-      return;
+    } else {
+      await submitFormData();
     }
-    await submitFormData();
   };
 
   if (!isReady) return <div className="min-h-screen bg-[#0a192f] flex items-center justify-center text-white">{t("loading")}</div>;
@@ -393,14 +407,30 @@ export default function CreateEventPage() {
               
               <div className="flex gap-2 w-full md:w-auto">
                  <select 
-                  className="flex-1 bg-gray-700 text-sm border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-blue-500"
-                  onChange={(e) => {
-                      if(e.target.value) addClass(e.target.value);
-                      e.target.value = "";
-                  }}
+                   className="flex-1 bg-gray-700 text-sm border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-blue-500"
+                   onChange={(e) => {
+                     if(e.target.value) addClass(e.target.value);
+                     e.target.value = "";
+                   }}
                  >
                    <option value="">{t('chooseTemplate')}</option>
-                   {BOOTSKLASSEN.map(b => <option key={b} value={b}>{t(`bootClasses.${b}`) ?? b}</option>)}
+                   {BOOTSKLASSEN.map((b) => {
+  // Wir nutzen t.raw um zu prüfen ob der Key existiert, ohne den Error-Handler von t() zu triggern
+  let label = b;
+  try {
+    // Versuche die Übersetzung zu holen
+    label = t(`bootClasses.${b}`);
+  } catch (e) {
+    // Falls next-intl wirft, bleibt label = b
+    label = b;
+  }
+
+  return (
+    <option key={b} value={b}>
+      {label}
+    </option>
+  );
+})}
                  </select>
                  <button 
                   type="button"
@@ -612,9 +642,21 @@ export default function CreateEventPage() {
           )}
           
           {/* SUBMIT */}
-          <button className="w-full bg-blue-700 py-2 rounded text-white font-bold">{t('createRegatta')}</button>
+          <button 
+            type="submit" 
+            className="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-white font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-[0.99]"
+          >
+            {t('createRegatta')}
+          </button>
        </form>
       </div>
+    {/* VERTRAGS-MODAL HIER EINFÜGEN */}
+    <LegalModal 
+      isOpen={legalModalOpen} 
+      onAccept={handleFinalSubmitAfterLegal} 
+      onCancel={() => setLegalModalOpen(false)}
+      t={t}
+    />
     </div>
   );
 }

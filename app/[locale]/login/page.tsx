@@ -51,34 +51,40 @@ export default function LoginPage() {
   }
 
   /**
-   * 2. 2FA-Code Verifizierung
-   */
-  async function handleVerifyCode(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+   * 2. 2FA-Code Verifizierung
+   */
+  async function handleVerifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
 
-    try {
-      const res = await fetch("/api/accounts/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
+    try {
+      const res = await fetch("/api/accounts/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      });
 
-      const data = await res.json();
+      const data = await res.json();
 
-      if (res.ok) {
-        router.refresh(); 
-        // Kurzer Timeout, damit das Refreshing der Session greifen kann
-        setTimeout(() => {
-          if (data.type === "segler") {
-            router.replace(`/dashboard/segler/${data.id}`);
-          } else {
-            router.replace(`/dashboard/verein/${data.id}`);
-          }
-        }, 100); 
-      } else {
-        alert(data.error || "Fehler beim Verifizieren");
-      }
+      if (res.ok) {
+        // --- NEU: ID IM LOCALSTORAGE SPEICHERN ---
+        if (data.type === "segler") {
+          localStorage.setItem("seglerId", data.id);
+        }
+        // -----------------------------------------
+
+        router.refresh(); 
+        
+        setTimeout(() => {
+          if (data.type === "segler") {
+            router.replace(`/dashboard/segler/${data.id}`);
+          } else {
+            router.replace(`/dashboard/verein/${data.id}`);
+          }
+        }, 100); 
+      } else {
+        alert(data.error || "Fehler beim Verifizieren");
+      }
     } catch (error) {
       console.error("Verification error:", error);
     } finally {

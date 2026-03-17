@@ -327,7 +327,6 @@
   "podium": "Θέσεις στο βάθρο"
 },
 "ProfileSettings": {
-  "loading": "Φόρτωση προφίλ συλλόγου...",
   "notFound": "Ο σύλλογος δεν βρέθηκε.",
   "back": "Πίσω",
   "accountBadge": "Λογαριασμός συλλόγου",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Παρακαλώ εισάγετε το τρέχον συνθηματικό για επιβεβαίωση",
   "successAlert": "Το προφίλ ενημερώθηκε επιτυχώς!",
   "errorAlert": "Σφάλμα κατά την αποθήκευση.",
-  "createStripeAccount": "Δημιουργία λογαριασμού"
+  "createStripeAccount": "Δημιουργία λογαριασμού",
+  "openStripeDashboard": "Πληρωμές & Stripe Dashboard",
+"loading": "Φόρτωση..."
 },
 "ClubPerformance": {
   "loading": "Φόρτωση απόδοσης...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "Κατηγορία 5,5m-R",
     "505": "505",
     "6m-R-Klasse": "Κατηγορία 6m-R",
@@ -675,7 +677,15 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "stripeSetupTitle": "Ρύθμιση πληρωμών",
+"stripeSetupDesc": "Για να λάβετε τα τέλη συμμετοχής, χρειάζεστε έναν λογαριασμό Stripe.",
+"createStripeAccount": "Δημιουργία λογαριασμού Stripe",
+"recommended": "(Προτείνεται)",
+"or": "ή",
+"existingStripeId": "Υπάρχον Stripe ID (acct_...)",
+"passwordRequired": "Απαιτείται κωδικός πρόσβασης",
+"stripeError": "Σφάλμα σύνδεσης με το Stripe"
 },
 "Legal": {
   "agbTitle": "Γενικοί Όροι και Προϋποθέσεις",

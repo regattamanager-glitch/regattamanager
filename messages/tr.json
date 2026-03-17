@@ -327,7 +327,6 @@
   "podium": "Podium dereceleri"
 },
 "ProfileSettings": {
-  "loading": "Kulüp profili yükleniyor...",
   "notFound": "Kulüp bulunamadı.",
   "back": "Geri",
   "accountBadge": "Kulüp hesabı",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Onay için lütfen mevcut şifreyi girin",
   "successAlert": "Profil başarıyla güncellendi!",
   "errorAlert": "Kaydetme hatası.",
-  "createStripeAccount": "Hesap oluştur"
+  "createStripeAccount": "Hesap oluştur",
+  "openStripeDashboard": "Ödemeler ve Stripe Paneli",
+"loading": "Yükleniyor..."
 },
 "ClubPerformance": {
   "loading": "Performans yükleniyor...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "5,5mR sınıfı",
     "505": "505",
     "6m-R-Klasse": "6mR sınıfı",
@@ -675,7 +677,40 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "legal": {
+      "title": "HİZMET VE KULLANIM SÖZLEŞMESİ (HKS)",
+      "parties": "Taraflar: Regatta Manager (Sağlayıcı) ve kayıt sürecinde doğrulanan kulüp / organizatör (Ortak)",
+      "accept": "HKS'yi kabul ediyorum ve etkinliği yayınla",
+      "cancel": "İptal Et",
+      "scrollInstruction": "Devam etmek için lütfen sözleşmeyi sonuna kadar okuyun",
+      "sections": {
+        "s1_title": "§ 1 Sözleşme Konusu ve Hizmet Kapsamı",
+        "s1_text": "Sağlayıcı, Ortağa yelken yarışlarının organizasyonu, yönetimi ve yürütülmesi için bulut tabanlı bir platform sunar.\nHizmet kapsamı, bir çevrimiçi kayıt formunun sağlanmasını, katılımcı listelerinin yönetimini ve entegre ödeme hizmet sağlayıcıları aracılığıyla kayıt ücreti ödemelerinin otomatik olarak işlenmesi için teknik arayüzü içerir.\nSağlayıcı sadece teknik altyapının sağlanmasından sorumludur. Sportif etkinliğin gerçekleştirilmesi tamamen Ortağın sorumluluğundadır.",
+        "s2_title": "§ 2 Kayıt ve Hesap Yükümlülükleri",
+        "s2_text": "Ortak, hesabını ve etkinliklerini oluştururken doğru bilgi vermekle yükümlüdür.\nOrtak, bağlı Stripe hesabının usulüne uygun olarak doğrulandığından emin olur. Sağlayıcı, Ortağın ödeme hizmet sağlayıcısına karşı eksik kimlik doğrulaması (KYC) nedeniyle oluşan ödeme gecikmelerinden sorumlu değildir.",
+        "s3_title": "§ 3 Rezervasyon Yetkisi ve Münhasırlık",
+        "s3_text": "Merkezileştirme: Veri kalitesinin tutarlılığını sağlamak ve başlangıç listelerinde mükerrer kayıtları önlemek için Ortak, teknik kaydı yalnızca Sağlayıcının platformu üzerinden gerçekleştirmeyi taahhüt eder.\nPazarlama Özgürlüğü: Yarışın üçüncü taraf sitelerinde, federasyon sitelerinde veya sosyal medyada tanıtılmasına açıkça izin verilir ve bu teşvik edilir. Ancak Ortak, tüm reklam çalışmalarında yalnızca Sağlayıcının kayıt portalına bağlantı vermeyi taahhüt eder.\nMünhasırlık: Ortağın, sözleşme konusu yarış için paralel dijital rezervasyon kanalları (örneğin kendi web formları, üçüncü taraf portalları veya e-posta listeleri) sunması veya kullanması yasaktır.\nYerinde Kayıtlar: Yarış günü yerinde kayıt alınması durumunda, tamlığın korunması için bu kayıtlar derhal Sağlayıcının sistemine işlenmelidir.",
+        "s4_title": "§ 4 Ücretler ve Ödeme Koşulları",
+        "s4_text": "Altyapının sağlanması ve işlem yürütme için Sağlayıcı, brüt kayıt ücretinin %8'i oranında (varsa KDV dahil) bir hizmet bedeli alır.\nHizmet bedeli, katılımcı tarafından yapılan ödeme sırasında doğrudan kesilir veya mahsuplaşma çerçevesinde yansıtılır.\nİptaller: Bir katılımcı tarafından iptal yapılması durumunda, %8 oranındaki hizmet bedeli Sağlayıcıda kalır. Bu bedel, halihazırda oluşmuş işlem maliyetlerini ve hazırlık masraflarını karşılamaya yarar. Ortak, yarış ilanında (Notice of Race) katılımcıları bu iade edilemezlik konusunda bilgilendirmekle yükümlüdür.\nÜcret Paritesi: Ortak, platformda sunulan fiyatların mevcut en ucuz tarifeye karşılık geldiğini garanti eder. Ücretlerin yansıtılması amacıyla platformdaki ücretlerin sistematik olarak artırılması yasaktır.",
+        "s5_title": "§ 5 Tarife Disiplini ve Cezai Şart",
+        "s5_text": "Ortak, sistemde tanımlanan fiyat kademelerine uymayı taahhüt eder (özellikle normal kayıt süresinin bitiminden sonra gecikme ücretinin tutarlı bir şekilde uygulanması).\nMünhasırlığın (§ 3 fıkra 3) veya ücret paritesinin (§ 4 fıkra 4) kusurlu bir şekilde ihlali, Sağlayıcıya cezai şart talep etme hakkı verir. Bu miktar, kaybedilen hizmet bedellerine göre hesaplanır ancak oluşan sistem ve itibar zararını dengelemek için ihlal başına en az 250,00 €'dur.",
+        "s6_title": "§ 6 Sorumluluk ve Muafiyet",
+        "s6_text": "Ortak; yarışın düzenlenmesinden, kazalardan, maddi hasarlardan veya spor hukuku kurallarının ihlalinden kaynaklanan üçüncü taraf taleplerinden Sağlayıcıyı muaf tutar.\nEsaslı sözleşme yükümlülükleri etkilenmediği sürece, BT kesintilerindeki hafif ihmaller için Sağlayıcının sorumluluğu hariç tutulmuştur.",
+        "s7_title": "§ 7 Veri Egemenliği ve Sonuç Listeleri",
+        "s7_text": "Ortak, GDPR (KVKK) anlamında 'verilerin sahibi' olarak kalır, ancak Sağlayıcıya sözleşmenin ifası için verileri işleme hakkı tanır.\nOrtak, platformun tarihsel veri tabanını korumak amacıyla resmi kesin sonuçları etkinlik bitiminden sonraki 48 saat içinde Sağlayıcının sisteminde yayınlamayı taahhüt eder.",
+        "s8_title": "§ 8 Son Hükümler",
+        "s8_text": "Sağlayıcının yerleşik olduğu yerin hukuku geçerlidir.\nBu sözleşmenin münferit hükümlerinin geçersiz olması durumunda, kalan hükümlerin geçerliliği etkilenmez."
+      }
+    },
+    "stripeSetupTitle": "Ödemeleri ayarla",
+"stripeSetupDesc": "Kayıt ücretlerini alabilmek için bir Stripe hesabına ihtiyacınız var.",
+"createStripeAccount": "Stripe hesabı oluştur",
+"recommended": "(Önerilen)",
+"or": "veya",
+"existingStripeId": "Mevcut Stripe Kimliği (acct_...)",
+"passwordRequired": "Şifre gerekli",
+"stripeError": "Stripe bağlantı hatası"
 },
 "Legal": {
   "agbTitle": "Genel Şartlar ve Koşullar",

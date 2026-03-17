@@ -327,7 +327,6 @@
   "podium": "Places sur le podium"
 },
 "ProfileSettings": {
-  "loading": "Chargement du profil du club...",
   "notFound": "Club introuvable.",
   "back": "Retour",
   "accountBadge": "Compte Club",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Veuillez saisir votre mot de passe actuel pour confirmer",
   "successAlert": "Profil mis à jour avec succès !",
   "errorAlert": "Erreur lors de l’enregistrement.",
-  "createStripeAccount": "Créer un compte"
+  "createStripeAccount": "Créer un compte",
+  "openStripeDashboard": "Versements et Tableau de bord Stripe",
+"loading": "Chargement..."
 },
 "ClubPerformance": {
   "loading": "Chargement des performances...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "Classe 5,5m-R",
     "505": "505",
     "6m-R-Klasse": "Classe 6m-R",
@@ -675,7 +677,40 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "legal": {
+      "title": "CONTRAT DE SERVICE ET D'UTILISATION (CSU)",
+      "parties": "Entre : Regatta Manager (Prestataire) et le club / organisateur vérifié lors du processus d'inscription (Partenaire)",
+      "accept": "J'accepte le CSU & je publie l'événement",
+      "cancel": "Annuler",
+      "scrollInstruction": "Veuillez lire le contrat jusqu'à la fin pour continuer",
+      "sections": {
+        "s1_title": "§ 1 Objet du contrat et étendue des services",
+        "s1_text": "Le Prestataire met à la disposition du Partenaire une plateforme basée sur le cloud pour l'organisation, l'administration et la gestion des régates de voile.\nL'étendue des services comprend la mise à disposition d'un formulaire d'inscription en ligne, la gestion des listes de participants ainsi que l'interface technique pour le traitement automatisé des paiements des frais d'inscription via des prestataires de services de paiement intégrés.\nLe Prestataire ne doit que la mise à disposition de l'infrastructure technique. Le Partenaire est seul responsable du bon déroulement de l'événement sportif.",
+        "s2_title": "§ 2 Inscription et obligations relatives au compte",
+        "s2_text": "Le Partenaire est tenu de fournir des informations exactes lors de la création de son compte et de ses événements.\nLe Partenaire s'assure que son compte Stripe lié est correctement vérifié. Le Prestataire n'est pas responsable des retards de paiement causés par l'absence de vérification d'identité (KYC) du Partenaire auprès du prestataire de services de paiement.",
+        "s3_title": "§ 3 Souveraineté de réservation et exclusivité",
+        "s3_text": "Centralisation : Afin de garantir une qualité de données constante et d'éviter les doublons dans les listes de départ, le Partenaire s'engage à traiter l'inscription technique exclusivement via la plateforme du Prestataire.\nLiberté de marketing : La promotion de la régate sur des sites tiers, des sites d'associations ou des réseaux sociaux est expressément autorisée et encouragée. Toutefois, le Partenaire s'engage à faire exclusivement le lien vers le portail d'inscription du Prestataire dans toutes ses mesures publicitaires.\nExclusivité : Il est interdit au Partenaire de proposer ou d'utiliser des canaux de réservation numériques parallèles (par exemple, ses propres formulaires web, des portails tiers ou des listes de diffusion par e-mail) pour la régate faisant l'objet du contrat.\nInscriptions sur place : Si des inscriptions sont acceptées sur place le jour de la régate, elles doivent être immédiatement saisies dans le système du Prestataire afin de garantir l'exhaustivité.",
+        "s4_title": "§ 4 Frais et conditions de paiement",
+        "s4_text": "Pour la mise à disposition de l'infrastructure et le traitement des transactions, le Prestataire perçoit des frais de service s'élevant à 8 % des frais d'inscription bruts correspondants (TVA incluse, le cas échéant).\nLes frais de service sont directement retenus lors du paiement par le participant ou compensés dans le cadre de la facturation.\nAnnulations : En cas d'annulation par un participant, les frais de service de 8 % restent acquis au Prestataire. Ceux-ci servent à couvrir les frais de transaction et les frais de mise à disposition déjà engagés. Le Partenaire est tenu d'informer les participants de cette non-remboursabilité dans son avis de course (Notice of Race).\nParité des frais : Le Partenaire garantit que les prix affichés sur la plateforme correspondent au tarif le plus bas disponible. L'augmentation systématique des frais sur la plateforme dans le but de répercuter les frais est inadmissible.",
+        "s5_title": "§ 5 Discipline tarifaire et clause pénale",
+        "s5_text": "Le Partenaire s'engage à respecter les niveaux de prix définis dans le système (notamment l'application systématique des frais de retard après l'expiration du délai d'inscription normal).\nUne violation fautive de l'exclusivité (§ 3 al. 3) ou de la parité des frais (§ 4 al. 4) autorise le Prestataire à réclamer une clause pénale. Celle-ci est calculée en fonction du montant des frais de service perdus, mais s'élève à au moins 250,00 € par violation, afin de compenser les dommages subis par le système et la réputation.",
+        "s6_title": "§ 6 Responsabilité et exonération",
+        "s6_text": "Le Partenaire dégage le Prestataire de toute responsabilité en cas de réclamations de tiers résultant de la réalisation de la régate, d'accidents, de dommages matériels ou de la violation des règles du droit du sport.\nLa responsabilité du Prestataire pour négligence légère en cas de pannes informatiques est exclue, dans la mesure où aucune obligation contractuelle essentielle n'est affectée.",
+        "s7_title": "§ 7 Souveraineté des données et listes de résultats",
+        "s7_text": "Le Partenaire reste 'maître des données' au sens du RGPD, mais accorde au Prestataire le droit de traiter les données pour l'exécution du contrat.\nLe Partenaire s'engage à publier les résultats finaux officiels dans le système du Prestataire dans les 48 heures suivant la fin de l'événement, afin d'alimenter la base de données historique de la plateforme.",
+        "s8_title": "§ 8 Dispositions finales",
+        "s8_text": "Le droit applicable est celui du siège du Prestataire.\nSi certaines dispositions de ce contrat devaient être caduques, la validité des autres dispositions n'en serait pas affectée."
+      }
+    },
+    "stripeSetupTitle": "Configurer les paiements",
+"stripeSetupDesc": "Pour recevoir les frais d'inscription, vous avez besoin d'un compte Stripe.",
+"createStripeAccount": "Créer un compte Stripe",
+"recommended": "(Recommandé)",
+"or": "ou",
+"existingStripeId": "ID Stripe existant (acct_...)",
+"passwordRequired": "Mot de passe requis",
+"stripeError": "Erreur de connexion à Stripe"
 },
 "Legal": {
   "agbTitle": "Conditions Générales de Vente",

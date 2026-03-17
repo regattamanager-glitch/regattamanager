@@ -327,7 +327,6 @@
   "podium": "Posiciones en el podio"
 },
 "ProfileSettings": {
-  "loading": "Cargando perfil del club...",
   "notFound": "Club no encontrado.",
   "back": "Volver",
   "accountBadge": "Cuenta del club",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Por favor ingrese la contraseña actual para confirmar",
   "successAlert": "¡Perfil actualizado correctamente!",
   "errorAlert": "Error al guardar.",
-  "createStripeAccount": "Crear cuenta"
+  "createStripeAccount": "Crear cuenta",
+  "openStripeDashboard": "Pagos y Panel de Stripe",
+"loading": "Cargando..."
 },
 "ClubPerformance": {
   "loading": "Cargando desempeño...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "Clase 5,5mR",
     "505": "505",
     "6m-R-Klasse": "Clase 6mR",
@@ -675,7 +677,40 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "legal": {
+      "title": "ACUERDO DE SERVICIO Y USO (ASU)",
+      "parties": "Entre: Regatta Manager (Proveedor) y el club / organizador verificado en el proceso de registro (Socio)",
+      "accept": "Acepto el ASU y publicar evento",
+      "cancel": "Cancelar",
+      "scrollInstruction": "Por favor, lea el contrato hasta el final para continuar",
+      "sections": {
+        "s1_title": "§ 1 Objeto del contrato y alcance de los servicios",
+        "s1_text": "El Proveedor pone a disposición del Socio una plataforma basada en la nube para la organización, administración y gestión de regatas de vela.\nEl alcance de los servicios incluye la provisión de un formulario de inscripción en línea, la gestión de listas de participantes y la interfaz técnica para el procesamiento automatizado de los pagos de las cuotas de inscripción a través de proveedores de servicios de pago integrados.\nEl Proveedor solo es responsable de proporcionar la infraestructura técnica. La realización del evento deportivo es responsabilidad exclusiva del Socio.",
+        "s2_title": "§ 2 Registro y obligaciones de la cuenta",
+        "s2_text": "El Socio está obligado a proporcionar información veraz al crear su cuenta y sus eventos.\nEl Socio se asegura de que su cuenta de Stripe vinculada esté debidamente verificada. El Proveedor no se hace responsable de los retrasos en los pagos causados por la falta de verificación de identidad (KYC) del Socio ante el proveedor de servicios de pago.",
+        "s3_title": "§ 3 Autoridad de reserva y exclusividad",
+        "s3_text": "Centralización: Para garantizar una calidad de datos consistente y evitar duplicados en las listas de salida, el Socio se compromete a procesar la inscripción técnica exclusivamente a través de la plataforma del Proveedor.\nLibertad de marketing: Se permite y fomenta expresamente la promoción de la regata en sitios de terceros, sitios de asociaciones o redes sociales. Sin embargo, el Socio se compromete a enlazar exclusivamente al portal de inscripción del Proveedor en todas las medidas publicitarias.\nExclusividad: Se prohíbe al Socio ofrecer o utilizar canales de reserva digitales paralelos (por ejemplo, formularios web propios, portales de terceros o listas de correo electrónico) para la regata objeto de este contrato.\nInscripciones in situ: Si se aceptan inscripciones en el lugar el día de la regata, estas deben introducirse de inmediato en el sistema del Proveedor para mantener la integridad de los datos.",
+        "s4_title": "§ 4 Tarifas y condiciones de pago",
+        "s4_text": "Por la provisión de la infraestructura y el procesamiento de las transacciones, el Proveedor cobra una tarifa de servicio del 8% de la respectiva cuota bruta de inscripción (IVA incluido, si corresponde).\nLa tarifa de servicio se retiene directamente durante el pago por parte del participante o se compensa como parte de la liquidación.\nCancelaciones: En caso de cancelación por parte de un participante, la tarifa de servicio del 8% permanece en poder del Proveedor. Esto sirve para cubrir los costes de transacción y los gastos de provisión ya realizados. El Socio está obligado a informar a los participantes sobre esta no reembolsabilidad en su Anuncio de Regata (Notice of Race).\nParidad de tarifas: El Socio garantiza que los precios mostrados en la plataforma corresponden a la tarifa más barata disponible. No se permite el aumento sistemático de las tarifas en la plataforma con el fin de repercutir los costes.",
+        "s5_title": "§ 5 Disciplina de tarifas y penalización contractual",
+        "s5_text": "El Socio se compromete a cumplir con los niveles de precios definidos en el sistema (especialmente la aplicación consistente de la cuota por mora tras el vencimiento del plazo de inscripción regular).\nUn incumplimiento culpable de la exclusividad (§ 3 apdo. 3) o de la paridad de tarifas (§ 4 apdo. 4) faculta al Proveedor a reclamar una penalización contractual. Esta se basa en el importe de las tarifas de servicio perdidas, pero es de al menos 250,00 € por infracción para compensar los daños resultantes en el sistema y la reputación.",
+        "s6_title": "§ 6 Responsabilidad e indemnización",
+        "s6_text": "El Socio indemniza al Proveedor frente a todas las reclamaciones de terceros derivadas de la realización de la regata, accidentes, daños materiales o la violación de las normas del derecho deportivo.\nSe excluye la responsabilidad del Proveedor por negligencia leve en caso de fallos informáticos, siempre que no se vean afectadas obligaciones contractuales esenciales.",
+        "s7_title": "§ 7 Soberanía de datos y listas de resultados",
+        "s7_text": "El Socio sigue siendo el 'responsable de los datos' en el sentido del RGPD, pero concede al Proveedor el derecho a procesar los datos para el cumplimiento del contrato.\nEl Socio se compromete a publicar los resultados finales oficiales en el sistema del Proveedor en un plazo de 48 horas tras la finalización del evento para mantener la base de datos histórica de la plataforma.",
+        "s8_title": "§ 8 Disposiciones finales",
+        "s8_text": "Se aplica la legislación del domicilio social del Proveedor.\nEn caso de que alguna de las disposiciones de este contrato sea nula, la validez de las disposiciones restantes no se verá afectada."
+      }
+    },
+    "stripeSetupTitle": "Configurar pagos",
+"stripeSetupDesc": "Para recibir las cuotas de inscripción, necesitas una cuenta de Stripe.",
+"createStripeAccount": "Crear cuenta de Stripe",
+"recommended": "(Recomendado)",
+"or": "o",
+"existingStripeId": "ID de Stripe existente (acct_...)",
+"passwordRequired": "Se requiere contraseña",
+"stripeError": "Error al conectar con Stripe"
 },
 "Legal": {
   "agbTitle": "Términos y Condiciones",

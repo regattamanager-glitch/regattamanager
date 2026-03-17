@@ -327,7 +327,6 @@
   "podium": "Položaji na postolju"
 },
 "ProfileSettings": {
-  "loading": "Učitavanje profila kluba...",
   "notFound": "Klub nije pronađen.",
   "back": "Natrag",
   "accountBadge": "Račun kluba",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Molimo unesite trenutnu lozinku za potvrdu",
   "successAlert": "Profil uspješno ažuriran!",
   "errorAlert": "Pogreška pri spremanju.",
-  "createStripeAccount": "Izradi račun"
+  "createStripeAccount": "Izradi račun",
+  "openStripeDashboard": "Isplate i Stripe nadzorna ploča",
+"loading": "Učitavanje..."
 },
 "ClubPerformance": {
   "loading": "Učitavanje performansi...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "Klasa 5,5m-R",
     "505": "505",
     "6m-R-Klasse": "Klasa 6m-R",
@@ -675,7 +677,40 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "legal": {
+      "title": "UGOVOR O USLUGAMA I KORIŠTENJU (DNV)",
+      "parties": "Između: Regatta Manager (Pružatelj) i kluba / organizatora verificiranog u procesu registracije (Partner)",
+      "accept": "Prihvaćam DNV i objavi događaj",
+      "cancel": "Odustani",
+      "scrollInstruction": "Molimo pročitajte ugovor do kraja za nastavak",
+      "sections": {
+        "s1_title": "§ 1 Predmet ugovora i opseg usluga",
+        "s1_text": "Pružatelj stavlja Partneru na raspolaganje platformu u oblaku za organizaciju, administraciju i obradu jedriličarskih regata.\nOpseg usluga uključuje pružanje online obrasca za prijavu, upravljanje popisima sudionika te tehničko sučelje za automatiziranu obradu plaćanja startnina putem integriranih pružatelja platnih usluga.\nPružatelj je dužan samo osigurati tehničku infrastrukturu. Provedba sportskog događaja isključiva je odgovornost Partnera.",
+        "s2_title": "§ 2 Registracija i obveze računa",
+        "s2_text": "Partner je dužan dati istinite podatke prilikom kreiranja svog računa i događaja.\nPartner osigurava da je njegov povezani Stripe račun propisno verificiran. Pružatelj ne odgovara za kašnjenja u isplatama uzrokovana nedostatkom provjere identiteta (KYC) Partnera prema pružatelju platnih usluga.",
+        "s3_title": "§ 3 Ovlast rezervacije i ekskluzivnost",
+        "s3_text": "Centralizacija: Kako bi se osigurala dosljedna kvaliteta podataka i izbjegli duplikati na startnim listama, Partner se obvezuje tehničku prijavu provoditi isključivo putem platforme Pružatelja.\nSloboda marketinga: Promocija regate na stranicama trećih strana, stranicama saveza ili društvenim mrežama izričito je dopuštena i poželjna. Međutim, Partner se obvezuje u svim reklamnim mjerama povezivati isključivo na portal za prijavu Pružatelja.\nEkskluzivnost: Partneru je zabranjeno nuditi ili koristiti paralelne digitalne kanale rezervacije (npr. vlastite web obrasce, portale trećih strana ili liste e-pošte) za regatu koja je predmet ovog ugovora.\nPrijave na licu mjesta: Ako se prijave primaju na licu mjesta na dan regate, moraju se odmah unijeti u sustav Pružatelja radi očuvanja potpunosti.",
+        "s4_title": "§ 4 Naknade i uvjeti plaćanja",
+        "s4_text": "Za pružanje infrastrukture i obradu transakcija, Pružatelj naplaćuje naknadu za uslugu u iznosu od 8% od odgovarajuće bruto startnine (uklj. PDV, ako je primjenjivo).\nNaknada za uslugu zadržava se izravno prilikom plaćanja od strane sudionika ili se obračunava u okviru namire.\nOtkazivanja: U slučaju otkazivanja od strane sudionika, naknada za uslugu u iznosu od 8% ostaje Pružatelju. Ona služi za pokrivanje već nastalih troškova transakcije i troškova pružanja usluge. Partner je dužan obavijestiti sudionike o ovoj nepovratnosti u svom raspisu regate (Notice of Race).\nParitet naknada: Partner jamči da cijene na platformi odgovaraju najpovoljnijoj dostupnoj tarifi. Sustavno povećanje naknada na platformi u svrhu prebacivanja troškova nije dopušteno.",
+        "s5_title": "§ 5 Disciplina cijena i ugovorna kazna",
+        "s5_text": "Partner se obvezuje pridržavati razina cijena definiranih u sustavu (posebno dosljedna primjena naknade za kasnu prijavu nakon isteka redovnog roka).\nSkrivljeno kršenje ekskluzivnosti (§ 3 st. 3) ili pariteta naknada (§ 4 st. 4) daje Pružatelju pravo na potraživanje ugovorne kazne. Ona se temelji na iznosu izgubljenih naknada za usluge, ali iznosi najmanje 250,00 € po prekršaju, kako bi se nadoknadila nastala šteta za sustav i ugled.",
+        "s6_title": "§ 6 Odgovornost i oslobađanje",
+        "s6_text": "Partner oslobađa Pružatelja svih zahtjeva trećih strana proizašlih iz provedbe regate, nesreća, materijalne štete ili kršenja pravila sportskog prava.\nOdgovornost Pružatelja za laku nemarnost u slučaju IT kvarova je isključena, pod uvjetom da nisu pogođene bitne ugovorne obveze.",
+        "s7_title": "§ 7 Vlasništvo nad podacima i rezultati",
+        "s7_text": "Partner ostaje 'voditelj obrade podataka' u smislu GDPR-a, ali daje Pružatelju pravo obrade podataka radi ispunjenja ugovora.\nPartner se obvezuje objaviti službene konačne rezultate u sustavu Pružatelja u roku od 48 sati nakon završetka događaja, kako bi se održala povijesna baza podataka platforme.",
+        "s8_title": "§ 8 Završne odredbe",
+        "s8_text": "Primjenjuje se pravo sjedišta Pružatelja.\nAko bi pojedine odredbe ovog ugovora bile nevažeće, valjanost ostalih odredbi ostaje netaknuta."
+      }
+    },
+    "stripeSetupTitle": "Postavljanje plaćanja",
+"stripeSetupDesc": "Za primanje startnina potreban vam je Stripe račun.",
+"createStripeAccount": "Izradi Stripe račun",
+"recommended": "(Preporučeno)",
+"or": "ili",
+"existingStripeId": "Postojeći Stripe ID (acct_...)",
+"passwordRequired": "Potrebna lozinka",
+"stripeError": "Pogreška pri povezivanju sa Stripeom"
 },
 "Legal": {
   "agbTitle": "Opći uvjeti poslovanja",

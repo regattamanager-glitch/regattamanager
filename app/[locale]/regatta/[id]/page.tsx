@@ -73,34 +73,49 @@ type SeglerAnmeldung = {
 };
 
 type ResultsData = Record<
-  string, // eventId
+  string, 
   Record<
-    string, // bootsklasse
+    string, 
     Record<
-      string, // seglerId
-      string[] // Ergebnisse pro Rennen
+      string,
+      string[]
     >
   >
 >;
 
 type Friend = {
   id: string;
-  name?: string;
+  vorname?: string; 
+  nachname?: string; 
+  name?: string;     
 };
 
 
 export default function RegattaDetailPage() {
   const t = useTranslations("");
-  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+
+  const params = useParams<{ id: string; locale: string }>();
+  const id = params.id;
+
+  const searchParams = useSearchParams();
+
+  const [seglerId, setSeglerId] = useState<string | null>(null);
+
+  useEffect(() => {
+  // Prüfe, unter welchem Namen du die ID speicherst (z.B. "seglerId", "userId" oder "user")
+  const storedId = localStorage.getItem("seglerId"); 
+  if (storedId) {
+    setSeglerId(storedId);
+  }
+}, []);
+
   const [openId, setOpenId] = useState<string | null>(null);
   const [event, setEvent] = useState<Event | null>(null);
   const [verein, setVerein] = useState<Account | null>(null);
   const [activeTab, setActiveTab] = useState("details");
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [meldungen, setMeldungen] = useState<Record<string, Meldung[]>>({});
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const seglerId = searchParams.get("seglerId");
   const [resultsData, setResultsData] = useState<ResultsData>({});
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -204,9 +219,7 @@ const vId = found.vereinId || found.verein_id;
 setEvent({
   ...found,
   vereinId: vId,
-  // WICHTIG: Die API liefert 'notiz', dein State braucht 'notizen'
   notizen: found.notiz || "", 
-  
   // Die anderen Felder mappen (falls nötig)
   anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
   anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
@@ -266,7 +279,6 @@ const sendInvitations = async () => {
     });
 
     if (res.ok) {
-      alert(t("regattaDetail.inviteSuccess"));
       setIsInviteModalOpen(false);
       setSelectedFriends([]);
       // Optional: Freundesliste neu laden, falls Status sich ändern soll
@@ -467,34 +479,45 @@ return (
         
               <div className="max-h-64 overflow-y-auto space-y-2 pr-2 mb-8 custom-scrollbar">
                 {userFriends.length > 0 ? (
-                  /* Hier filtern wir Duplikate basierend auf der ID heraus */
                   userFriends
                     .filter((friend, index, self) => 
                       index === self.findIndex((f) => f.id === friend.id)
                     )
-                    .map(friend => (
-                      <div 
-                        key={friend.id}
-                        onClick={() => {
-                          setSelectedFriends(prev => 
-                            prev.includes(friend.id) ? prev.filter(id => id !== friend.id) : [...prev, friend.id]
-                          )
-                        }}
-                        className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition border ${
-                          selectedFriends.includes(friend.id) 
-                          ? "bg-indigo-600/20 border-indigo-500 text-white" 
-                          : "bg-white/5 border-transparent text-slate-400 hover:bg-white/10"
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-black italic border border-white/10">
-                          {friend.name?.substring(0,2).toUpperCase() ?? "??"}
+                    .map(friend => {
+                      // Wir bauen den Namen hier zusammen
+                      const displayName = friend.vorname || friend.nachname 
+                        ? `${friend.vorname ?? ""} ${friend.nachname ?? ""}`.trim() 
+                        : (friend.name || t("regattaDetail.unknown"));
+                
+                      // Wir holen die Initialen (z.B. "MA" für Max Mustermann)
+                      const initials = friend.vorname 
+                        ? (friend.vorname[0] + (friend.nachname?.[0] || "")).toUpperCase()
+                        : displayName.substring(0, 2).toUpperCase();
+                
+                      return (
+                        <div 
+                          key={friend.id}
+                          onClick={() => {
+                            setSelectedFriends(prev => 
+                              prev.includes(friend.id) ? prev.filter(id => id !== friend.id) : [...prev, friend.id]
+                            )
+                          }}
+                          className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition border ${
+                            selectedFriends.includes(friend.id) 
+                            ? "bg-indigo-600/20 border-indigo-500 text-white" 
+                            : "bg-white/5 border-transparent text-slate-400 hover:bg-white/10"
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-black italic border border-white/10 text-xs">
+                            {initials}
+                          </div>
+                          <span className="font-bold uppercase italic text-sm">
+                            {displayName}
+                          </span>
+                          {selectedFriends.includes(friend.id) && <span className="ml-auto text-indigo-400 font-bold">✓</span>}
                         </div>
-                        <span className="font-bold uppercase italic text-sm">
-                          {friend.name ?? t("regattaDetail.unknown")}
-                        </span>
-                        {selectedFriends.includes(friend.id) && <span className="ml-auto text-indigo-400 font-bold">✓</span>}
-                      </div>
-                    ))
+                      );
+                    })
                 ) : (
                   <p className="text-center text-slate-500 py-10 text-xs font-bold uppercase italic">{t("regattaDetail.noFriends")}</p>
                 )}

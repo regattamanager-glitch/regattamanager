@@ -327,7 +327,6 @@
   "podium": "Posições no pódio"
 },
 "ProfileSettings": {
-  "loading": "Carregando perfil do clube...",
   "notFound": "Clube não encontrado.",
   "back": "Voltar",
   "accountBadge": "Conta do clube",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Por favor, insira a senha atual para confirmar",
   "successAlert": "Perfil atualizado com sucesso!",
   "errorAlert": "Erro ao salvar.",
-  "createStripeAccount": "Criar conta"
+  "createStripeAccount": "Criar conta",
+  "openStripeDashboard": "Pagamentos e Painel do Stripe",
+"loading": "Carregando..."
 },
 "ClubPerformance": {
   "loading": "Carregando desempenho...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "Classe 5,5m-R",
     "505": "505",
     "6m-R-Klasse": "Classe 6m-R",
@@ -675,7 +677,40 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "legal": {
+      "title": "ACORDO DE SERVIÇO E UTILIZAÇÃO (ASU)",
+      "parties": "Entre: Regatta Manager (Provedor) e o clube / organizador verificado no processo de registo (Parceiro)",
+      "accept": "Aceito o ASU e publicar evento",
+      "cancel": "Cancelar",
+      "scrollInstruction": "Por favor, leia o contrato até ao fim para continuar",
+      "sections": {
+        "s1_title": "§ 1 Objeto do contrato e âmbito dos serviços",
+        "s1_text": "O Provedor disponibiliza ao Parceiro uma plataforma baseada na nuvem para a organização, administração e gestão de regatas de vela.\nO âmbito dos serviços inclui a disponibilização de um formulário de inscrição online, a gestão de listas de participantes e a interface técnica para o processamento automatizado de pagamentos de taxas de inscrição através de prestadores de serviços de pagamento integrados.\nO Provedor é apenas responsável pela disponibilização da infraestrutura técnica. A realização do evento desportivo é da exclusiva responsabilidade do Parceiro.",
+        "s2_title": "§ 2 Registo e obrigações da conta",
+        "s2_text": "O Parceiro é obrigado a fornecer informações verdadeiras ao criar a sua conta e os seus eventos.\nO Parceiro garante que a sua conta Stripe associada está devidamente verificada. O Provedor não se responsabiliza por atrasos nos pagamentos causados pela falta de verificação de identidade (KYC) do Parceiro perante o prestador de serviços de pagamento.",
+        "s3_title": "§ 3 Soberania de reserva e exclusividade",
+        "s3_text": "Centralização: Para garantir uma qualidade de dados consistente e evitar duplicados nas listas de partida, o Parceiro compromete-se a processar a inscrição técnica exclusivamente através da plataforma do Provedor.\nLiberdade de marketing: A promoção da regata em sites de terceiros, sites de associações ou redes sociais é expressamente permitida e encorajada. No entanto, o Parceiro compromete-se a ligar exclusivamente ao portal de inscrição do Provedor em todas as medidas publicitárias.\nExclusividade: É proibido ao Parceiro oferecer ou utilizar canais de reserva digitais paralelos (ex: formulários web próprios, portais de terceiros ou listas de e-mail) para a regata objeto deste contrato.\nInscrições no local: Se forem aceites inscrições no local no dia da regata, estas devem ser imediatamente inseridas no sistema do Provedor para garantir a integridade dos dados.",
+        "s4_title": "§ 4 Taxas e condições de pagamento",
+        "s4_text": "Pela disponibilização da infraestrutura e processamento das transações, o Provedor cobra uma taxa de serviço de 8% da respetiva taxa de inscrição bruta (incl. IVA, se aplicável).\nA taxa de serviço é retida diretamente no momento do pagamento pelo participante ou compensada no âmbito da liquidação.\nCancelamentos: Em caso de cancelamento por um participante, a taxa de serviço de 8% permanece com o Provedor. Esta serve para cobrir os custos de transação e as despesas de disponibilização já incorridas. O Parceiro é obrigado a informar os participantes sobre esta não reembolsabilidade no seu Anúncio de Regata (Notice of Race).\nParidade de taxas: O Parceiro garante que os preços praticados na plataforma correspondem à tarifa mais barata disponível. O aumento sistemático das taxas na plataforma com o objetivo de transferir os custos é inadmissível.",
+        "s5_title": "§ 5 Disciplina tarifária e cláusula penal",
+        "s5_text": "O Parceiro compromete-se a cumprir os níveis de preços definidos no sistema (especialmente a aplicação consistente da taxa de mora após o termo do prazo de inscrição regular).\nUma violação culposa da exclusividade (§ 3 par. 3) ou da paridade das taxas (§ 4 par. 4) autoriza o Provedor a exigir uma cláusula penal. Esta é calculada com base no montante das taxas de serviço perdidas, mas é de pelo menos 250,00 € por infração, para compensar os danos resultantes no sistema e na reputação.",
+        "s6_title": "§ 6 Responsabilidade e isenção",
+        "s6_text": "O Parceiro isenta o Provedor de quaisquer reclamações de terceiros resultantes da realização da regata, acidentes, danos materiais ou violação das normas do direito desportivo.\nA responsabilidade do Provedor por negligência leve em caso de falhas informáticas é excluída, desde que não sejam afetadas obrigações contratuais essenciais.",
+        "s7_title": "§ 7 Soberania de dados e listas de resultados",
+        "s7_text": "O Parceiro continua a ser o 'responsável pelos dados' na aceção do RGPD, mas concede ao Provedor o direito de tratar os dados para o cumprimento do contrato.\nO Parceiro compromete-se a publicar os resultados finais oficiais no sistema do Provedor no prazo de 48 horas após o fim do evento, a fim de manter a base de dados histórica da plataforma.",
+        "s8_title": "§ 8 Disposições finais",
+        "s8_text": "Aplica-se o direito da sede do Provedor.\nCaso disposições individuais deste contrato sejam nulas, a validade das restantes disposições não será afetada."
+      }
+    },
+    "stripeSetupTitle": "Configurar pagamentos",
+"stripeSetupDesc": "Para receber as taxas de inscrição, você precisa de uma conta Stripe.",
+"createStripeAccount": "Criar conta Stripe",
+"recommended": "(Recomendado)",
+"or": "ou",
+"existingStripeId": "ID Stripe existente (acct_...)",
+"passwordRequired": "Senha necessária",
+"stripeError": "Erro ao conectar ao Stripe"
 },
 "Legal": {
   "agbTitle": "Termos e Condições",

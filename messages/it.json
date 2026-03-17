@@ -327,7 +327,6 @@
   "podium": "Podio"
 },
 "ProfileSettings": {
-  "loading": "Caricamento profilo club...",
   "notFound": "Club non trovato.",
   "back": "Indietro",
   "accountBadge": "Account Club",
@@ -354,7 +353,9 @@
   "confirmPasswordAlert": "Inserisci la password attuale per confermare",
   "successAlert": "Profilo aggiornato con successo!",
   "errorAlert": "Errore durante il salvataggio.",
-  "createStripeAccount": "Crea account"
+  "createStripeAccount": "Crea account",
+  "openStripeDashboard": "Pagamenti e Dashboard Stripe",
+"loading": "Caricamento..."
 },
 "ClubPerformance": {
   "loading": "Caricamento performance...",
@@ -615,6 +616,7 @@
     "470": "470",
     "49er": "49er",
     "49erFX": "49erFX",
+    "29er": "29er",
     "5,5m-R-Klasse": "Classe 5,5m-R",
     "505": "505",
     "6m-R-Klasse": "Classe 6m-R",
@@ -675,7 +677,40 @@
     "Vaurien": "Vaurien",
     "Yngling": "Yngling",
     "Zoom8": "Zoom8"
-  }
+  },
+  "legal": {
+      "title": "CONTRATTO DI SERVIZIO E D'USO (CSU)",
+      "parties": "Tra: Regatta Manager (Provider) e il club / organizzatore verificato nel processo di registrazione (Partner)",
+      "accept": "Accetto il CSU e pubblica l'evento",
+      "cancel": "Annulla",
+      "scrollInstruction": "Si prega di leggere il contratto fino alla fine per continuare",
+      "sections": {
+        "s1_title": "§ 1 Oggetto del contratto e ambito dei servizi",
+        "s1_text": "Il Provider mette a disposizione del Partner una piattaforma basata su cloud per l'organizzazione, l'amministrazione e la gestione di regate veliche.\nL'ambito dei servizi comprende la fornitura di un modulo di iscrizione online, la gestione delle liste dei partecipanti e l'interfaccia tecnica per l'elaborazione automatizzata dei pagamenti delle quote di iscrizione tramite fornitori di servizi di pagamento integrati.\nIl Provider è responsabile solo della fornitura dell'infrastruttura tecnica. L'esecuzione dell'evento sportivo è di esclusiva responsabilità del Partner.",
+        "s2_title": "§ 2 Registrazione e obblighi dell'account",
+        "s2_text": "Il Partner è obbligato a fornire informazioni veritiere durante la creazione del proprio account e degli eventi.\nIl Partner assicura che il proprio account Stripe collegato sia correttamente verificato. Il Provider non è responsabile per ritardi nei pagamenti causati dalla mancanza di verifica dell'identità (KYC) del Partner nei confronti del fornitore di servizi di pagamento.",
+        "s3_title": "§ 3 Sovranità di prenotazione ed esclusività",
+        "s3_text": "Centralizzazione: Per garantire una qualità dei dati costante ed evitare duplicati nelle liste di partenza, il Partner si impegna a gestire l'iscrizione tecnica esclusivamente tramite la piattaforma del Provider.\nLibertà di marketing: La promozione della regata su siti di terze parti, siti di associazioni o social media è espressamente consentita e incoraggiata. Tuttavia, il Partner si impegna a collegarsi esclusivamente al portale di iscrizione del Provider in tutte le misure pubblicitarie.\nEsclusività: È vietato al Partner offrire o utilizzare canali di prenotazione digitali paralleli (es. moduli web propri, portali di terze parti o liste di distribuzione e-mail) per la regata oggetto del presente contratto.\nIscrizioni in loco: Se le iscrizioni vengono accettate in loco il giorno della regata, queste devono essere immediatamente inserite nel sistema del Provider per garantire la completezza dei dati.",
+        "s4_title": "§ 4 Commissioni e condizioni di pagamento",
+        "s4_text": "Per la fornitura dell'infrastruttura e l'elaborazione delle transazioni, il Provider riscuote una commissione di servizio pari all'8% della rispettiva quota di iscrizione lorda (incl. IVA, se applicabile).\nLa commissione di servizio viene trattenuta direttamente al momento del pagamento da parte del partecipante o compensata nell'ambito del regolamento.\nCancellazioni: In caso di cancellazione da parte di un partecipante, la commissione di servizio dell'8% rimane al Provider. Questa serve a coprire i costi di transazione e le spese di fornitura già sostenute. Il Partner è obbligato a informare i partecipanti di questa non rimborsabilità nel proprio Bando di Regata (Notice of Race).\nParità di commissioni: Il Partner garantisce che i prezzi indicati sulla piattaforma corrispondano alla tariffa più conveniente disponibile. L'aumento sistematico delle commissioni sulla piattaforma al fine di trasferire i costi è inammissibile.",
+        "s5_title": "§ 5 Disciplina tariffaria e penale contrattuale",
+        "s5_text": "Il Partner si impegna a rispettare i livelli di prezzo definiti nel sistema (in particolare l'applicazione coerente della tassa di mora dopo la scadenza del termine di iscrizione regolare).\nUna violazione colpevole dell'esclusività (§ 3 comma 3) o della parità delle commissioni (§ 4 comma 4) autorizza il Provider a richiedere una penale contrattuale. Questa viene calcolata in base all'importo delle commissioni di servizio perse, ma ammonta ad almeno € 250,00 per violazione, per compensare il danno al sistema e alla reputazione derivante.",
+        "s6_title": "§ 6 Responsabilità e manleva",
+        "s6_text": "Il Partner solleva il Provider da qualsiasi pretesa di terzi derivante dallo svolgimento della regata, incidenti, danni materiali o violazione delle norme del diritto sportivo.\nÈ esclusa la responsabilità del Provider per negligenza lieve in caso di guasti informatici, purché non siano interessati obblighi contrattuali essenziali.",
+        "s7_title": "§ 7 Sovranità dei dati e liste dei risultati",
+        "s7_text": "Il Partner rimane 'titolare dei dati' ai sensi del GDPR, ma concede al Provider il diritto di trattare i dati per l'esecuzione del contratto.\nIl Partner si impegna a pubblicare i risultati ufficiali finali nel sistema del Provider entro 48 ore dal termine dell'evento, al fine di mantenere il database storico della piattaforma.",
+        "s8_title": "§ 8 Disposizioni finali",
+        "s8_text": "Si applica il diritto della sede del Provider.\nQualora singole disposizioni del presente contratto fossero inefficaci, la validità delle restanti disposizioni rimane inalterata."
+      }
+    },
+    "stripeSetupTitle": "Configura i pagamenti",
+"stripeSetupDesc": "Per ricevere le quote di iscrizione, è necessario un account Stripe.",
+"createStripeAccount": "Crea account Stripe",
+"recommended": "(Consigliato)",
+"or": "o",
+"existingStripeId": "ID Stripe esistente (acct_...)",
+"passwordRequired": "Password richiesta",
+"stripeError": "Errore durante la connessione a Stripe"
 },
 "Legal": {
   "agbTitle": "Termini e Condizioni",
