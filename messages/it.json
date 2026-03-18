@@ -842,9 +842,11 @@
     "noArchive": "L'archivio è ancora vuoto."
   },
   "eventCard": {
-    "results": "Risultati",
-    "edit": "Modifica"
-  }
+  "results": "Risultati",
+  "edit": "Modifica",
+  "registrations": "Iscrizioni",
+  "manualAdd": "Iscrizione manuale"
+}
 },
 "Header": {
     "login": "Accedi",

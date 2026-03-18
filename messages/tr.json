@@ -840,9 +840,11 @@
     "noArchive": "Arşiv henüz boş."
   },
   "eventCard": {
-    "results": "Sonuçlar",
-    "edit": "Düzenle"
-  }
+  "results": "Sonuçlar",
+  "edit": "Düzenle",
+  "registrations": "Kayıtlar",
+  "manualAdd": "Elle Kayıt"
+}
 },
 "Header": {
     "login": "Giriş yap",

@@ -23,9 +23,10 @@ type Event = {
   name: string;
   datumVon: string;
   datumBis: string;
+  anmeldungs_bis: string; 
   location: string;
   land?: string;
-}; 
+};
 
 type Account = {
   id: string;
@@ -228,10 +229,38 @@ function StatCard({ label, value, color }: { label: string, value: number, color
 function EventCard({ ev, vereinId, isPast }: { ev: Event, vereinId: string, isPast?: boolean }) {
   const t = useTranslations("VereinsDashboard.eventCard");
   const router = useRouter();
+  
+  const heute = dayjs().startOf('day');
+  const startDatum = dayjs(ev.datumVon).startOf('day');
+  const meldeschluss = ev.anmeldungs_bis 
+    ? dayjs(ev.anmeldungs_bis).startOf('day') 
+    : startDatum;
+  
+  const zeigeResultate = heute.isSame(startDatum) || heute.isAfter(startDatum);
+  const isManualRegistrationPeriod = heute.isAfter(meldeschluss) && 
+                                     (heute.isBefore(startDatum) || heute.isSame(startDatum));
+
+  const handleCardClick = () => {
+    if (isPast) {
+      router.push(`/dashboard/verein/${vereinId}/publish/${ev.id}`);
+    } else {
+      router.push(`/dashboard/verein/${vereinId}/registrationlist?eventId=${ev.id}`);
+    }
+  };
+
+  const handleButtonClick = (e: React.MouseEvent, path: string) => {
+    e.stopPropagation(); 
+    router.push(path);
+  };
+
   return (
-    <div className="group bg-[#1e293b] hover:bg-[#26334d] border border-slate-800 rounded-2xl p-5 transition-all flex flex-col md:flex-row justify-between items-center gap-4">
+    <div 
+      onClick={handleCardClick}
+      className="group bg-[#1e293b] hover:bg-[#26334d] border border-slate-800 rounded-2xl p-5 transition-all duration-300 flex flex-col md:flex-row justify-between items-center gap-4 cursor-pointer hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/10 active:scale-[0.98]"
+    >
+      {/* Info Bereich */}
       <div className="flex gap-5 items-center w-full">
-        <div className={`h-14 w-14 rounded-xl flex flex-col items-center justify-center border ${isPast ? 'bg-slate-800 border-slate-700' : 'bg-blue-600/10 border-blue-500/30'}`}>
+        <div className={`h-14 w-14 rounded-xl flex flex-col items-center justify-center border transition-transform duration-300 group-hover:scale-110 ${isPast ? 'bg-slate-800 border-slate-700' : 'bg-blue-600/10 border-blue-500/30'}`}>
           <span className={`text-[10px] font-black uppercase ${isPast ? 'text-slate-500' : 'text-blue-400'}`}>
             {dayjs(ev.datumVon).format('MMM')}
           </span>
@@ -249,20 +278,48 @@ function EventCard({ ev, vereinId, isPast }: { ev: Event, vereinId: string, isPa
         </div>
       </div>
 
-      <div className="flex items-center gap-3 w-full md:w-auto">
+      {/* Button Bereich */}
+      <div className="flex flex-wrap items-center gap-3 w-full md:w-auto relative z-10">
+        
+        {/* MELDUNGEN (Blau) */}
+        {!isPast && (
+          <button
+            onClick={(e) => handleButtonClick(e, `/dashboard/verein/${vereinId}/registrationlist?eventId=${ev.id}`)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-blue-600 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/30 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all border border-slate-700 hover:border-blue-400"
+          >
+            <GroupsIcon sx={{ fontSize: 18 }} /> {t('registrations') || 'Meldungen'}
+          </button>
+        )}
+
+        {/* NACHMELDEN (Bernstein/Orange) */}
+        {!isPast && isManualRegistrationPeriod && (
+          <button
+            onClick={(e) => handleButtonClick(e, `/dashboard/verein/${vereinId}/manualRegistration?eventId=${ev.id}`)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 hover:scale-105 hover:shadow-lg hover:shadow-amber-500/40 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all border border-amber-700 hover:border-amber-300"
+          >
+            <PlusCircle size={16} /> {t('manualAdd') || 'Nachmelden'}
+          </button>
+        )}
+
+        {/* EDIT (Indigo) */}
         <button
-          onClick={() => router.push(`/dashboard/verein/${vereinId}/publish/${ev.id}`)}
-          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all"
-        >
-          <Trophy size={16} /> {t('results')}
-        </button>
-        <button
-          onClick={() => router.push(`/dashboard/verein/${vereinId}/edit/${ev.id}`)}
-          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all"
+          onClick={(e) => handleButtonClick(e, `/dashboard/verein/${vereinId}/edit/${ev.id}`)}
+          className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-indigo-600 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/30 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all border border-slate-700 hover:border-indigo-400"
         >
           <Edit3 size={16} /> {t('edit')}
         </button>
-        <ChevronRight className="hidden md:block text-slate-600 group-hover:text-white transition-all group-hover:translate-x-1" />
+
+        {/* RESULTATE (Smaragd/Grün) */}
+        {zeigeResultate && (
+          <button
+            onClick={(e) => handleButtonClick(e, `/dashboard/verein/${vereinId}/publish/${ev.id}`)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/40 text-white px-4 py-2.5 rounded-xl font-bold text-sm transition-all border border-emerald-700 hover:border-emerald-300"
+          >
+            <Trophy size={16} /> {t('results')}
+          </button>
+        )}
+        
+        <ChevronRight className={`hidden md:block transition-all duration-300 group-hover:translate-x-2 ${isPast ? 'text-emerald-500' : 'text-blue-500'}`} />
       </div>
     </div>
   );

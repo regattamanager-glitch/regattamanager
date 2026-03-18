@@ -840,9 +840,11 @@
     "noArchive": "El archivo aún está vacío."
   },
   "eventCard": {
-    "results": "Resultados",
-    "edit": "Editar"
-  }
+  "results": "Resultados",
+  "edit": "Editar",
+  "registrations": "Inscripciones",
+  "manualAdd": "Inscripción manual"
+}
 },
 "Header": {
     "login": "Iniciar sesión",

@@ -842,9 +842,11 @@
     "noArchive": "The archive is still empty."
   },
   "eventCard": {
-    "results": "Results",
-    "edit": "Edit"
-  }
+  "results": "Results",
+  "edit": "Edit",
+  "registrations": "Entries",
+  "manualAdd": "Late Entry"
+}
 },
 "Header": {
     "login": "Login",

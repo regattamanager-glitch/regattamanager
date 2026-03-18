@@ -840,9 +840,11 @@
     "noArchive": "Het archief is nog leeg."
   },
   "eventCard": {
-    "results": "Resultaten",
-    "edit": "Bewerken"
-  }
+  "results": "Resultaten",
+  "edit": "Bewerken",
+  "registrations": "Inschrijvingen",
+  "manualAdd": "Handmatige aanmelding"
+}
 },
 "Header": {
     "login": "Inloggen",

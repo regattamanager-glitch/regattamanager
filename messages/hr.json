@@ -840,9 +840,11 @@
     "noArchive": "Arhiva je još prazna."
   },
   "eventCard": {
-    "results": "Rezultati",
-    "edit": "Uredi"
-  }
+  "results": "Rezultati",
+  "edit": "Uredi",
+  "registrations": "Prijave",
+  "manualAdd": "Naknadna prijava"
+}
 },
 "Header": {
     "login": "Prijava",

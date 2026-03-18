@@ -843,7 +843,9 @@
     },
     "eventCard": {
       "results": "Resultate",
-      "edit": "Edit"
+      "edit": "Bearbeiten",
+      "registrations": "Meldungen",
+      "manualAdd": "Nachmelden"
     }
   },
   "Header": {
@@ -923,6 +925,17 @@
       "openExternal": "Extern öffnen",
       "previewTitle": "Dokument Vorschau",
       "selectToPreview": "Wähle ein Dokument aus der Liste aus, um es anzuzeigen."
+    }
+  },
+  "RegistrationList": {
+    "back": "Zurück",
+    "searchPlaceholder": "Suchen...",
+    "noRegistrations": "Keine Meldungen für dieses Event gefunden.",
+    "exportCsv": "Exportieren",
+    "table": {
+      "name": "Name",
+      "class": "Klasse",
+      "date": "Datum"
     }
   }
 }
