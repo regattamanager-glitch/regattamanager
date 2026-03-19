@@ -38,19 +38,54 @@ export default function PublishResultsPage() {
   const SaveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V4h5a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2h5v7.586l-1.293-1.293z" /></svg>;
   const ChevronLeft = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" /></svg>;
 
-  // Load Event
-  useEffect(() => {
-    if (!eventId) return;
-    fetch(`/api/events?eventId=${eventId}`)
-      .then(res => res.json())
-      .then((data: EventData) => {
-        setEvent(data);
-        setSelectedClass(data.bootsklassen[0] || null);
-      })
-      .catch(console.error);
-  }, [eventId]);
+  // Load Event AND Participants
+useEffect(() => {
+  if (!eventId) return;
 
-  const sailorCount = event && selectedClass ? event.segler[selectedClass]?.length ?? 0 : 0;
+  Promise.all([
+    fetch(`/api/events?eventId=${eventId}`).then(res => res.json()),
+    fetch(`/api/registrations?eventId=${eventId}`).then(res => res.json())
+  ])
+    .then(([eventData, registrationData]) => {
+      // Wichtig: eventData ist oft ein Array (z.B. [event]), 
+      // deine route.ts gibt bei eventId meist enrichedEvents[0] zurück.
+      const actualEvent = Array.isArray(eventData) ? eventData[0] : eventData;
+
+      if (actualEvent && actualEvent.bootsklassen) {
+        const groupedSegler: { [key: string]: SeglerAnmeldung[] } = {};
+        
+        // Initialisiere die Gruppen für jede Bootsklasse des Events
+        actualEvent.bootsklassen.forEach((cls: string) => {
+          groupedSegler[cls] = [];
+        });
+
+        if (Array.isArray(registrationData)) {
+          registrationData.forEach((reg: any) => {
+            // Prüfe alle gängigen Feldnamen für die Klasse
+            const klasse = reg.bootsklasse || reg.boot?.bootsklasse || reg.klasse;
+            
+            if (klasse && groupedSegler[klasse]) {
+              groupedSegler[klasse].push(reg);
+            } else if (klasse) {
+              // Falls die Klasse in der DB steht, aber nicht im Event-Array
+              groupedSegler[klasse] = [reg];
+            }
+          });
+        }
+
+        setEvent({
+          ...actualEvent,
+          segler: groupedSegler
+        });
+        setSelectedClass(actualEvent.bootsklassen[0] || null);
+      }
+    })
+    .catch(err => console.error("Fehler beim Laden der Daten:", err));
+}, [eventId]);
+
+  const sailorCount = (event?.segler && selectedClass) 
+  ? event.segler[selectedClass]?.length ?? 0 
+  : 0;
 
   useEffect(() => {
     if (!event || !selectedClass) return;
@@ -224,7 +259,7 @@ export default function PublishResultsPage() {
 
         {/* CLASS TABS */}
         <div className="flex gap-2 mt-10 overflow-x-auto pb-2 scrollbar-hide">
-          {event.bootsklassen.map((cls) => (
+          {event?.bootsklassen?.map((cls) => (
             <button
               key={cls}
               onClick={() => setSelectedClass(cls)}

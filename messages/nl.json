@@ -82,7 +82,27 @@
   "noClubFallback": "—",
   "classesLabel": "Klassen",
   "moreThanTenClasses": "+9 klassen",
-  "openClass": "Open"
+  "openClass": "Open",
+  "searchPlaceholder": "Zoeken...",
+"country": "Land",
+"class": "Klasse",
+"status": "Status",
+"statusOpen": "Open",
+"statusComing": "Binnenkort",
+"statusClosed": "Gesloten",
+"statusFinished": "Beëindigd",
+"resetPin": "Pin resetten",
+"notRegisteredOnly": "Niet ingeschreven",
+"year": "Jaar",
+"registered": "Ingeschreven",
+"labels": {
+  "OPEN": "Open",
+  "COMING": "Binnenkort",
+  "CLOSED": "Gesloten",
+  "FINISHED": "Beëindigd"
+},
+"overlapWarning": "Overlapping",
+"overlapDetail": "Overlapt met"
 },
 "Dashboard": {
   "upcomingCount": "Je hebt {count} {count, plural, =1 {regatta} other {regatta's}} aankomende",
@@ -448,7 +468,25 @@
     "nation": "Vertegenwoordigde natie",
     "club": "Club",
     "password": "Wachtwoord"
-  }
+  },
+  "backToOverview": "Terug naar overzicht",
+  "adminEntry": "Admin-invoer",
+  "searchAccount": "Account zoeken (database)",
+  "searchPlaceholder": "Voornaam, achternaam of e-mail...",
+  "labelEmergencyContact": "Noodcontact",
+  "labelSelectClass": "Selecteer bootklasse",
+  "selectPlaceholder": "-- Maak een keuze --",
+  "noExtrasAvailable": "Geen extra's beschikbaar",
+  "addCrewMember": "+ Bemanningslid toevoegen",
+  "noCrewEntered": "Geen bemanningsleden ingevoerd",
+  "summaryTitle": "Overzicht",
+  "feeRegistration": "Inschrijfgeld",
+  "total": "Totaal",
+  "saving": "Opslaan...",
+  "saveRegistration": "Inschrijving opslaan",
+  "loadingManager": "REGATTA MANAGER LADEN...",
+  "errorSelectClass": "Selecteer een bootklasse!",
+  "confirmManualEntry": "Handmatige inschrijving aanmaken? De zeiler wordt direct als 'Betaald' gemarkeerd."
 },
 "Footer": {
   "description": "De complete oplossing voor modern regatta-management en digitale facturatie.",

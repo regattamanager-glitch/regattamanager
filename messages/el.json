@@ -82,7 +82,27 @@
   "noClubFallback": "—",
   "classesLabel": "Κατηγορίες",
   "moreThanTenClasses": "+9 κατηγορίες",
-  "openClass": "Open"
+  "openClass": "Open",
+  "searchPlaceholder": "Αναζήτηση...",
+"country": "Χώρα",
+"class": "Κατηγορία",
+"status": "Κατάσταση",
+"statusOpen": "Ανοιχτό",
+"statusComing": "Σύντομα",
+"statusClosed": "Κλειστό",
+"statusFinished": "Ολοκληρώθηκε",
+"resetPin": "Επαναφορά Pin",
+"notRegisteredOnly": "Χωρίς εγγραφή",
+"year": "Έτος",
+"registered": "Εγγεγραμμένος",
+"labels": {
+  "OPEN": "Ανοιχτό",
+  "COMING": "Σύντομα",
+  "CLOSED": "Κλειστό",
+  "FINISHED": "Ολοκληρώθηκε"
+},
+"overlapWarning": "Σύγκρουση Προγράμματος",
+"overlapDetail": "Συγκρούεται με"
 },
 "Dashboard": {
   "upcomingCount": "Έχετε {count} {count, plural, =1 {ιστιοδρομία} other {ιστιοδρομίες}} προσεχείς",
@@ -448,7 +468,25 @@
     "nation": "Αντιπροσωπευόμενη χώρα",
     "club": "Σύλλογος",
     "password": "Κωδικός"
-  }
+  },
+  "backToOverview": "Επιστροφή στην επισκόπηση",
+  "adminEntry": "Καταχώριση διαχειριστή",
+  "searchAccount": "Αναζήτηση λογαριασμού (Βάση δεδομένων)",
+  "searchPlaceholder": "Όνομα, επώνυμο ή email...",
+  "labelEmergencyContact": "Επαφή έκτακτης ανάγκης",
+  "labelSelectClass": "Επιλογή κατηγορίας σκάφους",
+  "selectPlaceholder": "-- Παρακαλώ επιλέξτε --",
+  "noExtrasAvailable": "Δεν υπάρχουν διαθέσιμα έξτρα",
+  "addCrewMember": "+ Προσθήκη μέλους πληρώματος",
+  "noCrewEntered": "Δεν έχουν καταχωρηθεί μέλη πληρώματος",
+  "summaryTitle": "Επισκόπηση",
+  "feeRegistration": "Παράβολο συμμετοχής",
+  "total": "Σύνολο",
+  "saving": "Αποθήκευση...",
+  "saveRegistration": "Αποθήκευση συμμετοχής",
+  "loadingManager": "ΦΟΡΤΩΣΗ REGATTA MANAGER...",
+  "errorSelectClass": "Παρακαλώ επιλέξτε μια κατηγορία σκάφους!",
+  "confirmManualEntry": "Μη αυτόματη δημιουργία συμμετοχής; Ο ιστιοπλόος θα επισημανθεί αμέσως ως 'Πληρωμένο'."
 },
 "Footer": {
   "description": "Η ολοκληρωμένη λύση για σύγχρονη διαχείριση ρεγκάτας και ψηφιακή τιμολόγηση.",

@@ -206,41 +206,49 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
   useEffect(() => {
   async function load() {
     try {
-      // 1. Event laden
-      const res = await fetch("/api/events");
-      const events: Event[] = await res.json();
-      
-      // Das spezifische Event suchen
+      // 1. Event UND Registrierungen parallel laden
+      const [eventsRes, registrationsRes] = await Promise.all([
+        fetch("/api/events"),
+        fetch(`/api/registrations?eventid=${id}`) // Hier die id aus params nutzen
+      ]);
+
+      const events: Event[] = await eventsRes.json();
+      const allRegs = await registrationsRes.json();
       const found: any = events.find(e => e.id === id);
-if (!found) return;
+      
+      if (!found) return;
 
-const vId = found.vereinId || found.verein_id;
-
-setEvent({
-  ...found,
-  vereinId: vId,
-  notizen: found.notiz || "", 
-  // Die anderen Felder mappen (falls nötig)
-  anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
-  anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
-  datumVon: found.datumVon,
-  datumBis: found.datumBis,
-});
-
-      // 2. Vereinsdaten laden (NICHT alle Accounts laden!)
-      if (vId) {
-        const accountRes = await fetch(`/api/accounts?id=${vId}`);
-        if (accountRes.ok) {
-          const accountData = await accountRes.json();
-          setVerein(accountData);
-        }
+      // Gruppiere die Segler nach Bootsklasse für das event-Objekt
+      const groupedSegler: Record<string, SeglerAnmeldung[]> = {};
+      if (Array.isArray(allRegs)) {
+        allRegs.forEach((reg: any) => {
+          const klasse = reg.klasse || "Unknown";
+          if (!groupedSegler[klasse]) groupedSegler[klasse] = [];
+          
+          // Mappe das flache DB-Objekt auf das SeglerAnmeldung Interface
+          groupedSegler[klasse].push({
+            skipper: typeof reg.skipper === 'string' ? JSON.parse(reg.skipper) : reg.skipper,
+            boot: typeof reg.boot === 'string' ? JSON.parse(reg.boot) : reg.boot,
+            bezahlt: !!reg.paidAt,
+            createdAt: reg.createdAt
+          });
+        });
       }
+
+      setEvent({
+        ...found,
+        vereinId: found.vereinId || found.verein_id,
+        segler: groupedSegler, // <--- DAS HAT GEFEHLT
+        notizen: found.notiz || "",
+        anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
+        anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
+      });
 
       if (found.bootsklassen?.length > 0) {
         setSelectedClass(found.bootsklassen[0]);
       }
     } catch (err) {
-      console.error("Fehler beim Laden der Regatta-Details:", err);
+      console.error("Fehler beim Laden:", err);
     }
   }
   load();
@@ -904,7 +912,7 @@ return (
                               <div className="text-right">
                                 <div className="text-sm font-bold text-blue-300 font-mono">
                                   {scoresRaw.length > 0
-                                    ? t('results.points', { points: total })
+                                    ? t('regattaDetail.results.points', { points: total })
                                     : "—"}
                                 </div>
                               </div>

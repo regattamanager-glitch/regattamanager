@@ -83,18 +83,24 @@ export default function VereinsDashboard() {
     router.push('/login');
   };
 
-  // NEU: Präziser Vergleich auf Tagesbasis
-const heute = dayjs().startOf('day');
+  const heute = dayjs().startOf('day');
 
-const kommende = events.filter(ev => {
+// 1. Events, die heute laufen (Start <= heute UND Ende >= heute)
+const laufend = events.filter(ev => {
   const start = dayjs(ev.datumVon).startOf('day');
-  // Event ist kommend, wenn es heute oder in der Zukunft startet
-  return start.isSame(heute) || start.isAfter(heute);
+  const ende = dayjs(ev.datumBis).startOf('day');
+  return (start.isBefore(heute) || start.isSame(heute)) && (ende.isAfter(heute) || ende.isSame(heute));
 });
 
+// 2. Events, die erst in der Zukunft starten
+const kommende = events.filter(ev => {
+  const start = dayjs(ev.datumVon).startOf('day');
+  return start.isAfter(heute);
+});
+
+// 3. Events, die bereits abgeschlossen sind
 const vergangene = events.filter(ev => {
   const ende = dayjs(ev.datumBis).startOf('day');
-  // Event ist vergangen, wenn das Ende-Datum vor heute liegt
   return ende.isBefore(heute);
 });
 
@@ -177,6 +183,19 @@ const vergangene = events.filter(ev => {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-12">
+              {laufend.length > 0 && (
+                  <section className="animate-pulse-slow">
+                    <SectionHeader 
+                      title="Live / Laufende Regatten" 
+                      icon={<Anchor className="text-emerald-400" />} 
+                    />
+                    <div className="grid gap-4 mt-6">
+                     {laufend.map(ev => (
+                        <EventCard key={ev.id} ev={ev} vereinId={vereinId as string} />
+                      ))}
+                    </div>
+                  </section>
+                )}
               <section>
                 <SectionHeader title={t('sections.upcoming')} icon={<Calendar className="text-blue-500" />} />
                 <div className="grid gap-4 mt-6">

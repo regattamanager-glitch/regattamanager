@@ -82,7 +82,27 @@
     "noClubFallback": "—",
     "classesLabel": "Klassen",
     "moreThanTenClasses": "+9 Klassen",
-    "openClass": "Open"
+    "openClass": "Open",
+    "searchPlaceholder": "Suchen...",
+    "country": "Land",
+    "class": "Klasse",
+    "status": "Status",
+    "statusOpen": "Offen",
+    "statusComing": "Bald",
+    "statusClosed": "Geschlossen",
+    "statusFinished": "Beendet",
+    "resetPin": "Pin gelöst (Reset)",
+    "notRegisteredOnly": "Nicht Gemeldet",
+    "year": "Jahr",
+    "registered": "Gemeldet",
+    "labels": {
+      "OPEN": "Offen",
+      "COMING": "Bald",
+      "CLOSED": "Geschlossen",
+      "FINISHED": "Beendet"
+    },
+    "overlapWarning": "Zeitliche Überschneidung",
+    "overlapDetail": "Kollidiert mit"
   },
   "Dashboard": {
     "upcomingCount": "Du hast {count} bevorstehende {count, plural, =1 {Regatta} other {Regatten}}",
@@ -448,7 +468,25 @@
       "nation": "Repräsentierte Nation",
       "club": "Verein",
       "password": "Passwort"
-    }
+    },
+    "backToOverview": "Zurück zur Übersicht",
+    "adminEntry": "Admin-Eintrag",
+    "searchAccount": "Account suchen (Datenbank)",
+    "searchPlaceholder": "Vorname, Nachname oder Email...",
+    "labelEmergencyContact": "Notfallkontakt",
+    "labelSelectClass": "Bootsklasse auswählen",
+    "selectPlaceholder": "-- Bitte wählen --",
+    "noExtrasAvailable": "Keine Extras verfügbar",
+    "addCrewMember": "+ Crew hinzufügen",
+    "noCrewEntered": "Keine Crew-Mitglieder eingetragen",
+    "summaryTitle": "Übersicht",
+    "feeRegistration": "Meldegeld",
+    "total": "Gesamt",
+    "saving": "Speichere...",
+    "saveRegistration": "Anmeldung speichern",
+    "loadingManager": "LADE REGATTA MANAGER...",
+    "errorSelectClass": "Bitte eine Bootsklasse wählen!",
+    "confirmManualEntry": "Anmeldung manuell anlegen? Der Segler wird direkt als 'Bezahlt' markiert."
   },
   "Footer": {
     "description": "Die Komplettlösung für modernes Regatta-Management und digitale Abrechnung.",

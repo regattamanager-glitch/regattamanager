@@ -64,9 +64,14 @@ export default function EditEventPage() {
     const loadEvent = async () => {
       if (!eventId || !account) return;
       try {
-        const res = await fetch(`/api/events?vereinId=${account.id}`);
-        const data = await res.json();
-        const event = data.find((e: any) => e.id === eventId);
+        const res = await fetch(`/api/events?eventId=${eventId}`);
+        const event = await res.json();
+
+// Da enrichedEvents[0] zurückgegeben wird, haben wir direkt das Objekt
+        if (!event || event.id !== eventId) {
+          console.error("Event nicht gefunden oder Fehler");
+          return;
+        }
 
         if (!event) return;
 
@@ -175,6 +180,7 @@ export default function EditEventPage() {
     const payload = { 
       ...form, 
       id: eventId, 
+      vereinId: vereinId, 
       gebuehrenProKlasse, 
       bootsklassen: activeClasses.map(c => c.name),
       extras: form.extras.map(ex => ({ name: ex.name, price: Number(ex.price) })),

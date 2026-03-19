@@ -82,7 +82,27 @@
   "noClubFallback": "—",
   "classesLabel": "Classes",
   "moreThanTenClasses": "+9 classes",
-  "openClass": "Open"
+  "openClass": "Open",
+  "searchPlaceholder": "Search...",
+"country": "Country",
+"class": "Class",
+"status": "Status",
+"statusOpen": "Open",
+"statusComing": "Coming Soon",
+"statusClosed": "Closed",
+"statusFinished": "Finished",
+"resetPin": "Reset Pin",
+"notRegisteredOnly": "Not Registered",
+"year": "Year",
+"registered": "Registered",
+"labels": {
+  "OPEN": "Open",
+  "COMING": "Coming Soon",
+  "CLOSED": "Closed",
+  "FINISHED": "Finished"
+},
+"overlapWarning": "Schedule Conflict",
+"overlapDetail": "Conflicts with"
 },
 "Dashboard": {
   "upcomingCount": "You have {count} upcoming {count, plural, =1 {regatta} other {regattas}}",
@@ -448,7 +468,25 @@
     "nation": "Represented Nation",
     "club": "Club",
     "password": "Password"
-  }
+  },
+  "backToOverview": "Back to Overview",
+  "adminEntry": "Admin Entry",
+  "searchAccount": "Search Account (Database)",
+  "searchPlaceholder": "First name, last name or email...",
+  "labelEmergencyContact": "Emergency Contact",
+  "labelSelectClass": "Select Boat Class",
+  "selectPlaceholder": "-- Please select --",
+  "noExtrasAvailable": "No extras available",
+  "addCrewMember": "+ Add Crew Member",
+  "noCrewEntered": "No crew members entered",
+  "summaryTitle": "Summary",
+  "feeRegistration": "Entry Fee",
+  "total": "Total",
+  "saving": "Saving...",
+  "saveRegistration": "Save Registration",
+  "loadingManager": "LOADING REGATTA MANAGER...",
+  "errorSelectClass": "Please select a boat class!",
+  "confirmManualEntry": "Create manual registration? The sailor will be marked as 'Paid' immediately."
 },
 "Footer": {
   "description": "The complete solution for modern regatta management and digital billing.",

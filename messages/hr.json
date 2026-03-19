@@ -82,7 +82,27 @@
   "noClubFallback": "—",
   "classesLabel": "Klase",
   "moreThanTenClasses": "+9 klasa",
-  "openClass": "Open"
+  "openClass": "Open",
+  "searchPlaceholder": "Pretraži...",
+"country": "Država",
+"class": "Klasa",
+"status": "Status",
+"statusOpen": "Otvoreno",
+"statusComing": "Uskoro",
+"statusClosed": "Zatvoreno",
+"statusFinished": "Završeno",
+"resetPin": "Poništi pribadaču",
+"notRegisteredOnly": "Nije prijavljeno",
+"year": "Godina",
+"registered": "Prijavljeno",
+"labels": {
+  "OPEN": "Otvoreno",
+  "COMING": "Uskoro",
+  "CLOSED": "Zatvoreno",
+  "FINISHED": "Završeno"
+},
+"overlapWarning": "Preklapanje Termina",
+"overlapDetail": "U sukobu s"
 },
 "Dashboard": {
   "upcomingCount": "Imate {count} {count, plural, =1 {regatu} other {regata}} u najavi",
@@ -448,7 +468,25 @@
     "nation": "Zemlja koju predstavlja",
     "club": "Klub",
     "password": "Lozinka"
-  }
+  },
+  "backToOverview": "Povratak na pregled",
+  "adminEntry": "Admin unos",
+  "searchAccount": "Pretraži račun (Baza podataka)",
+  "searchPlaceholder": "Ime, prezime ili e-mail...",
+  "labelEmergencyContact": "Kontakt za hitne slučajeve",
+  "labelSelectClass": "Odaberite klasu broda",
+  "selectPlaceholder": "-- Molimo odaberite --",
+  "noExtrasAvailable": "Nema dostupnih dodataka",
+  "addCrewMember": "+ Dodaj člana posade",
+  "noCrewEntered": "Nema unesenih članova posade",
+  "summaryTitle": "Pregled",
+  "feeRegistration": "Startnina",
+  "total": "Ukupno",
+  "saving": "Spremanje...",
+  "saveRegistration": "Spremi prijavu",
+  "loadingManager": "UCITAVANJE REGATTA MANAGERA...",
+  "errorSelectClass": "Molimo odaberite klasu broda!",
+  "confirmManualEntry": "Ručno kreirati prijavu? Jedriličar će odmah biti označen kao 'Plaćeno'."
 },
 "Footer": {
   "description": "Cjelovito rješenje za moderno upravljanje regatama i digitalno fakturiranje.",

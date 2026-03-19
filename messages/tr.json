@@ -82,7 +82,27 @@
   "noClubFallback": "—",
   "classesLabel": "Sınıflar",
   "moreThanTenClasses": "+9 sınıf",
-  "openClass": "Open"
+  "openClass": "Open",
+  "searchPlaceholder": "Ara...",
+"country": "Ülke",
+"class": "Sınıf",
+"status": "Durum",
+"statusOpen": "Açık",
+"statusComing": "Yakında",
+"statusClosed": "Kapalı",
+"statusFinished": "Bitti",
+"resetPin": "Pini Sıfırla",
+"notRegisteredOnly": "Kayıtlı Değil",
+"year": "Yıl",
+"registered": "Kayıtlı",
+"labels": {
+  "OPEN": "Açık",
+  "COMING": "Yakında",
+  "CLOSED": "Kapalı",
+  "FINISHED": "Bitti"
+},
+"overlapWarning": "Zaman Çakışması",
+"overlapDetail": "Şununla çakışıyor"
 },
 "Dashboard": {
   "upcomingCount": "{count} yaklaşan {count, plural, =1 {yarış} other {yarışlar}} var",
@@ -448,7 +468,25 @@
     "nation": "Temsil edilen ülke",
     "club": "Kulüp",
     "password": "Şifre"
-  }
+  },
+  "backToOverview": "Genel bakışa dön",
+  "adminEntry": "Yönetici girişi",
+  "searchAccount": "Hesap ara (Veritabanı)",
+  "searchPlaceholder": "Ad, soyad veya e-posta...",
+  "labelEmergencyContact": "Acil durum kişisi",
+  "labelSelectClass": "Tekne sınıfı seçin",
+  "selectPlaceholder": "-- Lütfen seçin --",
+  "noExtrasAvailable": "Ekstra seçenek bulunmuyor",
+  "addCrewMember": "+ Mürettebat ekle",
+  "noCrewEntered": "Mürettebat üyesi girilmedi",
+  "summaryTitle": "Özet",
+  "feeRegistration": "Kayıt ücreti",
+  "total": "Toplam",
+  "saving": "Kaydediliyor...",
+  "saveRegistration": "Kaydı kaydet",
+  "loadingManager": "REGATTA MANAGER YÜKLENİYOR...",
+  "errorSelectClass": "Lütfen bir tekne sınıfı seçin!",
+  "confirmManualEntry": "Manuel kayıt oluşturulsun mu? Yelken sporcusu anında 'Ödendi' olarak işaretlenecektir."
 },
 "Footer": {
   "description": "Modern regatta yönetimi ve dijital faturalama için eksiksiz çözüm.",

@@ -58,6 +58,7 @@ export default function RegattaÜbersicht() {
   const [mapFilter, setMapFilter] = useState<{ lat: number, lng: number } | null>(null);
   
   const [myRegisteredEventIds, setMyRegisteredEventIds] = useState<string[]>([]);
+  const [myRegisteredEvents, setMyRegisteredEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const getStatusInfo = (event: any) => {
@@ -77,6 +78,15 @@ export default function RegattaÜbersicht() {
     }
     return { label: "Geschlossen", color: "text-red-400 bg-red-400/10 border-red-400/20", type: 'CLOSED' };
   };
+
+  const checkOverlap = (startA: string, endA: string, startB: string, endB: string) => {
+  const sA = dayjs(startA);
+  const eA = dayjs(endA || startA);
+  const sB = dayjs(startB);
+  const eB = dayjs(endB || startB);
+
+  return sA.isBefore(eB.add(1, 'day')) && sB.isBefore(eA.add(1, 'day'));
+}; 
 
   useEffect(() => {
     async function fetchData() {
@@ -111,6 +121,16 @@ export default function RegattaÜbersicht() {
           verein: accounts.find((acc: any) => String(acc.id) === String(e.vereinId))?.name ?? t('noClubFallback'),
         }));
 
+        const registeredEventsData = (await Promise.all(registrationPromises))
+      .filter(item => item !== null);
+
+      const myFullRegisteredEvents = eventsData.filter((e: any) => 
+      registeredEventsData.includes(String(e.id))
+    );
+
+    setMyRegisteredEventIds(registeredEventsData as string[]);
+    setMyRegisteredEvents(myFullRegisteredEvents);
+
         setEvents(mappedEvents);
       } catch (err) {
         console.error(err);
@@ -122,21 +142,26 @@ export default function RegattaÜbersicht() {
   }, [seglerId, t]);
 
   const filtered = useMemo(() => {
-    return events.filter((e) => {
-      const isRegistered = myRegisteredEventIds.includes(e.id);
-      const status = getStatusInfo(e);
-      const eventDate = dayjs(e.datumVon);
+  return events.filter((e) => {
+    const isRegistered = myRegisteredEventIds.includes(e.id);
+    const status = getStatusInfo(e);
+    const eventDate = dayjs(e.datumVon);
 
-      const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase());
-      const matchesLand = filterLand ? e.land?.toLowerCase().includes(filterLand.toLowerCase()) : true;
-      const matchesYear = filterYear ? eventDate.year().toString() === filterYear : true;
-      const matchesClass = filterBootsklasse ? e.bootsklassen?.includes(filterBootsklasse) : true;
-      const matchesStatus = filterStatus ? status.type === filterStatus : true;
-      const matchesExcludeRegistration = filterExcludeRegistered ? !isRegistered : true;
+    const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase());
+    const matchesLand = filterLand ? e.land?.toLowerCase().includes(filterLand.toLowerCase()) : true;
+    const matchesYear = filterYear ? eventDate.year().toString() === filterYear : true;
+    const matchesClass = filterBootsklasse ? e.bootsklassen?.includes(filterBootsklasse) : true;
+    const matchesStatus = filterStatus ? status.type === filterStatus : true;
+    const matchesExcludeRegistration = filterExcludeRegistered ? !isRegistered : true;
 
-      return matchesSearch && matchesLand && matchesYear && matchesClass && matchesStatus && matchesExcludeRegistration;
-    });
-  }, [events, search, filterLand, filterYear, filterBootsklasse, filterStatus, filterExcludeRegistered, myRegisteredEventIds]);
+    const matchesMap = mapFilter 
+      ? (Math.abs(e.lat - mapFilter.lat) < 0.001 && Math.abs(e.lng - mapFilter.lng) < 0.001)
+      : true;
+
+    return matchesSearch && matchesLand && matchesYear && matchesClass && 
+           matchesStatus && matchesExcludeRegistration && matchesMap;
+  });
+}, [events, search, filterLand, filterYear, filterBootsklasse, filterStatus, filterExcludeRegistered, myRegisteredEventIds, mapFilter]);
 
   if (loading) return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center"><Loader2 className="w-12 h-12 text-sky-500 animate-spin" /></div>;
 
@@ -158,37 +183,57 @@ export default function RegattaÜbersicht() {
 
           <div className="flex bg-slate-800/50 backdrop-blur-xl p-1.5 rounded-full border border-white/5 shadow-2xl">
             <button onClick={() => setViewMode('list')} className={`px-6 py-2.5 rounded-full text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-sky-500 text-white' : 'text-slate-400'}`}>
-              <List className="w-3.5 h-3.5 inline mr-1.5" /> Liste
+              <List className="w-3.5 h-3.5 inline mr-1.5" /> {t('viewList')}
             </button>
             <button onClick={() => setViewMode('map')} className={`px-6 py-2.5 rounded-full text-xs font-bold transition-all ${viewMode === 'map' ? 'bg-sky-500 text-white' : 'text-slate-400'}`}>
-              <MapIcon className="w-3.5 h-3.5 inline mr-1.5" /> Karte
+              <MapIcon className="w-3.5 h-3.5 inline mr-1.5" /> {t('viewMap')}
             </button>
           </div>
         </div>
 
-        {/* SCHMÄLERES HORIZONTALES FILTER PANEL */}
         <div className="bg-slate-800/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-3 mb-12 shadow-2xl overflow-x-auto">
           <div className="flex flex-wrap md:flex-nowrap items-center gap-2 min-w-max">
             
             <div className="relative flex-grow min-w-[160px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-sky-400/60" />
-              <input type="text" placeholder="Suchen..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-[#1e293b]/60 border-none rounded-full py-2.5 pl-9 pr-4 text-[11px] text-white focus:ring-2 focus:ring-sky-500/50" />
+              <input 
+                type="text" 
+                placeholder={t('searchPlaceholder')} 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+                className="w-full bg-[#1e293b]/60 border-none rounded-full py-2.5 pl-9 pr-4 text-[11px] text-white focus:ring-2 focus:ring-sky-500/50" 
+              />
             </div>
 
-            <input type="text" placeholder="Land" value={filterLand} onChange={(e) => setFilterLand(e.target.value)} className="bg-[#1e293b]/60 border-none rounded-full py-2.5 px-4 text-[11px] text-white w-20" />
+            <input 
+              type="text" 
+              placeholder={t('country')} 
+              value={filterLand} 
+              onChange={(e) => setFilterLand(e.target.value)} 
+              className="bg-[#1e293b]/60 border-none rounded-full py-2.5 px-4 text-[11px] text-white w-20" 
+            />
 
             <select value={filterBootsklasse} onChange={(e) => setFilterBootsklasse(e.target.value)} className="bg-[#1e293b]/60 border-none rounded-full py-2.5 px-4 text-[11px] text-slate-300 w-28">
-              <option value="">Klasse</option>
+              <option value="">{t('class')}</option>
               {BOOTSKLASSEN.map(b => <option key={b} value={b} className="bg-slate-900">{b}</option>)}
             </select>
 
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="bg-[#1e293b]/60 border-none rounded-full py-2.5 px-4 text-[11px] text-sky-400 font-bold w-28">
-              <option value="" className="text-slate-300 font-normal">Status</option>
-              <option value="OPEN">Offen</option>
-              <option value="COMING">Bald</option>
-              <option value="CLOSED">Geschlossen</option>
-              <option value="FINISHED">Beendet</option>
+              <option value="" className="text-slate-300 font-normal">{t('status')}</option>
+              <option value="OPEN">{t('statusOpen')}</option>
+              <option value="COMING">{t('statusComing')}</option>
+              <option value="CLOSED">{t('statusClosed')}</option>
+              <option value="FINISHED">{t('statusFinished')}</option>
             </select>
+
+            {mapFilter && (
+              <button 
+                onClick={() => setMapFilter(null)}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[11px] font-bold bg-sky-500 text-white shadow-lg animate-pulse"
+              >
+                <MapPin className="w-3 h-3" /> {t('resetPin')}
+              </button>
+            )}
 
             <button
               onClick={() => setFilterExcludeRegistered(!filterExcludeRegistered)}
@@ -196,16 +241,31 @@ export default function RegattaÜbersicht() {
                 filterExcludeRegistered ? 'bg-orange-500 border-orange-400 text-white shadow-lg shadow-orange-500/20' : 'bg-[#1e293b]/60 border-transparent text-slate-400'
               }`}
             >
-              <CheckCircle2 className="w-3 h-3" /> Nicht Gemeldet
+              <CheckCircle2 className="w-3 h-3" /> {t('notRegisteredOnly')}
             </button>
 
             <div className="flex items-center gap-1.5 bg-[#1e293b]/60 rounded-full px-3">
               <Calendar className="w-3 h-3 text-sky-400" />
-              <input type="number" placeholder="Jahr" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="bg-transparent border-none py-2.5 text-[11px] text-white w-12 focus:ring-0 placeholder:text-slate-500" />
+              <input 
+                type="number" 
+                placeholder={t('year')} 
+                value={filterYear} 
+                onChange={(e) => setFilterYear(e.target.value)} 
+                className="bg-transparent border-none py-2.5 text-[11px] text-white w-12 focus:ring-0 placeholder:text-slate-500" 
+              />
             </div>
 
-            {(search || filterLand || filterBootsklasse || filterStatus || filterYear || filterExcludeRegistered) && (
-              <button onClick={() => {setSearch(""); setFilterLand(""); setFilterBootsklasse(""); setFilterStatus(""); setFilterYear(""); setFilterExcludeRegistered(false);}} className="p-2.5 bg-red-500/10 text-red-400 rounded-full hover:bg-red-500 hover:text-white transition-all"><FilterX className="w-3.5 h-3.5" /></button>
+            {/* Reset Button */}
+            {(search || filterLand || filterBootsklasse || filterStatus || filterYear || filterExcludeRegistered || mapFilter) && (
+              <button 
+                onClick={() => {
+                  setSearch(""); setFilterLand(""); setFilterBootsklasse(""); 
+                  setFilterStatus(""); setFilterYear(""); setFilterExcludeRegistered(false); setMapFilter(null);
+                }} 
+                className="p-2.5 bg-red-500/10 text-red-400 rounded-full hover:bg-red-500 hover:text-white transition-all"
+              >
+                <FilterX className="w-3.5 h-3.5" />
+              </button>
             )}
           </div>
         </div>
@@ -215,21 +275,50 @@ export default function RegattaÜbersicht() {
             {filtered.map((event) => {
               const status = getStatusInfo(event);
               const isRegistered = myRegisteredEventIds.includes(event.id);
+
+              const overlappingEvent = !isRegistered ? myRegisteredEvents.find(regEv => 
+                checkOverlap(
+                  event.datumVon, 
+                  event.datum_bis || event.datumBis, 
+                  regEv.datumVon, 
+                  regEv.datum_bis || regEv.datumBis
+                )
+              ) : null;
+            
               return (
                 <div key={event.id} onClick={() => router.push(`/regatta/${event.id}?seglerId=${seglerId}`)} className="group bg-slate-800/30 border border-white/5 p-7 rounded-[3rem] flex flex-col hover:bg-sky-900/20 transition-all cursor-pointer relative shadow-xl">
                   <div className="flex justify-between items-start mb-6">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${status.color}`}>
-                        {status.label}
+                        {t(`labels.${status.type}`)}
                       </span>
+                      
                       {isRegistered && (
                         <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Gemeldet
+                          <CheckCircle2 className="w-3 h-3" /> {t('registered')}
                         </span>
+                      )}
+            
+                      {/* NEU: Warnanzeige bei Zeitüberschneidung */}
+                      {overlappingEvent && (
+                        <div className="flex flex-col gap-1">
+                          <span className="bg-orange-500/20 text-orange-400 border border-orange-500/40 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 animate-pulse">
+                            <Wind className="w-3 h-3" /> {t('overlapWarning')}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <h2 className="text-2xl font-bold text-white group-hover:text-sky-400 transition-colors mb-6 italic line-clamp-2">{event.name}</h2>
+            
+                  <h2 className="text-2xl font-bold text-white group-hover:text-sky-400 transition-colors mb-2 italic line-clamp-2">{event.name}</h2>
+                  
+                  {/* Detail-Text zur Kollision */}
+                  {overlappingEvent && (
+                    <p className="text-[10px] text-orange-400/70 mb-4 font-medium italic">
+                      {t('overlapDetail')}: {overlappingEvent.name}
+                    </p>
+                  )}
+            
                   <div className="mt-auto flex items-end justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-slate-400 text-sm font-medium"><MapPin className="w-4 h-4 text-sky-400" /> {event.location}</div>

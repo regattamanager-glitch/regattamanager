@@ -82,7 +82,27 @@
   "noClubFallback": "—",
   "classesLabel": "Classes",
   "moreThanTenClasses": "+9 classes",
-  "openClass": "Open"
+  "openClass": "Open",
+  "searchPlaceholder": "Pesquisar...",
+"country": "País",
+"class": "Classe",
+"status": "Estado",
+"statusOpen": "Aberto",
+"statusComing": "Em breve",
+"statusClosed": "Fechado",
+"statusFinished": "Finalizado",
+"resetPin": "Remover Pin",
+"notRegisteredOnly": "Não Inscrito",
+"year": "Ano",
+"registered": "Inscrito",
+"labels": {
+  "OPEN": "Aperto",
+  "COMING": "Em breve",
+  "CLOSED": "Fechado",
+  "FINISHED": "Finalizado"
+},
+"overlapWarning": "Conflito de Horário",
+"overlapDetail": "Conflito com"
 },
 "Dashboard": {
   "upcomingCount": "Você tem {count} {count, plural, =1 {regata} other {regatas}} futuras",
@@ -448,7 +468,25 @@
     "nation": "Nação representada",
     "club": "Clube",
     "password": "Senha"
-  }
+  },
+  "backToOverview": "Voltar para a visão geral",
+  "adminEntry": "Entrada de administrador",
+  "searchAccount": "Pesquisar conta (base de dados)",
+  "searchPlaceholder": "Nome, apelido ou e-mail...",
+  "labelEmergencyContact": "Contacto de emergência",
+  "labelSelectClass": "Selecionar classe do barco",
+  "selectPlaceholder": "-- Por favor selecione --",
+  "noExtrasAvailable": "Sem extras disponíveis",
+  "addCrewMember": "+ Adicionar tripulante",
+  "noCrewEntered": "Nenhum tripulante inserido",
+  "summaryTitle": "Resumo",
+  "feeRegistration": "Taxa de inscrição",
+  "total": "Total",
+  "saving": "A guardar...",
+  "saveRegistration": "Guardar inscrição",
+  "loadingManager": "A CARREGAR REGATTA MANAGER...",
+  "errorSelectClass": "Por favor, selecione uma classe de barco!",
+  "confirmManualEntry": "Criar inscrição manual? O velejador será marcado como 'Pago' imediatamente."
 },
 "Footer": {
   "description": "Solução completa para gestão moderna de regatas e faturamento digital.",
