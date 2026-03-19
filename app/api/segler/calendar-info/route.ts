@@ -5,51 +5,43 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const seglerId = searchParams.get("seglerId");
 
-  if (!seglerId) {
-    return NextResponse.json({ error: "ID fehlt" }, { status: 400 });
-  }
+  if (!seglerId) return NextResponse.json({ error: "ID fehlt" }, { status: 400 });
 
   try {
-    // 1. Freunde laden (IDs der akzeptierten Freundschaften)
-    // Wir suchen in der 'invitations' Tabelle nach allen 'accepted' Einträgen
+    // 1. Eigene Registrierungen (Tabelle: registrations)
+    // Wir nutzen "eventId" und "seglerId" in Anführungszeichen, wie vom Server gefordert
+    const myRegistrations = await sql`
+      SELECT "eventId", "klasse" 
+      FROM "registrations" 
+      WHERE "seglerId" = ${seglerId}
+    `;
+
+    // 2. Deine Einladungen (Tabelle: event_Invitations)
+    const invitations = await sql`
+      SELECT "event_id" as "eventId" 
+      FROM "event_Invitations"
+      WHERE "receiver_id" = ${seglerId} 
+      AND "status" = 'pending'
+    `.catch(() => []);
+
+    // 3. Deine Freunde (Tabelle: _SeglerFriends)
     const friendsRows = await sql`
       SELECT 
-        CASE WHEN sender_id = ${seglerId} THEN receiver_id ELSE sender_id END as friend_id
-      FROM invitations 
-      WHERE (sender_id = ${seglerId} OR receiver_id = ${seglerId}) 
-      AND status = 'accepted'
-    `;
-    const friends = friendsRows.map(row => row.friend_id);
+        CASE WHEN "A" = ${seglerId} THEN "B" ELSE "A" END as friend_id
+      FROM "_SeglerFriends" 
+      WHERE "A" = ${seglerId} OR "B" = ${seglerId}
+    `.catch(() => []);
 
-    // 2. Event-Einladungen laden (Pending)
-    // Hier ziehen wir die Daten aus 'event_invitations'
-    const eventInvites = await sql`
-      SELECT 
-        id, 
-        sender_id as "senderId", 
-        receiver_id as "receiverId", 
-        event_id as "eventId", 
-        event_name as "eventName", 
-        status, 
-        created_at as "sentAt"
-      FROM event_invitations
-      WHERE receiver_id = ${seglerId} 
-      AND status = 'pending'
-    `;
-
-    // Diagnose-Log (wie in deinem Original-Code)
-    eventInvites.forEach(inv => {
-       console.log(`✅ EINLADUNG GEFUNDEN: Event '${inv.eventName}' (ID: ${inv.eventId})`);
-    });
+    console.log(`Erfolg! ${myRegistrations.length} Registrierungen für ${seglerId} geladen.`);
 
     return NextResponse.json({ 
-      friends, 
-      invitations: eventInvites 
+      friends: friendsRows.map((f: any) => f.friend_id), 
+      invitations,
+      myRegistrations 
     });
 
   } catch (err) {
-    console.error("Kritischer Fehler in SQL API [calendar-info]:", err);
-    // Wir geben leere Arrays zurück, damit das Frontend nicht abstürzt
-    return NextResponse.json({ friends: [], invitations: [] });
+    console.error("Datenbank-Fehler in calendar-info:", err);
+    return NextResponse.json({ friends: [], invitations: [], myRegistrations: [] });
   }
 }

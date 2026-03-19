@@ -4,18 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dayjs from "dayjs";
 import 'dayjs/locale/de';
-import 'dayjs/locale/en'; // Englisch hinzugefügt
-import 'dayjs/locale/fr'; // Falls benötigt
+import 'dayjs/locale/en';
 import { 
-  Trophy, 
-  ChevronLeft, 
-  MapPin, 
-  Calendar,
-  ArrowRight,
-  Loader2,
-  Medal,
-  Target,
-  Anchor
+  Trophy, ChevronLeft, MapPin, Calendar,
+  ArrowRight, Loader2, Medal, Target, Anchor
 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -28,7 +20,7 @@ type ResultEntry = {
   rank: number;
   totalParticipants: number;
 };
- 
+
 export default function SeglerResultsPage() {
   const t = useTranslations('Results');
   const locale = useLocale();
@@ -39,60 +31,81 @@ export default function SeglerResultsPage() {
   const [results, setResults] = useState<ResultEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Dayjs Sprache synchronisieren
   useEffect(() => {
     dayjs.locale(locale);
   }, [locale]);
 
   useEffect(() => {
     const loadData = async () => {
-      try {
-        const sessionRes = await fetch('/api/accounts/session');
-        const userData = await sessionRes.json();
-        const [eventsRes, resultsRes] = await Promise.all([
-          fetch('/api/events'),
-          fetch('/api/events/results')
-        ]);
-        
-        const allEvents = await eventsRes.json();
-        const allResults = await resultsRes.json();
-        const myId = String(userData.id).trim();
-        const processed: ResultEntry[] = [];
+  try {
+    const [eventsRes, resultsRes] = await Promise.all([
+      fetch('/api/events'),
+      fetch('/api/events/results')
+    ]);
+    
+    const allEvents = await eventsRes.json();
+    const allResults = await resultsRes.json();
+    const myId = String(seglerId).trim().toLowerCase();
+    const processed: ResultEntry[] = [];
 
-        allEvents.forEach((event: any) => {
-          if (!event.segler) return;
-          Object.entries(event.segler).forEach(([klasse, participants]: [string, any]) => {
-            const partArray = participants as any[];
-            const isMe = partArray.some((p: any) => String(p.skipper?.seglerId || p.seglerId || "").trim() === myId);
-            
-            if (isMe) {
-              const resObj = allResults[event.id]?.[klasse];
-              if (resObj) {
-                const rank = calculatePlacement(partArray, resObj, myId);
-                if (rank !== null) {
-                  processed.push({
-                    eventId: event.id, 
-                    eventName: event.name, 
-                    datum: event.datumVon,
-                    location: event.location, 
-                    klasse, 
-                    rank, 
-                    totalParticipants: partArray.length
-                  });
-                }
+    if (Array.isArray(allEvents)) {
+      // Wir müssen die Registrierungen für JEDES Event einzeln abfragen,
+      // da die API die eventId zwingend voraussetzt.
+      await Promise.all(allEvents.map(async (event: any) => {
+        try {
+          const regRes = await fetch(`/api/registrations?eventId=${event.id}`);
+          if (!regRes.ok) return;
+
+          const eventRegistrations = await regRes.json();
+          const registrationsArray = Array.isArray(eventRegistrations) 
+            ? eventRegistrations 
+            : (eventRegistrations.registrations || []);
+
+          // 1. Schauen, ob DU in diesem Event registriert bist
+          const myReg = registrationsArray.find((r: any) => 
+            String(r.seglerid || r.seglerId || "").toLowerCase() === myId
+          );
+
+          if (myReg) {
+            const klasse = myReg.klasse;
+            const eventResults = allResults[event.id] || {};
+            const klasseResults = eventResults[klasse];
+
+            // 2. Alle Teilnehmer der gleichen Klasse für das Ranking filtern
+            const classParticipants = registrationsArray.filter((r: any) => 
+              r.klasse === klasse
+            );
+
+            if (klasseResults) {
+              const rank = calculatePlacement(classParticipants, klasseResults, myId);
+              if (rank !== null) {
+                processed.push({
+                  eventId: event.id,
+                  eventName: event.name,
+                  datum: event.datumVon,
+                  location: event.location,
+                  klasse,
+                  rank,
+                  totalParticipants: classParticipants.length
+                });
               }
             }
-          });
-        });
-        setResults(processed.sort((a, b) => dayjs(b.datum).diff(dayjs(a.datum))));
-      } catch (err) { 
-        console.error(err); 
-      } finally { 
-        setLoading(false); 
-      }
-    };
+          }
+        } catch (e) {
+          console.error(`Fehler beim Laden von Event ${event.id}:`, e);
+        }
+      }));
+    }
+
+    setResults(processed.sort((a, b) => dayjs(b.datum).diff(dayjs(a.datum))));
+  } catch (err) {
+    console.error("Kritischer Fehler im Loader:", err);
+  } finally {
+    setLoading(false);
+  }
+};
     loadData();
-  }, [seglerId]);
+  }, [seglerId]); // Hier war die schließende Klammer zuvor falsch gesetzt
 
   if (loading) {
     return (
@@ -133,8 +146,6 @@ export default function SeglerResultsPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 pt-10">
-        
-        {/* Stats Section */}
         <div className="grid grid-cols-3 gap-6 mb-12">
           {[
             { label: t('statRegattas'), value: stats.total, icon: Target, color: 'text-sky-400' },
@@ -216,7 +227,7 @@ export default function SeglerResultsPage() {
     </div>
   );
 }
-// Hilfsfunktion (exakt wie im Original)
+
 function calculatePlacement(seglerList: any[], eventResults: Record<string, any[]>, targetId: string) {
   const numParticipants = seglerList.length;
   if (numParticipants === 0) return null;

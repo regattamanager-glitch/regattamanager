@@ -28,61 +28,64 @@ export default function SeglerCalendarPage() {
   }, [locale]);
 
   async function loadCalendarData() {
-    try {
-      setLoading(true);
-      const [resEvents, resInfo] = await Promise.all([
-        fetch('/api/events'),
-        fetch(`/api/segler/calendar-info?seglerId=${seglerId}`)
-      ]);
+  try {
+    setLoading(true);
+    const [resEvents, resInfo] = await Promise.all([
+      fetch('/api/events'),
+      fetch(`/api/segler/calendar-info?seglerId=${seglerId}`)
+    ]);
 
-      if (!resEvents.ok || !resInfo.ok) throw new Error("Fehler beim Laden");
+    const allEvents = await resEvents.json(); 
+    const { myRegistrations, invitations } = await resInfo.json();
 
-      const allEvents = await resEvents.json(); 
-      const { friends, invitations } = await resInfo.json();
-
-      if (Array.isArray(allEvents)) {
-        // ... innerhalb von if (Array.isArray(allEvents))
-const processed = allEvents.map(event => {
-  let status = 'neutral';
-  
-  // 1. Check: Bin ich selbst angemeldet?
-  // Wir prüfen, ob die seglerId irgendwo in den Bootsklassen-Listen auftaucht
-  const istAngemeldet = event.segler && typeof event.segler === 'object' && 
-    Object.values(event.segler).some((liste: any) => 
-      Array.isArray(liste) && liste.some((anm: any) => 
-        String(anm.skipper?.seglerId) === String(seglerId)
-      )
-    );
-
-  // 2. Check: Bin ich eingeladen?
-  const istEingeladen = invitations?.some((inv: any) => {
-    const targetId = inv.eventId || inv.eventID || inv.regattaId;
-    return String(targetId) === String(event.id);
-  });
-
-  // 3. Check: Sind Freunde dabei?
-  const freundeDabei = event.segler && typeof event.segler === 'object' &&
-    Object.values(event.segler).some((liste: any) => 
-      Array.isArray(liste) && liste.some((anm: any) => 
-        friends?.includes(anm.skipper?.seglerId)
-      )
-    );
-
-  if (istAngemeldet) status = 'angemeldet';
-  else if (istEingeladen) status = 'eingeladen';
-  else if (freundeDabei) status = 'freunde';
-
-  return { ...event, status };
-}).filter(event => event.status !== 'neutral');
-
-setEvents(processed);
-      }
-    } catch (err) {
-      console.error("Kalender-Fehler:", err);
-    } finally {
-      setLoading(false);
+    // --- DIAGNOSE START ---
+    console.log("1. Alle Events vom Server:", allEvents.length);
+    console.log("2. Meine Registrierungen (Rohdaten):", myRegistrations);
+    console.log("3. Gesuchte Segler-ID im Frontend:", seglerId);
+    
+    if (myRegistrations && myRegistrations.length > 0) {
+       const firstRegId = String(myRegistrations[0].eventid || myRegistrations[0].eventId);
+       const matchTest = allEvents.find((e: any) => String(e.id) === firstRegId);
+       console.log("4. Test-Match mit erstem Event:", matchTest ? "ERFOLGREICH ✅" : "FEHLGESCHLAGEN ❌");
     }
+    // --- DIAGNOSE ENDE ---
+
+    if (Array.isArray(allEvents)) {
+      const processed = allEvents.map((event: any) => {
+        const eId = String(event.id).trim().toLowerCase();
+        
+        // Wir vergleichen hier extrem sicher
+        const istAngemeldet = myRegistrations?.some((reg: any) => {
+          const regEventId = String(reg.eventid || reg.eventId || "").trim().toLowerCase();
+          return regEventId === eId;
+        });
+
+        const istEingeladen = invitations?.some((inv: any) => 
+          String(inv.eventId || inv.eventID || "").trim().toLowerCase() === eId
+        );
+
+        let status = 'neutral';
+        if (istAngemeldet) status = 'angemeldet';
+        else if (istEingeladen) status = 'eingeladen';
+
+        return { 
+          ...event, 
+          status,
+          // Wir nutzen die Felder, die deine API (v3/app/api/events/route.ts) garantiert liefert:
+          displayStart: event.datumVon, 
+          displayEnd: event.datumBis
+        };
+      }).filter((event: any) => event.status !== 'neutral');
+
+      console.log("5. Finale Events für Kalender:", processed);
+      setEvents(processed);
+    }
+  } catch (err) {
+    console.error("Kalender-Fehler:", err);
+  } finally {
+    setLoading(false);
   }
+}
 
   useEffect(() => {
     if (seglerId) loadCalendarData();
@@ -113,8 +116,10 @@ setEvents(processed);
   const targetDay = cellDate.startOf('day');
   
   return events.filter(e => {
-    const start = dayjs(e.datumVon).startOf('day');
-    const end = dayjs(e.datumBis).startOf('day');
+    if (!e.displayStart) return false; // Ohne Datum kein Eintrag
+    const start = dayjs(e.displayStart).startOf('day');
+    const end = dayjs(e.displayEnd || e.displayStart).startOf('day');
+    
     return (
       targetDay.isSame(start) || 
       targetDay.isSame(end) || 
