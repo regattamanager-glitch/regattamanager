@@ -58,12 +58,9 @@ try {
       VALUES (${registrationId}, ${JSON.stringify({ eventId, klasse, seglerId, extras, skipper, boot, crew })})
     `;
 
-    // 5. Stripe Session erstellen
+    // 5. Stripe Session erstellen (Kompatibilitäts-Modus für alte Library)
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: undefined, // Wichtig: Muss leer sein für automatic_payment_methods
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      payment_method_types: ["card"], // Wir starten nur mit Karte, um Fehler zu vermeiden
       mode: "payment",
       line_items: [
         {
@@ -85,6 +82,7 @@ try {
           },
           quantity: 1,
         },
+        // Extras hinzufügen
         ...(extras || []).filter((e: any) => e.quantity > 0).map((e: any) => ({
           price_data: {
             currency: "eur",
@@ -108,7 +106,7 @@ try {
         klasse, 
         seglerId 
       },
-    } as any); // Das 'as any' hier ist der Schlüssel!
+    }); 
 
     return NextResponse.json({ url: session.url });
   } catch (err: any) {
