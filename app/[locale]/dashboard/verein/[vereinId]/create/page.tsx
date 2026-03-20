@@ -286,23 +286,35 @@ export default function CreateEventPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // 1. Validierungen
-    if (activeClasses.length === 0) {
-      alert(t("addAtLeastOneClass"));
-      return;
-    }
-    
-    const invalidFees = activeClasses.some(cls => Number(cls.feeLate) < Number(cls.feeRegular) * 1.08);
-    if (invalidFees) {
-      alert(t("lateFeeWarning"));
-      // Wir blockieren hier nicht hart, zeigen aber die Warnung
-    }
-    
-    // 2. Vertrag öffnen (Das Modal wird angezeigt)
-    setLegalModalOpen(true);
-  };
+  e.preventDefault();
+  
+  // 1. Validierungen
+  if (activeClasses.length === 0) {
+    alert(t("addAtLeastOneClass"));
+    return;
+  }
+
+  // PRÜFUNG: Mindestgebühr von 10€
+  const feeTooLow = activeClasses.some(cls => 
+    Number(cls.feeRegular) < 10 || Number(cls.feeLate) < 10
+  );
+
+  if (feeTooLow) {
+    // Du solltest hierfür einen neuen Übersetzungsschlüssel anlegen, z.B. 'minFeeError'
+    alert(t("minFeeError") || "Die Gebühr muss mindestens 10€ betragen.");
+    return; // Hier stoppen wir den Prozess, da 10€ eine harte Grenze sein sollen
+  }
+  
+  // PRÜFUNG: 8% Aufschlag für Nachmeldegebühr
+  const invalidFees = activeClasses.some(cls => Number(cls.feeLate) < Number(cls.feeRegular) * 1.08);
+  
+  if (invalidFees) {
+    alert(t("lateFeeWarning"));
+  }
+  
+  // 2. Vertrag öffnen
+  setLegalModalOpen(true);
+};
 
   // Diese Funktion wird vom Modal aufgerufen, wenn "Akzeptieren" geklickt wurde
   const handleFinalSubmitAfterLegal = async () => {
@@ -415,22 +427,22 @@ export default function CreateEventPage() {
                  >
                    <option value="">{t('chooseTemplate')}</option>
                    {BOOTSKLASSEN.map((b) => {
-  // Wir nutzen t.raw um zu prüfen ob der Key existiert, ohne den Error-Handler von t() zu triggern
-  let label = b;
-  try {
-    // Versuche die Übersetzung zu holen
-    label = t(`bootClasses.${b}`);
-  } catch (e) {
-    // Falls next-intl wirft, bleibt label = b
-    label = b;
-  }
-
-  return (
-    <option key={b} value={b}>
-      {label}
-    </option>
-  );
-})}
+                     // Wir nutzen t.raw um zu prüfen ob der Key existiert, ohne den Error-Handler von t() zu triggern
+                     let label = b;
+                     try {
+                       // Versuche die Übersetzung zu holen
+                       label = t(`bootClasses.${b}`);
+                     } catch (e) {
+                       // Falls next-intl wirft, bleibt label = b
+                       label = b;
+                     }
+                   
+                     return (
+                       <option key={b} value={b}>
+                         {label}
+                       </option>
+                     );
+                   })}
                  </select>
                  <button 
                   type="button"

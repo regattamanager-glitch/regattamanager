@@ -158,7 +158,18 @@ export default function EditEventPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 8% Regel Validierung (Regatta Manager Richtlinie)
+    // 1. Validierung: Mindestgebühr 10€
+    const feeTooLow = activeClasses.some(cls => 
+      Number(cls.feeRegular) < 10 || Number(cls.feeLate) < 10
+    );
+
+    if (feeTooLow) {
+      // Nutzt den Key aus deiner JSON oder einen Fallback-Text
+      alert(t("minFeeError") || "Die Gebühr muss mindestens 10€ betragen.");
+      return;
+    }
+
+    // 2. 8% Regel Validierung (bestehend)
     const invalidFees = activeClasses.some(cls => Number(cls.feeLate) < Number(cls.feeRegular) * 1.08);
     if (invalidFees) {
       alert(t("lateFeeWarning"));
