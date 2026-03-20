@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import crypto from "crypto";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { 
-  apiVersion: "2022-11-15" as any 
+  apiVersion: "2025-01-27-acacia" as any // Nutze die aktuellste Version
 });
 
 export async function POST(req: NextRequest) {
@@ -62,8 +62,10 @@ try {
     `;
 
     // 5. Stripe Session erstellen
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card", "sepa_debit"],
+    const sessionOptions: any = {
+      automatic_payment_methods: {
+        enabled: true,
+      },
       mode: "payment",
       line_items: [
         {
@@ -98,7 +100,7 @@ try {
       payment_intent_data: {
         application_fee_amount: Math.round(serviceFee * 100),
         transfer_data: {
-          destination: verein.stripeAccountId, // Vorher: stripe_account_id
+          destination: verein.stripeAccountId,
         },
       },
       success_url: `${origin}/dashboard/segler/${seglerId}?success=true`,
@@ -109,7 +111,9 @@ try {
         klasse, 
         seglerId 
       },
-    });
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionOptions);
 
     return NextResponse.json({ url: session.url });
   } catch (err: any) {
