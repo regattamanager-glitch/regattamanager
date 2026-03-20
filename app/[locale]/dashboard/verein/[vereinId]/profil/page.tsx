@@ -153,6 +153,8 @@ async function handleStripeConnect() {
 
 async function handleOpenStripeDashboard() {
   setIsOpeningDashboard(true);
+  setStripeError(""); // Fehler vorher zurücksetzen
+
   try {
     const res = await fetch("/api/stripe/connect/login-link", {
       method: "POST",
@@ -161,13 +163,20 @@ async function handleOpenStripeDashboard() {
     });
 
     const data = await res.json();
-    if (data.url) {
-      window.open(data.url, "_blank"); // Öffnet Stripe in einem neuen Tab
+
+    if (res.ok && data.url) {
+      // Fall 1: Alles okay, Dashboard öffnen
+      window.open(data.url, "_blank");
+    } else if (res.status === 403 && data.error === "ONBOARDING_INCOMPLETE") {
+      // Fall 2: Onboarding fehlt -> Wir leiten zum Onboarding weiter
+      // Wir nutzen hierfür einfach deine bereits existierende handleStripeConnect Funktion
+      console.log("Onboarding unvollständig, generiere neuen Link für ID:", stripeId);
+      await handleStripeConnect(); 
     } else {
-      throw new Error(data.error);
+      throw new Error(data.error || "Dashboard konnte nicht geöffnet werden");
     }
   } catch (err: any) {
-    setStripeError(err.message || "Dashboard konnte nicht geöffnet werden");
+    setStripeError(err.message);
   } finally {
     setIsOpeningDashboard(false);
   }
