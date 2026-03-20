@@ -748,6 +748,7 @@
 "or": "veya",
 "existingStripeId": "Mevcut Stripe Kimliği (acct_...)",
 "passwordRequired": "Şifre gerekli",
+"minFeeError": "Tüm sınıflar için ücret en az 10€ olmalıdır.",
 "stripeError": "Stripe bağlantı hatası"
 },
 "Legal": {

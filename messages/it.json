@@ -748,6 +748,7 @@
 "or": "o",
 "existingStripeId": "ID Stripe esistente (acct_...)",
 "passwordRequired": "Password richiesta",
+"minFeeError": "La quota per tutte le classi deve essere di almeno 10€.",
 "stripeError": "Errore durante la connessione a Stripe"
 },
 "Legal": {

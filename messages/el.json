@@ -723,6 +723,7 @@
 "or": "ή",
 "existingStripeId": "Υπάρχον Stripe ID (acct_...)",
 "passwordRequired": "Απαιτείται κωδικός πρόσβασης",
+"minFeeError": "Το παράβολο για όλες τις κατηγορίες πρέπει να είναι τουλάχιστον 10€.",
 "stripeError": "Σφάλμα σύνδεσης με το Stripe"
 },
 "Legal": {

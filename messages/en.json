@@ -748,6 +748,7 @@
 "or": "or",
 "existingStripeId": "Existing Stripe ID (acct_...)",
 "passwordRequired": "Password required",
+"minFeeError": "The fee for all classes must be at least 10€.",
 "stripeError": "Error connecting to Stripe"
 },
 "Legal": {

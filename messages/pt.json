@@ -748,6 +748,7 @@
 "or": "ou",
 "existingStripeId": "ID Stripe existente (acct_...)",
 "passwordRequired": "Senha necessária",
+"minFeeError": "A taxa para todas as classes deve ser de pelo menos 10€.",
 "stripeError": "Erro ao conectar ao Stripe"
 },
 "Legal": {

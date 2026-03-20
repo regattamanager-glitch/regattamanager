@@ -748,7 +748,9 @@
     "or": "oder",
     "existingStripeId": "Bestehende Stripe-ID (acct_...)",
     "passwordRequired": "Passwort erforderlich",
-    "stripeError": "Fehler bei der Verbindung mit Stripe"
+    "stripeError": "Fehler bei der Verbindung mit Stripe",
+    "minFeeError": "Die Gebühr für alle Klassen muss mindestens 10€ betragen.",
+    "...": "..."
   },
   "Legal": {
   "agbTitle": "Allgemeine Geschäftsbedingungen",

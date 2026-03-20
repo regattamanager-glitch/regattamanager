@@ -300,10 +300,10 @@ export default function CreateEventPage() {
   );
 
   if (feeTooLow) {
-    // Du solltest hierfür einen neuen Übersetzungsschlüssel anlegen, z.B. 'minFeeError'
-    alert(t("minFeeError") || "Die Gebühr muss mindestens 10€ betragen.");
-    return; // Hier stoppen wir den Prozess, da 10€ eine harte Grenze sein sollen
-  }
+      // Nutzt den Translation-Key für die Fehlermeldung
+      alert(t("minFeeError"));
+      return;
+    }
   
   // PRÜFUNG: 8% Aufschlag für Nachmeldegebühr
   const invalidFees = activeClasses.some(cls => Number(cls.feeLate) < Number(cls.feeRegular) * 1.08);

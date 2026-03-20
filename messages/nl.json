@@ -748,6 +748,7 @@
 "or": "of",
 "existingStripeId": "Bestaande Stripe-ID (acct_...)",
 "passwordRequired": "Wachtwoord vereist",
+"minFeeError": "Het inschrijfgeld voor alle klassen moet minimaal 10€ zijn.",
 "stripeError": "Fout bij verbinding met Stripe"
 },
 "Legal": {

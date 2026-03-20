@@ -748,6 +748,7 @@
 "or": "ili",
 "existingStripeId": "Postojeći Stripe ID (acct_...)",
 "passwordRequired": "Potrebna lozinka",
+"minFeeError": "Pristojba za sve klase mora biti najmanje 10€.",
 "stripeError": "Pogreška pri povezivanju sa Stripeom"
 },
 "Legal": {
