@@ -455,10 +455,10 @@ return (
                 <span>👋</span> {t("regattaDetail.inviteFriends")}
               </button>
               <button
-                onClick={() => router.push(`/dashboard/segler/${seglerId}`)}
+                onClick={() => router.back()}
                 className="bg-blue-600/50 text-white px-4 py-2 rounded hover:bg-blue-800/90 transition font-medium"
               >
-                {t("regattaDetail.backToDashboard")}
+                {t("Common.back")}
               </button>
             </>
           ) : (
