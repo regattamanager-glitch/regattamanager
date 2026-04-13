@@ -10,9 +10,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
-    // FALL 1: Spezifischen Nutzer laden
+    // --- FALL 1: Spezifischen Nutzer laden ---
     if (id) {
-      // Segler suchen inkl. verknüpfter Vereine über die Tabelle "_SeglerVereine"
       const seglerRows = await sql`
         SELECT s.*, 
                json_agg(v.*) FILTER (WHERE v.id IS NOT NULL) as vereine
@@ -27,10 +26,25 @@ export async function GET(req: Request) {
       const segler = seglerRows[0];
 
       if (segler) {
+        // Datum in Einzelteile zerlegen für das Frontend
+        let tag = "", monat = "", jahr = "";
+        if (segler.geburtsdatum) {
+          const d = new Date(segler.geburtsdatum);
+          if (!isNaN(d.getTime())) {
+            tag = d.getDate().toString().padStart(2, '0');
+            monat = (d.getMonth() + 1).toString().padStart(2, '0');
+            jahr = d.getFullYear().toString();
+          }
+        }
+
         const vereine = segler.vereine || [];
         return NextResponse.json({
           ...segler,
           type: "segler",
+          // Diese Keys werden von deiner RegisterToEventPage erwartet
+          geburtstag: tag,
+          geburtsmonat: monat,
+          geburtsjahr: jahr,
           vereinsNamen: vereine.map((v: any) => v.kuerzel || v.name),
           verein: vereine.length > 0 
             ? (vereine[0].kuerzel || vereine[0].name) 
@@ -52,7 +66,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Nutzer nicht gefunden" }, { status: 404 });
     }
 
-    // FALL 2: Alle Nutzer laden
+    // --- FALL 2: Alle Nutzer laden ---
     const allSegler = await sql`
       SELECT s.*, json_agg(v.*) FILTER (WHERE v.id IS NOT NULL) as vereine
       FROM "Segler" s
@@ -63,8 +77,28 @@ export async function GET(req: Request) {
     
     const allVereine = await sql`SELECT * FROM "Verein"`;
 
+    // Auch in der Liste die Datumsfelder für jeden Segler aufbereiten
+    const mappedSegler = allSegler.map((s: any) => {
+      let tag = "", monat = "", jahr = "";
+      if (s.geburtsdatum) {
+        const d = new Date(s.geburtsdatum);
+        if (!isNaN(d.getTime())) {
+          tag = d.getDate().toString().padStart(2, '0');
+          monat = (d.getMonth() + 1).toString().padStart(2, '0');
+          jahr = d.getFullYear().toString();
+        }
+      }
+      return { 
+        ...s, 
+        type: "segler",
+        geburtstag: tag,
+        geburtsmonat: monat,
+        geburtsjahr: jahr
+      };
+    });
+
     const combined = [
-      ...allSegler.map((s: any) => ({ ...s, type: "segler" })),
+      ...mappedSegler,
       ...allVereine.map((v: any) => ({ ...v, type: "verein" }))
     ];
 

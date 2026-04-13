@@ -750,7 +750,7 @@
     "passwordRequired": "Passwort erforderlich",
     "stripeError": "Fehler bei der Verbindung mit Stripe",
     "minFeeError": "Die Gebühr für alle Klassen muss mindestens 10€ betragen.",
-    "...": "..."
+    "loadingDots": "..."
   },
   "Legal": {
   "agbTitle": "Allgemeine Geschäftsbedingungen",
