@@ -11,14 +11,25 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Daten aus dem Request holen
     const body = await req.json().catch(() => ({}));
-    const { type, email, passwort, vorname, nachname, geburtsjahr, nation, name, kuerzel, adresse } = body;
+    const { 
+      type, 
+      email, 
+      passwort, 
+      vorname, 
+      nachname, 
+      geburtsdatum, 
+      nation, 
+      name, 
+      kuerzel, 
+      adresse 
+    } = body;
 
     // 2. Pflichtfelder prüfen
     if (!type || !email || !passwort) {
       return NextResponse.json({ success: false, message: "Fehlende Pflichtfelder" }, { status: 400 });
     }
 
-    // 3. Prüfen, ob die Email bereits existiert (in beiden Tabellen)
+    // 3. Prüfen, ob die Email bereits existiert
     const existingSeglerResult = await sql`SELECT id FROM "Segler" WHERE email = ${email} LIMIT 1`;
     const existingVereinResult = await sql`SELECT id FROM "Verein" WHERE email = ${email} LIMIT 1`;
 
@@ -33,45 +44,32 @@ export async function POST(req: NextRequest) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 Minuten gültig
     
-    // IDs für die neuen Einträge generieren
     const newUserId = randomUUID();
     const loginCodeId = randomUUID();
 
-    // 6. User in Neon DB anlegen
-let newUser;
-const now = new Date();
+    // 6. User in DB anlegen
+    let newUser;
+    const now = new Date();
 
-if (type === "segler") {
-  const rows = await sql`
-    INSERT INTO "Segler" (
-      id, 
-      email, 
-      passwort, 
-      vorname, 
-      nachname, 
-      geburtsdatum,
-      nation, 
-      "createdAt", 
-      "updatedAt"
-    )
-    VALUES (
-      ${newUserId}, 
-      ${email}, 
-      ${hashedPassword}, 
-      ${vorname || ""}, 
-      ${nachname || ""}, 
-      ${birthDate},
-      ${nation || "GER"}, 
-      ${now}, 
-      ${now}
-    )
-    RETURNING id
-  `;
-  newUser = rows[0];
-} else {
+    if (type === "segler") {
       const rows = await sql`
-        INSERT INTO "Verein" (id, email, passwort, name, kuerzel, adresse, "createdAt", "updatedAt")
-        VALUES (${newUserId}, ${email}, ${hashedPassword}, ${name || ""}, ${kuerzel || ""}, ${adresse || ""}, ${now}, ${now})
+        INSERT INTO "Segler" (
+          id, email, passwort, vorname, nachname, geburtsdatum, nation, "createdAt", "updatedAt"
+        )
+        VALUES (
+          ${newUserId}, ${email}, ${hashedPassword}, ${vorname || ""}, ${nachname || ""}, ${geburtsdatum || null}, ${nation || "GER"}, ${now}, ${now}
+        )
+        RETURNING id
+      `;
+      newUser = rows[0];
+    } else {
+      const rows = await sql`
+        INSERT INTO "Verein" (
+          id, email, passwort, name, kuerzel, adresse, "createdAt", "updatedAt"
+        )
+        VALUES (
+          ${newUserId}, ${email}, ${hashedPassword}, ${name || ""}, ${kuerzel || ""}, ${adresse || ""}, ${now}, ${now}
+        )
         RETURNING id
       `;
       newUser = rows[0];
@@ -90,6 +88,19 @@ if (type === "segler") {
         ${now}
       )
     `;
+
+    // 8. E-Mail Versand
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || "587"),
+      secure: process.env.SMTP_SECURE === "true",
+      auth: { 
+        user: process.env.SMTP_USER, 
+        pass: process.env.SMTP_PASS 
+      },
+    });
+
+    
 
     // 8. E-Mail Versand (Nodemailer)
     const transporter = nodemailer.createTransport({
