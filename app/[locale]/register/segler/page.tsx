@@ -126,6 +126,7 @@ export default function RegisterSegler() {
             />
             <input
               className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
+              placeholder={t("birthYearPlaceholder")}
               type="date" // Wichtig: Browser-Kalender nutzen
               value={geburtsdatum}
               onChange={(e) => setGeburtsdatum(e.target.value)}
