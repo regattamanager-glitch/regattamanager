@@ -136,10 +136,10 @@ export default function RegisterSegler() {
   const inputStyle = "w-full rounded-md p-3 bg-[#112d5c]/50 text-white placeholder-white/50 border border-blue-400/30 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all";
 
   return (
-    <div className="flex min-h-screen items-center justify-center relative bg-[#001f3f]">
+    <div className="flex min-h-screen items-center justify-center relative">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 bg-[#0b2545] p-10 rounded-3xl shadow-2xl w-[400px] sm:w-[500px] border border-blue-900/50"
+        className="flex flex-col gap-6 bg-blue-900/30 backdrop-blur-md p-14 rounded-3xl shadow-xl w-[400px] sm:w-[450px]"
       >
         {step === "form" && (
           <>
