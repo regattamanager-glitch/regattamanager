@@ -7,9 +7,13 @@ export default function RegisterSegler() {
   const t = useTranslations("Auth");
   const router = useRouter();
 
+  // States für die Picker
+  const [day, setDay] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+
   const [vorname, setVorname] = useState("");
   const [nachname, setNachname] = useState("");
-  const [geburtsdatum, setGeburtsdatum] = useState("");
   const [nation, setNation] = useState("");
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
@@ -19,11 +23,20 @@ export default function RegisterSegler() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Daten für die Scroll-Räder generieren
+  const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
 
     if (step === "form") {
+      // Datum für die Datenbank zusammenbauen (YYYY-MM-DD)
+      const geburtsdatum = (year && month && day) ? `${year}-${month}-${day}` : "";
+
       if (!vorname || !nachname || !geburtsdatum || !nation || !email || !passwort || !confirmPasswort) {
         setMessage(t("errorFields"));
         return;
@@ -125,16 +138,35 @@ export default function RegisterSegler() {
               onChange={(e) => setNachname(e.target.value)}
             />
 
-            <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder={t("birthYearPlaceholder")}
-              type={geburtsdatum ? "date" : "text"}
-              onFocus={(e) => (e.target.type = "date")}
-              onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
-              value={geburtsdatum}
-              onChange={(e) => setGeburtsdatum(e.target.value)}
-              required
-            />
+            {/* Datum Picker Sektion */}
+            <div className="flex gap-2">
+              <select
+                className="flex-1 rounded-md p-2 bg-gray-800/70 text-white focus:outline-none cursor-pointer"
+                value={day}
+                onChange={(e) => setDay(e.target.value)}
+              >
+                <option value="" disabled>{t("dayPlaceholder") || "Tag"}</option>
+                {days.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+
+              <select
+                className="flex-1 rounded-md p-2 bg-gray-800/70 text-white focus:outline-none cursor-pointer"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+              >
+                <option value="" disabled>{t("monthPlaceholder") || "Monat"}</option>
+                {months.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+
+              <select
+                className="flex-1 rounded-md p-2 bg-gray-800/70 text-white focus:outline-none cursor-pointer"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+              >
+                <option value="" disabled>{t("yearPlaceholder") || "Jahr"}</option>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
 
             <input
               className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
