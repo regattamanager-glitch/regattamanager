@@ -9,7 +9,7 @@ export default function RegisterSegler() {
 
   const [vorname, setVorname] = useState("");
   const [nachname, setNachname] = useState("");
-  const [geburtsjahr, setGeburtsjahr] = useState("");
+  const [geburtsdatum, setGeburtsdatum] = useState("");
   const [nation, setNation] = useState("");
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
@@ -20,14 +20,15 @@ export default function RegisterSegler() {
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setMessage("");
+  e.preventDefault();
+  setMessage("");
 
-    if (step === "form") {
-      if (!vorname || !nachname || !geburtsjahr || !nation || !email || !passwort || !confirmPasswort) {
-        setMessage(t("errorFields"));
-        return;
-      }
+  if (step === "form") {
+    // Validierung auf das neue Feld prüfen
+    if (!vorname || !nachname || !geburtsdatum || !nation || !email || !passwort || !confirmPasswort) {
+      setMessage(t("errorFields"));
+      return;
+    }
 
       if (passwort !== confirmPasswort) {
         setMessage(t("errorPasswordMismatch"));
@@ -35,21 +36,21 @@ export default function RegisterSegler() {
       }
 
       setLoading(true);
-      try {
-        const res = await fetch("/api/accounts/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "segler",
-            vorname,
-            nachname,
-            geburtsjahr,
-            nation,
-            email,
-            passwort,
-            vereine: [],
-          }),
-        });
+    try {
+      const res = await fetch("/api/accounts/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "segler",
+          vorname,
+          nachname,
+          geburtsdatum, 
+          nation,
+          email,
+          passwort,
+          vereine: [],
+        }),
+      });
 
         const data = await res.json();
         setLoading(false);
@@ -125,9 +126,10 @@ export default function RegisterSegler() {
             />
             <input
               className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
-              placeholder={t("birthYearPlaceholder")}
-              value={geburtsjahr}
-              onChange={(e) => setGeburtsjahr(e.target.value)}
+              type="date" // Wichtig: Browser-Kalender nutzen
+              value={geburtsdatum}
+              onChange={(e) => setGeburtsdatum(e.target.value)}
+              required // Optional: HTML5 Validierung hinzufügen
             />
             <input
               className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
