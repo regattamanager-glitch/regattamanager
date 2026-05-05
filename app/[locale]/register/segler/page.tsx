@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "@/navigation";
 import { useTranslations } from "next-intl";
 
@@ -23,9 +23,30 @@ export default function RegisterSegler() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Daten für die Scroll-Räder generieren
-  const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-  const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  // Monatsnamen Liste
+  const monthNames = [
+    "Januar", "Februar", "März", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Dezember"
+  ];
+
+  // Dynamische Berechnung der Tage im Monat
+  const [daysArray, setDaysArray] = useState<string[]>([]);
+  
+  useEffect(() => {
+    const daysInMonth = (y: number, m: number) => new Date(y, m, 0).getDate();
+    const currentYear = year ? parseInt(year) : 2000; // Default Jahr für Berechnung
+    const currentMonth = month ? parseInt(month) : 1;
+    
+    const count = daysInMonth(currentYear, currentMonth);
+    const newDays = Array.from({ length: count }, (_, i) => (i + 1).toString().padStart(2, '0'));
+    setDaysArray(newDays);
+
+    // Falls der gewählte Tag im neuen Monat nicht existiert (z.B. 31. Februar), zurücksetzen
+    if (day && parseInt(day) > count) {
+      setDay("");
+    }
+  }, [month, year, day]);
+
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
 
@@ -34,7 +55,6 @@ export default function RegisterSegler() {
     setMessage("");
 
     if (step === "form") {
-      // Datum für die Datenbank zusammenbauen (YYYY-MM-DD)
       const geburtsdatum = (year && month && day) ? `${year}-${month}-${day}` : "";
 
       if (!vorname || !nachname || !geburtsdatum || !nation || !email || !passwort || !confirmPasswort) {
@@ -112,27 +132,30 @@ export default function RegisterSegler() {
     }
   }
 
+  // Gemeinsame Styles für die Inputs (basierend auf dem Screenshot)
+  const inputStyle = "w-full rounded-md p-3 bg-[#112d5c]/50 text-white placeholder-white/50 border border-blue-400/30 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all";
+
   return (
     <div className="flex min-h-screen items-center justify-center relative bg-[#001f3f]">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 bg-blue-900/30 backdrop-blur-md p-10 rounded-3xl shadow-xl w-[400px] sm:w-[450px]"
+        className="flex flex-col gap-4 bg-[#0b2545] p-10 rounded-3xl shadow-2xl w-[400px] sm:w-[500px] border border-blue-900/50"
       >
         {step === "form" && (
           <>
-            <h1 className="text-3xl font-bold text-white text-center mb-2">
+            <h1 className="text-3xl font-bold text-white text-center mb-4">
               {t("registerSeglerTitle")}
             </h1>
 
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputStyle}
               placeholder={t("firstNamePlaceholder")}
               value={vorname}
               onChange={(e) => setVorname(e.target.value)}
             />
             
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputStyle}
               placeholder={t("lastNamePlaceholder")}
               value={nachname}
               onChange={(e) => setNachname(e.target.value)}
@@ -141,35 +164,39 @@ export default function RegisterSegler() {
             {/* Datum Picker Sektion */}
             <div className="flex gap-2">
               <select
-                className="flex-1 rounded-md p-2 bg-gray-800/70 text-white focus:outline-none cursor-pointer"
+                className={`${inputStyle} flex-1 cursor-pointer`}
                 value={day}
                 onChange={(e) => setDay(e.target.value)}
               >
-                <option value="" disabled>{t("dayPlaceholder") || "Tag"}</option>
-                {days.map(d => <option key={d} value={d}>{d}</option>)}
+                <option value="" disabled>{t("dayPlaceholder")}</option>
+                {daysArray.map(d => <option key={d} value={d} className="bg-[#0b2545]">{d}.</option>)}
               </select>
 
               <select
-                className="flex-1 rounded-md p-2 bg-gray-800/70 text-white focus:outline-none cursor-pointer"
+                className={`${inputStyle} flex-[2] cursor-pointer`}
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
               >
-                <option value="" disabled>{t("monthPlaceholder") || "Monat"}</option>
-                {months.map(m => <option key={m} value={m}>{m}</option>)}
+                <option value="" disabled>{t("monthPlaceholder")}</option>
+                {monthNames.map((name, i) => (
+                  <option key={name} value={(i + 1).toString().padStart(2, '0')} className="bg-[#0b2545]">
+                    {name}
+                  </option>
+                ))}
               </select>
 
               <select
-                className="flex-1 rounded-md p-2 bg-gray-800/70 text-white focus:outline-none cursor-pointer"
+                className={`${inputStyle} flex-[1.5] cursor-pointer`}
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
               >
-                <option value="" disabled>{t("yearPlaceholder") || "Jahr"}</option>
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
+                <option value="" disabled>{t("yearPlaceholder")}</option>
+                {years.map(y => <option key={y} value={y} className="bg-[#0b2545]">{y}</option>)}
               </select>
             </div>
 
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputStyle}
               placeholder={t("nationPlaceholder")}
               value={nation}
               onChange={(e) => setNation(e.target.value.toUpperCase().slice(0, 3))}
@@ -177,7 +204,7 @@ export default function RegisterSegler() {
             />
 
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputStyle}
               placeholder={t("emailPlaceholder")}
               type="email"
               value={email}
@@ -185,7 +212,7 @@ export default function RegisterSegler() {
             />
 
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputStyle}
               placeholder={t("passwordPlaceholder")}
               type="password"
               value={passwort}
@@ -193,7 +220,7 @@ export default function RegisterSegler() {
             />
 
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputStyle}
               placeholder={t("confirmPasswordPlaceholder")}
               type="password"
               value={confirmPasswort}
@@ -203,7 +230,7 @@ export default function RegisterSegler() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 rounded-lg bg-blue-500 p-3 text-white font-semibold hover:bg-blue-400 transition disabled:opacity-50"
+              className="w-full mt-4 rounded-lg bg-blue-600 p-3 text-white font-bold hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all disabled:opacity-50"
             >
               {loading ? t("creatingAccountLoading") : t("createAccountButton")}
             </button>
@@ -211,7 +238,7 @@ export default function RegisterSegler() {
         )}
 
         {step === "verify" && (
-          <>
+          <div className="flex flex-col gap-6">
             <h1 className="text-3xl font-bold text-white text-center">
               {t("verifyCodeTitle")}
             </h1>
@@ -223,19 +250,19 @@ export default function RegisterSegler() {
               placeholder="123456"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="p-4 rounded-xl border border-white/50 bg-white/20 text-white placeholder-white text-center tracking-widest text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`${inputStyle} text-center tracking-[1rem] text-2xl font-bold`}
             />
             <button
               type="submit"
               disabled={loading}
-              className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-colors mt-2"
+              className="bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-colors mt-2"
             >
               {loading ? t("verifyingLoading") : t("confirmCodeButton")}
             </button>
-          </>
+          </div>
         )}
 
-        {message && <p className="text-center text-white/70 mt-2 text-sm">{message}</p>}
+        {message && <p className="text-center text-white/70 mt-2 text-sm font-medium">{message}</p>}
       </form>
     </div>
   );
