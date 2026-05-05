@@ -124,18 +124,19 @@ export default function RegisterSegler() {
               value={nachname}
               onChange={(e) => setNachname(e.target.value)}
             />
-            <div className="flex flex-col gap-1">
-  <label className="text-sm text-white/70 ml-1">
-    {t("birthYearPlaceholder")}
-  </label>
-  <input
-    className="w-full rounded-md p-2 bg-gray-800/70 text-white"
-    type="date"
-    value={geburtsdatum}
-    onChange={(e) => setGeburtsdatum(e.target.value)}
-    required
-  />
-</div>
+            <input
+  className={`
+    w-full rounded-md p-2 bg-gray-800/70 text-white
+    before:content-['${t("birthYearPlaceholder")}'] before:mr-auto before:text-white/70
+    invalid:before:block selection:before:hidden
+    ${geburtsdatum ? "before:hidden" : "before:inline-block"}
+  `}
+  type="date"
+  value={geburtsdatum}
+  onChange={(e) => setGeburtsdatum(e.target.value)}
+  required
+/>
+
 
             <input
               className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
