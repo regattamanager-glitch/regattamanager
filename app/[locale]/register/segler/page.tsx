@@ -125,17 +125,20 @@ export default function RegisterSegler() {
               onChange={(e) => setNachname(e.target.value)}
             />
             <input
-  className={`
-    w-full rounded-md p-2 bg-gray-800/70 text-white
-    before:content-['${t("birthYearPlaceholder")}'] before:mr-auto before:text-white/70
-    invalid:before:block selection:before:hidden
-    ${geburtsdatum ? "before:hidden" : "before:inline-block"}
-  `}
-  type="date"
+  className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
+  placeholder={t("birthYearPlaceholder")}
+  type="text"
+  // Schaltet beim Anklicken auf Datum um
+  onFocus={(e) => (e.target.type = "date")}
+  // Schaltet zurück auf Text, wenn leer, damit der Placeholder wieder kommt
+  onBlur={(e) => {
+    if (!e.target.value) e.target.type = "text";
+  }}
   value={geburtsdatum}
   onChange={(e) => setGeburtsdatum(e.target.value)}
   required
 />
+
 
 
             <input
