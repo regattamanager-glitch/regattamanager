@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Link, useRouter } from "@/navigation";
+import { useRouter } from "@/navigation";
 import { useTranslations } from "next-intl";
 
 export default function RegisterSegler() {
@@ -20,15 +20,14 @@ export default function RegisterSegler() {
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
-  e.preventDefault();
-  setMessage("");
+    e.preventDefault();
+    setMessage("");
 
-  if (step === "form") {
-    // Validierung auf das neue Feld prüfen
-    if (!vorname || !nachname || !geburtsdatum || !nation || !email || !passwort || !confirmPasswort) {
-      setMessage(t("errorFields"));
-      return;
-    }
+    if (step === "form") {
+      if (!vorname || !nachname || !geburtsdatum || !nation || !email || !passwort || !confirmPasswort) {
+        setMessage(t("errorFields"));
+        return;
+      }
 
       if (passwort !== confirmPasswort) {
         setMessage(t("errorPasswordMismatch"));
@@ -36,21 +35,21 @@ export default function RegisterSegler() {
       }
 
       setLoading(true);
-    try {
-      const res = await fetch("/api/accounts/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "segler",
-          vorname,
-          nachname,
-          geburtsdatum, 
-          nation,
-          email,
-          passwort,
-          vereine: [],
-        }),
-      });
+      try {
+        const res = await fetch("/api/accounts/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "segler",
+            vorname,
+            nachname,
+            geburtsdatum, 
+            nation,
+            email,
+            passwort,
+            vereine: [],
+          }),
+        });
 
         const data = await res.json();
         setLoading(false);
@@ -101,69 +100,68 @@ export default function RegisterSegler() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center relative">
+    <div className="flex min-h-screen items-center justify-center relative bg-[#001f3f]">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-6 bg-blue-900/30 backdrop-blur-md p-14 rounded-3xl shadow-xl w-[400px] sm:w-[450px]"
+        className="flex flex-col gap-4 bg-blue-900/30 backdrop-blur-md p-10 rounded-3xl shadow-xl w-[400px] sm:w-[450px]"
       >
         {step === "form" && (
           <>
-            <h1 className="text-3xl font-bold text-white text-center">
+            <h1 className="text-3xl font-bold text-white text-center mb-2">
               {t("registerSeglerTitle")}
             </h1>
 
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
+              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={t("firstNamePlaceholder")}
               value={vorname}
               onChange={(e) => setVorname(e.target.value)}
             />
+            
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
+              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={t("lastNamePlaceholder")}
               value={nachname}
               onChange={(e) => setNachname(e.target.value)}
             />
-            <input
-  className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
-  placeholder={t("birthYearPlaceholder")}
-  type="text"
-  // Schaltet beim Anklicken auf Datum um
-  onFocus={(e) => (e.target.type = "date")}
-  // Schaltet zurück auf Text, wenn leer, damit der Placeholder wieder kommt
-  onBlur={(e) => {
-    if (!e.target.value) e.target.type = "text";
-  }}
-  value={geburtsdatum}
-  onChange={(e) => setGeburtsdatum(e.target.value)}
-  required
-/>
-
-
 
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
+              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={t("birthYearPlaceholder")}
+              type={geburtsdatum ? "date" : "text"}
+              onFocus={(e) => (e.target.type = "date")}
+              onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
+              value={geburtsdatum}
+              onChange={(e) => setGeburtsdatum(e.target.value)}
+              required
+            />
+
+            <input
+              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={t("nationPlaceholder")}
               value={nation}
               onChange={(e) => setNation(e.target.value.toUpperCase().slice(0, 3))}
               maxLength={3}
             />
+
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
+              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={t("emailPlaceholder")}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
+              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={t("passwordPlaceholder")}
               type="password"
               value={passwort}
               onChange={(e) => setPasswort(e.target.value)}
             />
+
             <input
-              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70"
+              className="w-full rounded-md p-2 bg-gray-800/70 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={t("confirmPasswordPlaceholder")}
               type="password"
               value={confirmPasswort}
@@ -173,7 +171,7 @@ export default function RegisterSegler() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-blue-500 p-2 text-white font-semibold hover:bg-blue-400 transition"
+              className="w-full mt-2 rounded-lg bg-blue-500 p-3 text-white font-semibold hover:bg-blue-400 transition disabled:opacity-50"
             >
               {loading ? t("creatingAccountLoading") : t("createAccountButton")}
             </button>
@@ -198,14 +196,14 @@ export default function RegisterSegler() {
             <button
               type="submit"
               disabled={loading}
-              className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-colors"
+              className="bg-green-500 hover:bg-green-400 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-colors mt-2"
             >
               {loading ? t("verifyingLoading") : t("confirmCodeButton")}
             </button>
           </>
         )}
 
-        {message && <p className="text-center text-white/70 mt-2">{message}</p>}
+        {message && <p className="text-center text-white/70 mt-2 text-sm">{message}</p>}
       </form>
     </div>
   );
