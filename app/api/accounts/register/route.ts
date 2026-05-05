@@ -38,17 +38,37 @@ export async function POST(req: NextRequest) {
     const loginCodeId = randomUUID();
 
     // 6. User in Neon DB anlegen
-    let newUser;
-    const now = new Date();
+let newUser;
+const now = new Date();
 
-    if (type === "segler") {
-      const rows = await sql`
-        INSERT INTO "Segler" (id, email, passwort, vorname, nachname, geburtsjahr, nation, "createdAt", "updatedAt")
-        VALUES (${newUserId}, ${email}, ${hashedPassword}, ${vorname || ""}, ${nachname || ""}, ${String(geburtsjahr)}, ${nation || "GER"}, ${now}, ${now})
-        RETURNING id
-      `;
-      newUser = rows[0];
-    } else {
+if (type === "segler") {
+  const rows = await sql`
+    INSERT INTO "Segler" (
+      id, 
+      email, 
+      passwort, 
+      vorname, 
+      nachname, 
+      geburtsdatum,
+      nation, 
+      "createdAt", 
+      "updatedAt"
+    )
+    VALUES (
+      ${newUserId}, 
+      ${email}, 
+      ${hashedPassword}, 
+      ${vorname || ""}, 
+      ${nachname || ""}, 
+      ${birthDate},
+      ${nation || "GER"}, 
+      ${now}, 
+      ${now}
+    )
+    RETURNING id
+  `;
+  newUser = rows[0];
+} else {
       const rows = await sql`
         INSERT INTO "Verein" (id, email, passwort, name, kuerzel, adresse, "createdAt", "updatedAt")
         VALUES (${newUserId}, ${email}, ${hashedPassword}, ${name || ""}, ${kuerzel || ""}, ${adresse || ""}, ${now}, ${now})
