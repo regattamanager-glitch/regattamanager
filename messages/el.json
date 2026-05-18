@@ -503,7 +503,7 @@
 "Auth": {
   "dayPlaceholder": "Ημέρα",
   "monthPlaceholder": "Μήνας",
-  "yearPlaceholder": "Έτος"
+  "yearPlaceholder": "Έτος",
   "registerTitle": "Εγγραφή",
   "loginTitle": "Σύνδεση",
   "loginButton": "Σύνδεση",
