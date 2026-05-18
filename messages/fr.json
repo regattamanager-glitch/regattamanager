@@ -501,6 +501,9 @@
   "copyright": "Regatta Manager - Système de facturation professionnel"
 },
 "Auth": {
+ "dayPlaceholder": "Jour",
+  "monthPlaceholder": "Mois",
+  "yearPlaceholder": "Année"
   "registerTitle": "S’inscrire",
   "loginTitle": "Connexion",
   "loginButton": "Se connecter",
