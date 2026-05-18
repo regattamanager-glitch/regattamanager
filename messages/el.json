@@ -501,6 +501,9 @@
   "copyright": "Regatta Manager - Επαγγελματικό Σύστημα Τιμολόγησης"
 },
 "Auth": {
+  "dayPlaceholder": "Ημέρα",
+  "monthPlaceholder": "Μήνας",
+  "yearPlaceholder": "Έτος"
   "registerTitle": "Εγγραφή",
   "loginTitle": "Σύνδεση",
   "loginButton": "Σύνδεση",
