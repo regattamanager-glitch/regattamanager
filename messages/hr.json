@@ -501,6 +501,9 @@
   "copyright": "Regatta Manager - Profesionalni sustav fakturiranja"
 },
 "Auth": {
+  "dayPlaceholder": "Giorno",
+  "monthPlaceholder": "Mese",
+  "yearPlaceholder": "Anno",
   "dayPlaceholder": "Dan",
   "monthPlaceholder": "Mjesec",
   "yearPlaceholder": "Godina",
