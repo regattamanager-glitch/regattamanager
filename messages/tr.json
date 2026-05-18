@@ -501,6 +501,9 @@
   "copyright": "Regatta Manager - Profesyonel Faturalama Sistemi"
 },
 "Auth": {
+  "dayPlaceholder": "Gün",
+  "monthPlaceholder": "Ay",
+  "yearPlaceholder": "Yıl",
   "registerTitle": "Kayıt Ol",
   "loginTitle": "Giriş",
   "loginButton": "Giriş Yap",
