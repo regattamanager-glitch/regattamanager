@@ -501,6 +501,9 @@
   "copyright": "Regatta Manager - Professional Billing System"
 },
 "Auth": {
+  "dayPlaceholder": "Day",
+  "monthPlaceholder": "Month",
+  "yearPlaceholder": "Year"
   "registerTitle": "Register",
   "loginTitle": "Login",
   "loginButton": "Sign In",
