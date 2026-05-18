@@ -503,7 +503,7 @@
 "Auth": {
   "dayPlaceholder": "Day",
   "monthPlaceholder": "Month",
-  "yearPlaceholder": "Year"
+  "yearPlaceholder": "Year",
   "registerTitle": "Register",
   "loginTitle": "Login",
   "loginButton": "Sign In",
