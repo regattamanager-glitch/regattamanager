@@ -12,12 +12,12 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  async function fetchAdminData() {
+    async function fetchAdminData() {
     try {
       setErrorMsg(null);
-      // window.location.origin stellt sicher, dass wir absolut die Domain anspringen (z.B. https://regattamanager.../api/admin/data)
-      // Das umgeht das automatische [locale]-Präfix von next-intl
-      const res = await fetch(`${window.location.origin}/app/api/admin/data`, {
+      
+      // '../' springt aus /en/admin oder /de/admin heraus direkt auf /api/admin/data
+      const res = await fetch("../api/admin/data", {
         method: "GET",
         cache: "no-store",
         headers: {
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
       });
       
       if (!res.ok) {
-        throw new Error(`HTTP-Fehler! Status: ${res.status}`);
+        throw new Error(`HTTP-Fehler! Status: ${res.status} (Pfad wurde nicht gefunden)`);
       }
 
       const json = await res.json();
@@ -40,6 +40,30 @@ export default function AdminDashboard() {
       setErrorMsg(err.message || "Verbindung zur API fehlgeschlagen.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
+    setUpdatingId(vereinId);
+    try {
+      const res = await fetch("../api/admin/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setData((prev: any) => ({
+          ...prev,
+          vereine: prev.vereine.map((v: any) => 
+            v.id === vereinId ? { ...v, isApproved: !currentStatus } : v
+          )
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUpdatingId(null);
     }
   }
 
