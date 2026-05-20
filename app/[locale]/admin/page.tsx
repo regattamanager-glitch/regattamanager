@@ -12,22 +12,25 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-        async function fetchAdminData() {
+          async function fetchAdminData() {
     try {
       setErrorMsg(null);
       
-      // '../../' bricht aus der Sprachumgebung [locale] und dem admin-Ordner aus
-      // und steuert direkt app/api/admin/data/route.ts an!
-      const res = await fetch("../../api/admin/data", {
+      // 1. Wir bauen die absolut echte URL zusammen (z.B. https://regatta-manager.com/api/admin/data)
+      // 2. Ein Zeitstempel als Parameter (?v=...) zwingt den Browser-Kern, an Next.js vorbei direkt den Server zu fragen
+      const absoluteUrl = `${window.location.origin}/api/admin/data?v=${Date.now()}`;
+      
+      const res = await fetch(absoluteUrl, {
         method: "GET",
-        cache: "no-store",
         headers: {
-          "Accept": "application/json"
+          "Accept": "application/json",
+          "Pragma": "no-cache",
+          "Cache-Control": "no-cache"
         }
       });
       
       if (!res.ok) {
-        throw new Error(`HTTP-Fehler! Status: ${res.status} (Globale API unter app/api nicht gefunden)`);
+        throw new Error(`HTTP-Fehler! Status: ${res.status} (Die API in app/api hat nicht geantwortet)`);
       }
 
       const json = await res.json();
@@ -47,8 +50,8 @@ export default function AdminDashboard() {
   async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
     setUpdatingId(vereinId);
     try {
-      // Auch hier den identischen Pfaden-Ausbruch nutzen
-      const res = await fetch("../../api/admin/data", {
+      const absoluteUrl = `${window.location.origin}/api/admin/data?v=${Date.now()}`;
+      const res = await fetch(absoluteUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
@@ -68,34 +71,12 @@ export default function AdminDashboard() {
       setUpdatingId(null);
     }
   }
+
   useEffect(() => {
     fetchAdminData();
   }, []);
 
-  async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
-    setUpdatingId(vereinId);
-    try {
-      // Auch hier nutzen wir die absolute URL zur globalen Route
-      const res = await fetch(`${window.location.origin}/api/admin/data`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setData((prev: any) => ({
-          ...prev,
-          vereine: prev.vereine.map((v: any) => 
-            v.id === vereinId ? { ...v, isApproved: !currentStatus } : v
-          )
-        }));
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setUpdatingId(null);
-    }
-  }
+
 
   // Fehler-Anzeige, falls die globale API nicht antwortet oder abstürzt
   if (errorMsg) {
