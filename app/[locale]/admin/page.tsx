@@ -1,25 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LineChart, BarChart } from "@mui/x-charts";
+import { LineChart } from "@mui/x-charts";
 
 type ActiveTab = "overview" | "vereine" | "events";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [data, setData] = useState<any>(null);
+  const [days, setDays] = useState<string>("30"); // Zustand für den flexiblen Zeitraum
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // Daten vom globalen API-Endpunkt laden
   async function fetchAdminData() {
     try {
       setErrorMsg(null);
-      
-      // Nutzt den relativen Pfad. Da die Middleware geflickt ist,
-      // kommt dieser Request ohne Umschreibungen direkt an!
-      const res = await fetch("/api/admin/data", {
+      const res = await fetch(`/api/admin/data?days=${days}`, {
         method: "GET",
         cache: "no-store",
         headers: {
@@ -77,9 +74,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchAdminData();
-  }, []);
+  }, [days]);
 
-  // 1. Lade-Anzeige (Wichtig: Steht VOR der Datenberechnung!)
   if (loading) {
     return (
       <div className="min-h-screen bg-[#001f3f] flex items-center justify-center text-white">
@@ -88,7 +84,6 @@ export default function AdminDashboard() {
     );
   }
 
-  // 2. Fehler-Anzeige
   if (errorMsg) {
     return (
       <div className="min-h-screen bg-[#001f3f] flex flex-col items-center justify-center p-4 text-white">
@@ -109,17 +104,15 @@ export default function AdminDashboard() {
     );
   }
 
-  // Safe Guard: Erst ab hier greifen wir auf Verzeichnisse der API-Antwort zu
-  const { stats, vereine = [], events = [], timeline = [] } = data || {};
+  const { stats, vereine = [], events = [], timeline = [], revenueTimeline = [], eventTimeline = [] } = data || {};
   const totalRevenue = events.reduce((sum: number, e: any) => sum + (e.revenue || 0), 0) || 0;
 
-  // Daten für die MUI Diagramme mit strikten Fallbacks vorbereiten
-  const chartMonths = timeline.length > 0 ? timeline.map((t: any) => t.month) : ["Keine Daten"];
-  const chartZuwachs = timeline.length > 0 ? timeline.map((t: any) => t.zuwachs) : [0];
-
-  const eventNames = events.length > 0 ? events.map((e: any) => e.name) : ["Keine Events"];
-  const eventRevenues = events.length > 0 ? events.map((e: any) => e.revenue) : [0];
-
+ const chartDaysSegler = timeline.map((t: any) => t.date);
+  const chartZuwachsSegler = timeline.map((t: any) => t.zuwachs);
+  const chartDaysRevenue = revenueTimeline.map((r: any) => r.date);
+  const chartDailyRevenues = revenueTimeline.map((r: any) => r.revenue);
+  const chartDaysEvents = eventTimeline.map((e: any) => e.date);
+  const chartEventCount = eventTimeline.map((e: any) => e.count);
   return (
     <div className="flex h-screen bg-[#001f3f] text-slate-200 overflow-hidden">
       
@@ -138,7 +131,7 @@ export default function AdminDashboard() {
                 activeTab === "overview" ? "bg-[#2563eb] text-white shadow-lg" : "text-blue-100 hover:bg-[#112d5c]"
               }`}
             >
-              🔮 Dashboard Übersicht
+            Dashboard Übersicht
             </button>
             <button
               onClick={() => setActiveTab("vereine")}
@@ -146,7 +139,7 @@ export default function AdminDashboard() {
                 activeTab === "vereine" ? "bg-[#2563eb] text-white shadow-lg" : "text-blue-100 hover:bg-[#112d5c]"
               }`}
             >
-              🏢 Vereine verwalten
+            Vereine verwalten
             </button>
             <button
               onClick={() => setActiveTab("events")}
@@ -154,7 +147,7 @@ export default function AdminDashboard() {
                 activeTab === "events" ? "bg-[#2563eb] text-white shadow-lg" : "text-blue-100 hover:bg-[#112d5c]"
               }`}
             >
-              📅 Events & Finanzen
+            Events & Finanzen
             </button>
           </nav>
         </div>
@@ -164,11 +157,36 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col p-8 overflow-y-auto bg-[#0a192f]">
         
+        {/* HEADER MIT ZEITFILTER */}
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl font-bold text-white">
+            {activeTab === "overview" && "Dashboard Übersicht"}
+            {activeTab === "vereine" && `Vereine verwalten (${vereine.length})`}
+            {activeTab === "events" && `Regatta Events & Einnahmen (${events.length})`}
+          </h2>
+
+          {/* Der interaktive Zeitraum-Filter */}
+          <div className="flex items-center space-x-3 bg-[#112d5c] px-4 py-2 rounded-xl border border-blue-900/40">
+            <label htmlFor="timeframe" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Zeitraum:
+            </label>
+            <select
+              id="timeframe"
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+              className="bg-[#0a192f] text-white text-sm font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-blue-900/60 cursor-pointer"
+            >
+              <option value="7">Letzte 7 Tage</option>
+              <option value="30">Letzte 30 Tage</option>
+              <option value="90">Letzte 90 Tage</option>
+              <option value="all">Gesamter Zeitraum (Alles)</option>
+            </select>
+          </div>
+        </div>
+        
         {/* ÜBERSICHT TAB */}
         {activeTab === "overview" && (
           <div className="space-y-8">
-            <h2 className="text-2xl font-bold text-white">Dashboard Übersicht</h2>
-            
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
                 <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Registrierte Segler insgesamt</p>
@@ -190,25 +208,66 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* ZEITDIAGRAMM: Registrierungs-Trend */}
+            {/* DIAGRAMMTOPF: Benutzerentwicklung */}
             <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
-              <h3 className="text-lg font-semibold text-white mb-4">Neuzugänge Segler (Zeitverlauf)</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Benutzerentwicklung auf der Seite ({days === "all" ? "Gesamter Verlauf" : `Letzte ${days} Tage`})
+              </h3>
               <div className="h-72 w-full bg-[#0a192f]/50 rounded-xl p-2">
-                <LineChart
-                  xAxis={[{ scaleType: "point", data: chartMonths }]}
-                  series={[{ data: chartZuwachs, color: "#38bdf8", area: true }]}
-                  height={260}
-                />
-              </div>
+  <LineChart
+    xAxis={[{ 
+      scaleType: "point", 
+      data: chartDaysSegler,
+      tickLabelStyle: { fill: 'white' }
+    }]}
+    yAxis={[{
+      tickLabelStyle: { fill: 'white' }
+    }]}
+    series={[{ 
+      data: chartZuwachsSegler, 
+      color: "#38bdf8", 
+      area: true 
+    }]}
+    height={260}
+    sx={{
+      "& .MuiChartsAxis-line": { stroke: "white" },
+      "& .MuiChartsAxis-tick": { stroke: "white" },
+      "& .MuiChartsAxis-tickLabel": { fill: "white" }
+    }}
+  />
+</div>
             </div>
+
+            <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
+  <h3 className="mb-4 text-white">Event-Wachstum (Anzahl Events)</h3>
+  <LineChart 
+    xAxis={[{ 
+      scaleType: "point", 
+      data: chartDaysEvents,
+      tickLabelStyle: { fill: 'white' } // X-Achse weiß
+    }]} 
+    yAxis={[{
+      tickLabelStyle: { fill: 'white' } // Y-Achse weiß
+    }]}
+    series={[{ 
+      data: chartEventCount, 
+      color: "#a855f7", 
+      area: true 
+    }]} 
+    height={200}
+    sx={{
+      // Optional: Falls du die Achsenlinien selbst auch weiß willst
+      "& .MuiChartsAxis-line": { stroke: "white" },
+      "& .MuiChartsAxis-tick": { stroke: "white" },
+    }}
+  />
+</div>
           </div>
         )}
 
         {/* VEREINE TAB */}
         {activeTab === "vereine" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Vereine verwalten ({vereine.length})</h2>
-            
             <div className="bg-[#112d5c] rounded-2xl overflow-hidden border border-blue-900/40">
               <table className="w-full text-left border-collapse">
                 <thead className="bg-[#0b3d91] text-blue-100 text-xs font-semibold uppercase tracking-wider">
@@ -251,15 +310,15 @@ export default function AdminDashboard() {
         {/* EVENTS TAB */}
         {activeTab === "events" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Regatta Events & Einnahmen ({events.length})</h2>
-
-            {/* ZEITDIAGRAMM: Einnahmen pro Regatta */}
+            {/* Umsatzverlauf bleibt als visuelle Gedankenstütze auch hier drin */}
             <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
-              <h3 className="text-lg font-semibold text-white mb-4">Umsatz pro Regatta (€)</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Umsatzverlauf ({days === "all" ? "Gesamter Verlauf" : `Letzte ${days} Tage`})
+              </h3>
               <div className="h-64 w-full bg-[#0a192f]/50 rounded-xl p-2">
-                <BarChart
-                  xAxis={[{ scaleType: "band", data: eventNames }]}
-                  series={[{ data: eventRevenues, color: "#34d399" }]}
+                <LineChart
+                  xAxis={[{ scaleType: "point", data: chartDaysRevenue }]}
+                  series={[{ data: chartDailyRevenues, color: "#34d399", area: true }]}
                   height={230}
                 />
               </div>

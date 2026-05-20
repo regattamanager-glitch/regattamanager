@@ -10,12 +10,12 @@
     "vercel-build": "next build"
   },
   "dependencies": {
-    "@mui/x-charts": "^7.3.8",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.8",
     "@mui/material": "^7.3.8",
-    "@neondatabase/serverless": "^1.0.2",
+    "@mui/x-charts": "^7.3.8",
+    "@neondatabase/serverless": "^1.1.0",
     "@stripe/stripe-js": "^8.6.1",
     "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.3",
