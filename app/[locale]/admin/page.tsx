@@ -17,7 +17,7 @@ export default function AdminDashboard() {
       setErrorMsg(null);
       // window.location.origin stellt sicher, dass wir absolut die Domain anspringen (z.B. https://regattamanager.../api/admin/data)
       // Das umgeht das automatische [locale]-Präfix von next-intl
-      const res = await fetch(`${window.location.origin}/api/admin/data`, {
+      const res = await fetch(`${window.location.origin}/app/api/admin/data`, {
         method: "GET",
         cache: "no-store",
         headers: {
