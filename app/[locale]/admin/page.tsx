@@ -12,12 +12,13 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-    async function fetchAdminData() {
+      async function fetchAdminData() {
     try {
       setErrorMsg(null);
       
-      // '../' springt aus /en/admin oder /de/admin heraus direkt auf /api/admin/data
-      const res = await fetch("../api/admin/data", {
+      // Der führende Schrägstrich signalisiert dem Browser: Geh direkt an die Domain-Wurzel,
+      // ignoriere den aktuellen Ordner (/en/admin) komplett.
+      const res = await fetch("/api/admin/data", {
         method: "GET",
         cache: "no-store",
         headers: {
@@ -26,7 +27,7 @@ export default function AdminDashboard() {
       });
       
       if (!res.ok) {
-        throw new Error(`HTTP-Fehler! Status: ${res.status} (Pfad wurde nicht gefunden)`);
+        throw new Error(`HTTP-Fehler! Status: ${res.status} (Globale API nicht erreichbar)`);
       }
 
       const json = await res.json();
@@ -46,7 +47,7 @@ export default function AdminDashboard() {
   async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
     setUpdatingId(vereinId);
     try {
-      const res = await fetch("../api/admin/data", {
+      const res = await fetch("/api/admin/data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
