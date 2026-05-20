@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-          async function fetchAdminData() {
+            async function fetchAdminData() {
     try {
       setErrorMsg(null);
       
