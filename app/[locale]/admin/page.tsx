@@ -9,7 +9,7 @@ export default function AdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+    useEffect(() => {
     async function fetchAdminData() {
       try {
         const res = await fetch("/api/admin/data");
@@ -22,7 +22,7 @@ export default function AdminDashboard() {
       }
     }
     fetchAdminData();
-  } [], []);
+  }, []); // <-- So ist es syntaktisch korrekt
 
   if (loading) {
     return (
