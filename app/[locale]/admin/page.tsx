@@ -12,19 +12,19 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-              async function fetchAdminData() {
+  // Daten vom globalen API-Endpunkt laden
+  async function fetchAdminData() {
     try {
       setErrorMsg(null);
       
-      // Nutzt das native Stammverzeichnis ohne Next-Intl Interceptoren
-      const res = await fetch("/api/admin/data", {
+      // Erzeugt eine saubere, absolute URL (verhindert /app/ und /en/ Pfadfehler)
+      const cleanUrl = `${window.location.origin}/api/admin/data`;
+      
+      const res = await fetch(cleanUrl, {
         method: "GET",
         cache: "no-store",
         headers: {
-          "Accept": "application/json",
-          // Diese Header signalisieren Next.js, den Request unberührt an app/api/ weiterzureichen
-          "x-next-intl-skip": "true",
-          "x-middleware-skip": "true"
+          "Accept": "application/json"
         }
       });
       
@@ -46,18 +46,24 @@ export default function AdminDashboard() {
     }
   }
 
+  // Freigabe-Status eines Vereins umschalten
   async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
     setUpdatingId(vereinId);
     try {
-      const res = await fetch("/api/admin/data", {
+      const cleanUrl = `${window.location.origin}/api/admin/data`;
+      
+      const res = await fetch(cleanUrl, {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "x-next-intl-skip": "true",
-          "x-middleware-skip": "true"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
       });
+      
+      if (!res.ok) {
+        throw new Error("Status-Update fehlgeschlagen");
+      }
+      
       const json = await res.json();
       if (json.success) {
         setData((prev: any) => ({
@@ -77,8 +83,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchAdminData();
   }, []);
-
-
 
   // Fehler-Anzeige, falls die globale API nicht antwortet oder abstürzt
   if (errorMsg) {
