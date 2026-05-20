@@ -9,16 +9,35 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   async function fetchAdminData() {
     try {
-      // Absoluter Pfad verhindert Konflikte mit der [locale]-Route
-      const res = await fetch("/api/admin/data");
+      setErrorMsg(null);
+      // window.location.origin stellt sicher, dass wir absolut die Domain anspringen (z.B. https://regattamanager.../api/admin/data)
+      // Das umgeht das automatische [locale]-Präfix von next-intl
+      const res = await fetch(`${window.location.origin}/api/admin/data`, {
+        method: "GET",
+        cache: "no-store",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error(`HTTP-Fehler! Status: ${res.status}`);
+      }
+
       const json = await res.json();
-      if (json.success) setData(json);
-    } catch (err) {
+      if (json.success) {
+        setData(json);
+      } else {
+        throw new Error(json.message || "Unbekannter API-Fehler");
+      }
+    } catch (err: any) {
       console.error("Fehler beim Laden der Admin-Daten:", err);
+      setErrorMsg(err.message || "Verbindung zur API fehlgeschlagen.");
     } finally {
       setLoading(false);
     }
@@ -31,7 +50,8 @@ export default function AdminDashboard() {
   async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
     setUpdatingId(vereinId);
     try {
-      const res = await fetch("/api/admin/data", {
+      // Auch hier nutzen wir die absolute URL zur globalen Route
+      const res = await fetch(`${window.location.origin}/api/admin/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
@@ -52,10 +72,31 @@ export default function AdminDashboard() {
     }
   }
 
+  // Fehler-Anzeige, falls die globale API nicht antwortet oder abstürzt
+  if (errorMsg) {
+    return (
+      <div className="min-h-screen bg-[#001f3f] flex flex-col items-center justify-center p-4 text-white">
+        <div className="bg-red-950/40 border border-red-500/50 p-6 rounded-2xl max-w-md w-full text-center shadow-xl">
+          <span className="text-4xl">⚠️</span>
+          <h2 className="text-xl font-bold mt-3 text-red-400">Ladefehler</h2>
+          <p className="text-sm text-slate-300 mt-2 bg-slate-900/50 p-3 rounded-lg font-mono break-words">
+            {errorMsg}
+          </p>
+          <button 
+            onClick={() => { setLoading(true); fetchAdminData(); }}
+            className="mt-5 bg-[#2563eb] text-white px-5 py-2 rounded-xl font-medium text-sm hover:bg-blue-600 active:scale-95 transition-all"
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#001f3f] flex items-center justify-center text-white">
-        <div className="text-xl animate-pulse font-medium">Verbinde mit Regatta Manager API...</div>
+        <div className="text-xl animate-pulse font-medium">Verbinde mit globaler Regatta Manager API...</div>
       </div>
     );
   }
@@ -65,7 +106,7 @@ export default function AdminDashboard() {
 
   // Daten für die MUI Diagramme vorbereiten
   const chartMonths = timeline?.map((t: any) => t.month) || ["2026-05"];
-  const chartZuwachs = timeline?.map((t: any) => t.zuwachs) || [25];
+  const chartZuwachs = timeline?.map((t: any) => t.zuwachs) || [0];
 
   const eventNames = events?.map((e: any) => e.name) || ["Keine Events"];
   const eventRevenues = events?.map((e: any) => e.revenue) || [0];
