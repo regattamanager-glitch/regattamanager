@@ -13,14 +13,12 @@ export default function AdminDashboard() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Daten vom globalen API-Endpunkt laden
-  async function fetchAdminData() {
+    async function fetchAdminData() {
     try {
       setErrorMsg(null);
       
-      // Erzeugt eine saubere, absolute URL (verhindert /app/ und /en/ Pfadfehler)
-      const cleanUrl = `${window.location.origin}/api/admin/data`;
-      
-      const res = await fetch(cleanUrl, {
+      // Ganz normaler, sauberer API-Aufruf auf die Root-Ebene
+      const res = await fetch("/api/admin/data", {
         method: "GET",
         cache: "no-store",
         headers: {
@@ -46,24 +44,14 @@ export default function AdminDashboard() {
     }
   }
 
-  // Freigabe-Status eines Vereins umschalten
   async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
     setUpdatingId(vereinId);
     try {
-      const cleanUrl = `${window.location.origin}/api/admin/data`;
-      
-      const res = await fetch(cleanUrl, {
+      const res = await fetch("/api/admin/data", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
       });
-      
-      if (!res.ok) {
-        throw new Error("Status-Update fehlgeschlagen");
-      }
-      
       const json = await res.json();
       if (json.success) {
         setData((prev: any) => ({
