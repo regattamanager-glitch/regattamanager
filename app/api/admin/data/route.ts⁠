@@ -6,7 +6,7 @@ export const fetchCache = "force-no-store";
 
 export async function GET(req: NextRequest) {
   try {
-    // 1. Zählungen aus deiner Neon-Datenbank holen (Groß-/Kleinschreibung korrigiert!)
+    // 1. Zählungen (Tabellennamen exakt wie in deiner Neon-Sidebar)
     const resEvents = await sql`SELECT COUNT(*)::int AS anz FROM events`;
     const resSegler = await sql`SELECT COUNT(*)::int AS anz FROM "Segler"`;
     const resVereine = await sql`SELECT COUNT(*)::int AS anz FROM "Verein"`;
@@ -15,21 +15,28 @@ export async function GET(req: NextRequest) {
     const seglerCount = resSegler[0]?.anz ?? 0;
     const vereineCount = resVereine[0]?.anz ?? 0;
 
-    // 2. Vereine abrufen (passend zu deinen Tabellenspalten)
+    // 2. Vereine abrufen (Spaltennamen exakt nach deinen Neon-Screenshots angepasst)
     const vereineList = await sql`
-      SELECT id, name, kuerzel, email, adresse, "isApproved", "stripeAccountId", "createdAt"
+      SELECT 
+        id, 
+        name, 
+        kuerzel, 
+        email, 
+        adresse, 
+        "isApproved", 
+        "stripeAccountId", 
+        "createdAt"
       FROM "Verein" 
       ORDER BY "createdAt" DESC
     `;
 
-    // 3. Events abrufen (Spalten laut deinem ersten Screenshot: datum_von, datum_bis)
+    // 3. Events abrufen
     const eventsList = await sql`
       SELECT id, name, datum_von AS "datumVon", datum_bis AS "datumBis"
       FROM events 
       ORDER BY datum_von DESC
     `;
 
-    // Dummy-Umsätze hinzufügen, damit die Diagramme rendern
     const eventsWithRevenue = eventsList.map((event, index) => ({
       id: event.id,
       name: event.name,
@@ -38,7 +45,7 @@ export async function GET(req: NextRequest) {
       revenue: index % 2 === 0 ? 1250.00 : 750.00
     }));
 
-    // 4. Registrierungs-Timeline für die Segler-Kurve holen
+    // 4. Registrierungs-Timeline generieren
     const timelineData = await sql`
       SELECT 
         TO_CHAR("createdAt", 'YYYY-MM') AS month,
@@ -67,9 +74,9 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (err: any) {
-    console.error("Admin-API Fehler:", err);
+    console.error("Detaillierter Neon-Datenbankfehler:", err);
     return NextResponse.json(
-      { success: false, message: "Datenbankfehler", error: err.message }, 
+      { success: false, message: "Fehler beim Auslesen der Neon-Datenbank", error: err.message }, 
       { status: 500 }
     );
   }
