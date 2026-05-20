@@ -12,13 +12,13 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-      async function fetchAdminData() {
+        async function fetchAdminData() {
     try {
       setErrorMsg(null);
       
-      // Der führende Schrägstrich signalisiert dem Browser: Geh direkt an die Domain-Wurzel,
-      // ignoriere den aktuellen Ordner (/en/admin) komplett.
-      const res = await fetch("/api/admin/data", {
+      // '../../' bricht aus der Sprachumgebung [locale] und dem admin-Ordner aus
+      // und steuert direkt app/api/admin/data/route.ts an!
+      const res = await fetch("../../api/admin/data", {
         method: "GET",
         cache: "no-store",
         headers: {
@@ -27,7 +27,7 @@ export default function AdminDashboard() {
       });
       
       if (!res.ok) {
-        throw new Error(`HTTP-Fehler! Status: ${res.status} (Globale API nicht erreichbar)`);
+        throw new Error(`HTTP-Fehler! Status: ${res.status} (Globale API unter app/api nicht gefunden)`);
       }
 
       const json = await res.json();
@@ -47,7 +47,8 @@ export default function AdminDashboard() {
   async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
     setUpdatingId(vereinId);
     try {
-      const res = await fetch("/api/admin/data", {
+      // Auch hier den identischen Pfaden-Ausbruch nutzen
+      const res = await fetch("../../api/admin/data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
@@ -67,7 +68,6 @@ export default function AdminDashboard() {
       setUpdatingId(null);
     }
   }
-
   useEffect(() => {
     fetchAdminData();
   }, []);
