@@ -7,7 +7,8 @@ const intlMiddleware = createMiddleware(routing);
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. SCHNELLSPUR: API-Routen sofort ignorieren und direkt zum Server durchwinken
+  // 1. SCHNELLSPUR: API-Routen sofort abfangen und direkt zum Server durchwinken
+  // Das funktioniert jetzt, weil der Matcher weiter unten API-Routen zur Middleware zulässt!
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
@@ -35,6 +36,7 @@ export default async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Schützt vor unnötigen Aufrufen bei statischen Dateien
-  matcher: ['/((?!api|_next|.*\\..*).*)']
+  // Geändert: API wird hier NICHT mehr ausgeschlossen, damit die "if (pathname.startsWith('/api/'))" 
+  // Bedingung oben im Code die API-Routen aktiv vor next-intl beschützen kann.
+  matcher: ['/((?!_next|.*\\..*).*)']
 };
