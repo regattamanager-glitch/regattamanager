@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import sql from '@/lib/db';
+// Geändert: Wir importieren exakt wie in der funktionierenden Route
+import query from '@/lib/db';
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export async function GET(req: NextRequest) {
   try {
-    // 1. Zählungen (Tabellennamen exakt wie in deiner Neon-Sidebar)
-    const resEvents = await sql`SELECT COUNT(*)::int AS anz FROM events`;
-    const resSegler = await sql`SELECT COUNT(*)::int AS anz FROM "Segler"`;
-    const resVereine = await sql`SELECT COUNT(*)::int AS anz FROM "Verein"`;
+    // 1. Zählungen mit der funktionierenden 'query' Funktion
+    const resEvents = await query`SELECT COUNT(*)::int AS anz FROM events`;
+    const resSegler = await query`SELECT COUNT(*)::int AS anz FROM "Segler"`;
+    const resVereine = await query`SELECT COUNT(*)::int AS anz FROM "Verein"`;
 
     const eventsCount = resEvents[0]?.anz ?? 0;
     const seglerCount = resSegler[0]?.anz ?? 0;
     const vereineCount = resVereine[0]?.anz ?? 0;
 
-    // 2. Vereine abrufen (Spaltennamen exakt nach deinen Neon-Screenshots angepasst)
-    const vereineList = await sql`
+    // 2. Vereine abrufen
+    const vereineList = await query`
       SELECT 
         id, 
         name, 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     `;
 
     // 3. Events abrufen
-    const eventsList = await sql`
+    const eventsList = await query`
       SELECT id, name, datum_von AS "datumVon", datum_bis AS "datumBis"
       FROM events 
       ORDER BY datum_von DESC
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
     }));
 
     // 4. Registrierungs-Timeline generieren
-    const timelineData = await sql`
+    const timelineData = await query`
       SELECT 
         TO_CHAR("createdAt", 'YYYY-MM') AS month,
         COUNT(*)::int AS zuwachs
@@ -91,7 +92,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Keine Vereins-ID übergeben" }, { status: 400 });
     }
 
-    await sql`
+    // Geändert auf 'query'
+    await query`
       UPDATE "Verein"
       SET "isApproved" = ${isApproved}, "updatedAt" = NOW()
       WHERE id = ${vereinId}
