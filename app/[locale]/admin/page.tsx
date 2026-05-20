@@ -1,169 +1,194 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { LineChart, BarChart } from "@mui/x-charts";
 
-type ActiveTab = "overview" | "segler" | "vereine" | "events";
+type ActiveTab = "overview" | "vereine" | "events";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-    useEffect(() => {
-    async function fetchAdminData() {
-      try {
-        const res = await fetch("/api/admin/data");
-        const json = await res.json();
-        if (json.success) setData(json);
-      } catch (err) {
-        console.error("Fehler beim Laden der Dashboard-Daten:", err);
-      } finally {
-        setLoading(false);
-      }
+  async function fetchAdminData() {
+    try {
+      // Absoluter Pfad verhindert Konflikte mit der [locale]-Route
+      const res = await fetch("/api/admin/data");
+      const json = await res.json();
+      if (json.success) setData(json);
+    } catch (err) {
+      console.error("Fehler beim Laden der Admin-Daten:", err);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     fetchAdminData();
-  }, []); // <-- So ist es syntaktisch korrekt
+  }, []);
+
+  async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
+    setUpdatingId(vereinId);
+    try {
+      const res = await fetch("/api/admin/data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setData((prev: any) => ({
+          ...prev,
+          vereine: prev.vereine.map((v: any) => 
+            v.id === vereinId ? { ...v, isApproved: !currentStatus } : v
+          )
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUpdatingId(null);
+    }
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#001f3f] flex items-center justify-center text-white font-sans">
-        <div className="text-xl animate-pulse">Lade Regatta Manager Live-Daten...</div>
+      <div className="min-h-screen bg-[#001f3f] flex items-center justify-center text-white">
+        <div className="text-xl animate-pulse font-medium">Verbinde mit Regatta Manager API...</div>
       </div>
     );
   }
 
-  const { stats, segler, vereine, events } = data || {};
+  const { stats, vereine, events, timeline } = data || {};
+  const totalRevenue = events?.reduce((sum: number, e: any) => sum + (e.revenue || 0), 0) || 0;
+
+  // Daten für die MUI Diagramme vorbereiten
+  const chartMonths = timeline?.map((t: any) => t.month) || ["2026-05"];
+  const chartZuwachs = timeline?.map((t: any) => t.zuwachs) || [25];
+
+  const eventNames = events?.map((e: any) => e.name) || ["Keine Events"];
+  const eventRevenues = events?.map((e: any) => e.revenue) || [0];
 
   return (
-    <div className="flex h-screen bg-[#001f3f] text-slate-200 font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#001f3f] text-slate-200 overflow-hidden">
       
       {/* Sidebar */}
-      <div className="w-64 bg-[#0b3d91] p-6 flex flex-col justify-between border-r border-blue-900/30">
+      <div className="w-64 bg-[#0b3d91] p-6 flex flex-col justify-between border-r border-blue-900/40">
         <div>
-          <div className="mb-8">
+          <div className="mb-10">
             <h1 className="text-xl font-bold text-white tracking-wide">Regatta Manager</h1>
             <p className="text-xs text-blue-200">Built by Sailors for Sailors</p>
           </div>
           
           <nav className="space-y-2">
-            {(["overview", "segler", "vereine", "events"] as ActiveTab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all ${
-                  activeTab === tab
-                    ? "bg-[#2563eb] text-white shadow-lg shadow-blue-600/20"
-                    : "text-blue-100 hover:bg-[#112d5c] hover:text-white"
-                }`}
-              >
-                {tab === "overview" && "🔮 Übersicht"}
-                {tab === "segler" && "🧑‍✈️ Segler"}
-                {tab === "vereine" && "🏢 Vereine"}
-                {tab === "events" && "📅 Events"}
-              </button>
-            ))}
+            <button
+              onClick={() => setActiveTab("overview")}
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all ${
+                activeTab === "overview" ? "bg-[#2563eb] text-white shadow-lg" : "text-blue-100 hover:bg-[#112d5c]"
+              }`}
+            >
+              🔮 Dashboard Übersicht
+            </button>
+            <button
+              onClick={() => setActiveTab("vereine")}
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all ${
+                activeTab === "vereine" ? "bg-[#2563eb] text-white shadow-lg" : "text-blue-100 hover:bg-[#112d5c]"
+              }`}
+            >
+              🏢 Vereine verwalten
+            </button>
+            <button
+              onClick={() => setActiveTab("events")}
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all ${
+                activeTab === "events" ? "bg-[#2563eb] text-white shadow-lg" : "text-blue-100 hover:bg-[#112d5c]"
+              }`}
+            >
+              📅 Events & Finanzen
+            </button>
           </nav>
         </div>
-        <div className="text-xs text-blue-300/60 font-mono">Status: Connected to Neon DB</div>
+        <div className="text-xs text-blue-300/40 font-mono">Neon.tech Engine Active</div>
       </div>
 
-      {/* Main Content Pane */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col p-8 overflow-y-auto bg-[#0a192f]">
         
-        {/* TAB: ÜBERSICHT */}
+        {/* ÜBERSICHT TAB */}
         {activeTab === "overview" && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-8">
             <h2 className="text-2xl font-bold text-white">Dashboard Übersicht</h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
-                <p className="text-slate-400 text-sm font-medium uppercase tracking-wider">Registrierte Segler</p>
-                <p className="text-4xl font-extrabold mt-2 text-blue-400">{stats?.seglerCount}</p>
+                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Registrierte Segler insgesamt</p>
+                <p className="text-4xl font-extrabold mt-2 text-blue-400">{stats?.seglerCount || 0}</p>
               </div>
               <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
-                <p className="text-slate-400 text-sm font-medium uppercase tracking-wider">Vereine / Clubs</p>
-                <p className="text-4xl font-extrabold mt-2 text-emerald-400">{stats?.vereineCount}</p>
+                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Aktive Vereine</p>
+                <p className="text-4xl font-extrabold mt-2 text-emerald-400">{stats?.vereineCount || 0}</p>
               </div>
               <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
-                <p className="text-slate-400 text-sm font-medium uppercase tracking-wider">Geplante Events</p>
-                <p className="text-4xl font-extrabold mt-2 text-purple-400">{stats?.eventsCount}</p>
+                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Online Events</p>
+                <p className="text-4xl font-extrabold mt-2 text-purple-400">{stats?.eventsCount || 0}</p>
               </div>
               <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
-                <p className="text-slate-400 text-sm font-medium uppercase tracking-wider">Davon Test-User</p>
-                <p className="text-4xl font-extrabold mt-2 text-amber-400">{stats?.testCount}</p>
+                <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Gesamteinnahmen (€)</p>
+                <p className="text-4xl font-extrabold mt-2 text-amber-400">
+                  {totalRevenue.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                </p>
+              </div>
+            </div>
+
+            {/* ZEITDIAGRAMM: Registrierungs-Trend */}
+            <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
+              <h3 className="text-lg font-semibold text-white mb-4">Neuzugänge Segler (Zeitverlauf)</h3>
+              <div className="h-72 w-full bg-[#0a192f]/50 rounded-xl p-2">
+                <LineChart
+                  xAxis={[{ scaleType: "point", data: chartMonths }]}
+                  series={[{ data: chartZuwachs, color: "#38bdf8", area: true }]}
+                  height={260}
+                />
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB: SEGLER */}
-        {activeTab === "segler" && (
-          <div className="space-y-4">
-            <h2 class="text-2xl font-bold text-white">Segler Datenbank ({segler?.length})</h2>
-            <div className="bg-[#112d5c] rounded-2xl overflow-hidden border border-blue-900/40 shadow-xl">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-[#0b3d91] text-blue-100 text-xs font-semibold uppercase tracking-wider">
-                  <tr>
-                    <th className="p-4">Name</th>
-                    <th className="p-4">E-Mail</th>
-                    <th className="p-4">Nation</th>
-                    <th className="p-4">Geburtsdatum</th>
-                    <th className="p-4">Typ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-blue-900/30 text-sm text-slate-300">
-                  {segler?.map((s: any) => (
-                    <tr key={s.id} className="hover:bg-[#0b3d91]/30 transition-colors">
-                      <td className="p-4 font-medium text-white">{s.vorname} {s.nachname}</td>
-                      <td className="p-4 text-slate-400">{s.email}</td>
-                      <td className="p-4">
-                        <span className="bg-[#0a192f] px-2.5 py-1 rounded-md text-xs font-mono text-blue-300">{s.nation}</span>
-                      </td>
-                      <td className="p-4 text-slate-400">
-                        {s.geburtsdatum ? new Date(s.geburtsdatum).toLocaleDateString("de-DE") : "-"}
-                      </td>
-                      <td className="p-4">
-                        {s.test ? (
-                          <span className="text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full text-xs font-medium">Test</span>
-                        ) : (
-                          <span className="text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full text-xs font-medium">Live</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB: VEREINE */}
+        {/* VEREINE TAB */}
         {activeTab === "vereine" && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white">Registrierte Vereine ({vereine?.length})</h2>
-            <div className="bg-[#112d5c] rounded-2xl overflow-hidden border border-blue-900/40 shadow-xl">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">Vereine verwalten ({vereine?.length})</h2>
+            
+            <div className="bg-[#112d5c] rounded-2xl overflow-hidden border border-blue-900/40">
               <table className="w-full text-left border-collapse">
                 <thead className="bg-[#0b3d91] text-blue-100 text-xs font-semibold uppercase tracking-wider">
                   <tr>
                     <th className="p-4">Vereinsname</th>
                     <th className="p-4">Kürzel</th>
                     <th className="p-4">E-Mail</th>
-                    <th className="p-4">Adresse</th>
-                    <th className="p-4">Status</th>
+                    <th className="p-4">Stripe-Konto ID</th>
+                    <th className="p-4 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-blue-900/30 text-sm text-slate-300">
                   {vereine?.map((v: any) => (
-                    <tr key={v.id} className="hover:bg-[#0b3d91]/30 transition-colors">
-                      <td className="p-4 font-medium text-white">{v.name}</td>
-                      <td className="p-4 font-mono text-xs text-blue-300">{v.kuerzel}</td>
+                    <tr key={v.id} className="hover:bg-[#0b3d91]/20 transition-colors">
+                      <td className="p-4 font-medium text-white">{v.name || "Kein Name"}</td>
+                      <td className="p-4 font-mono text-xs text-blue-300">{v.kuerzel || "-"}</td>
                       <td className="p-4 text-slate-400">{v.email}</td>
-                      <td className="p-4 text-slate-400 max-w-xs truncate">{v.adresse}</td>
-                      <td className="p-4">
-                        {v.isApproved ? (
-                          <span className="text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full text-xs font-medium">✓ Aktiv</span>
-                        ) : (
-                          <span className="text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full text-xs font-medium">⏳ Offen</span>
-                        )}
+                      <td className="p-4 font-mono text-xs text-slate-400">{v.stripeAccountId || "Nicht verknüpft"}</td>
+                      <td className="p-4 text-center">
+                        <button
+                          disabled={updatingId === v.id}
+                          onClick={() => handleStatusToggle(v.id, v.isApproved)}
+                          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                            v.isApproved 
+                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/40" 
+                              : "bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/40"
+                          }`}
+                        >
+                          {updatingId === v.id ? "Speichert..." : v.isApproved ? "✓ Freigeschaltet" : "⏳ Gesperrt"}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -173,25 +198,42 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB: EVENTS */}
+        {/* EVENTS TAB */}
         {activeTab === "events" && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white">Regatta Regalkalender ({events?.length})</h2>
-            <div className="bg-[#112d5c] rounded-2xl overflow-hidden border border-blue-900/40 shadow-xl">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-white">Regatta Events & Einnahmen ({events?.length})</h2>
+
+            {/* ZEITDIAGRAMM: Einnahmen pro Regatta */}
+            <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
+              <h3 className="text-lg font-semibold text-white mb-4">Umsatz pro Regatta (€)</h3>
+              <div className="h-64 w-full bg-[#0a192f]/50 rounded-xl p-2">
+                <BarChart
+                  xAxis={[{ scaleType: "band", data: eventNames }]}
+                  series={[{ data: eventRevenues, color: "#34d399" }]}
+                  height={230}
+                />
+              </div>
+            </div>
+
+            <div className="bg-[#112d5c] rounded-2xl overflow-hidden border border-blue-900/40">
               <table className="w-full text-left border-collapse">
                 <thead className="bg-[#0b3d91] text-blue-100 text-xs font-semibold uppercase tracking-wider">
                   <tr>
-                    <th className="p-4">Event Name</th>
-                    <th className="p-4">Startdatum</th>
-                    <th className="p-4">Enddatum</th>
+                    <th className="p-4">Regattaname</th>
+                    <th className="p-4">Zeitraum</th>
+                    <th className="p-4 text-right">Einnahmen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-blue-900/30 text-sm text-slate-300">
                   {events?.map((e: any) => (
-                    <tr key={e.id} className="hover:bg-[#0b3d91]/30 transition-colors">
-                      <td className="p-4 font-semibold text-emerald-400">{e.name}</td>
-                      <td className="p-4 text-slate-300">{new Date(e.datumVon).toLocaleDateString("de-DE")}</td>
-                      <td className="p-4 text-slate-300">{new Date(e.datumBis).toLocaleDateString("de-DE")}</td>
+                    <tr key={e.id} className="hover:bg-[#0b3d91]/20 transition-colors">
+                      <td className="p-4 font-semibold text-white">{e.name}</td>
+                      <td className="p-4 text-slate-400">
+                        {new Date(e.datumVon).toLocaleDateString("de-DE")} - {new Date(e.datumBis).toLocaleDateString("de-DE")}
+                      </td>
+                      <td className="p-4 text-right font-mono font-bold text-emerald-400">
+                        {e.revenue?.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                      </td>
                     </tr>
                   ))}
                 </tbody>
