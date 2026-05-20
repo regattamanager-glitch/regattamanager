@@ -12,25 +12,24 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-            async function fetchAdminData() {
+              async function fetchAdminData() {
     try {
       setErrorMsg(null);
       
-      // 1. Wir bauen die absolut echte URL zusammen (z.B. https://regatta-manager.com/api/admin/data)
-      // 2. Ein Zeitstempel als Parameter (?v=...) zwingt den Browser-Kern, an Next.js vorbei direkt den Server zu fragen
-      const absoluteUrl = `${window.location.origin}/api/admin/data?v=${Date.now()}`;
-      
-      const res = await fetch(absoluteUrl, {
+      // Nutzt das native Stammverzeichnis ohne Next-Intl Interceptoren
+      const res = await fetch("/api/admin/data", {
         method: "GET",
+        cache: "no-store",
         headers: {
           "Accept": "application/json",
-          "Pragma": "no-cache",
-          "Cache-Control": "no-cache"
+          // Diese Header signalisieren Next.js, den Request unberührt an app/api/ weiterzureichen
+          "x-next-intl-skip": "true",
+          "x-middleware-skip": "true"
         }
       });
       
       if (!res.ok) {
-        throw new Error(`HTTP-Fehler! Status: ${res.status} (Die API in app/api hat nicht geantwortet)`);
+        throw new Error(`HTTP-Fehler! Status: ${res.status}`);
       }
 
       const json = await res.json();
@@ -50,10 +49,13 @@ export default function AdminDashboard() {
   async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
     setUpdatingId(vereinId);
     try {
-      const absoluteUrl = `${window.location.origin}/api/admin/data?v=${Date.now()}`;
-      const res = await fetch(absoluteUrl, {
+      const res = await fetch("/api/admin/data", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-next-intl-skip": "true",
+          "x-middleware-skip": "true"
+        },
         body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
       });
       const json = await res.json();
