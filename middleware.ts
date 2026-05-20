@@ -7,12 +7,17 @@ const intlMiddleware = createMiddleware(routing);
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. Supported locales for regex check
+  // 1. SCHNELLSPUR: API-Routen sofort ignorieren und direkt zum Server durchwinken
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  // 2. Unterstützte Sprachen für die Dashboard-Erkennung
   const locales = ['de', 'en', 'fr', 'it', 'es', 'nl', 'el', 'hr', 'tr', 'pt'];
   const localePattern = `^\\/(${locales.join('|')})\\/dashboard`;
   const isDashboardPath = pathname.match(new RegExp(localePattern)) || pathname.startsWith('/dashboard');
 
-  // 2. Dashboard protection
+  // 3. Dashboard-Schutz (Unverändert übernommen)
   if (isDashboardPath) {
     const sessionId = req.cookies.get("session_id")?.value || req.cookies.get("session")?.value;
 
@@ -25,10 +30,11 @@ export default async function middleware(req: NextRequest) {
     }
   }
 
-  // 3. Apply internationalization
+  // 4. Internationalisierung anwenden (Unverändert übernommen)
   return intlMiddleware(req);
 }
 
 export const config = {
+  // Schützt vor unnötigen Aufrufen bei statischen Dateien
   matcher: ['/((?!api|_next|.*\\..*).*)']
 };
