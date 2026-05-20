@@ -13,11 +13,12 @@ export default function AdminDashboard() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Daten vom globalen API-Endpunkt laden
-    async function fetchAdminData() {
+  async function fetchAdminData() {
     try {
       setErrorMsg(null);
       
-      // Ganz normaler, sauberer API-Aufruf auf die Root-Ebene
+      // Nutzt den relativen Pfad. Da die Middleware geflickt ist,
+      // kommt dieser Request ohne Umschreibungen direkt an!
       const res = await fetch("/api/admin/data", {
         method: "GET",
         cache: "no-store",
@@ -31,10 +32,10 @@ export default function AdminDashboard() {
       }
 
       const json = await res.json();
-      if (json.success) {
+      if (json && json.success) {
         setData(json);
       } else {
-        throw new Error(json.message || "Unbekannter API-Fehler");
+        throw new Error(json?.message || "Die Datenbank hat keine gültigen Daten geliefert.");
       }
     } catch (err: any) {
       console.error("Fehler beim Laden der Admin-Daten:", err);
@@ -52,17 +53,23 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
       });
+      if (!res.ok) throw new Error("Fehler beim Senden des Status.");
+      
       const json = await res.json();
       if (json.success) {
-        setData((prev: any) => ({
-          ...prev,
-          vereine: prev.vereine.map((v: any) => 
-            v.id === vereinId ? { ...v, isApproved: !currentStatus } : v
-          )
-        }));
+        setData((prev: any) => {
+          if (!prev || !prev.vereine) return prev;
+          return {
+            ...prev,
+            vereine: prev.vereine.map((v: any) => 
+              v.id === vereinId ? { ...v, isApproved: !currentStatus } : v
+            )
+          };
+        });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err.message || "Status-Update fehlgeschlagen.");
     } finally {
       setUpdatingId(null);
     }
@@ -72,7 +79,16 @@ export default function AdminDashboard() {
     fetchAdminData();
   }, []);
 
-  // Fehler-Anzeige, falls die globale API nicht antwortet oder abstürzt
+  // 1. Lade-Anzeige (Wichtig: Steht VOR der Datenberechnung!)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#001f3f] flex items-center justify-center text-white">
+        <div className="text-xl animate-pulse font-medium">Verbinde mit globaler Regatta Manager API...</div>
+      </div>
+    );
+  }
+
+  // 2. Fehler-Anzeige
   if (errorMsg) {
     return (
       <div className="min-h-screen bg-[#001f3f] flex flex-col items-center justify-center p-4 text-white">
@@ -93,23 +109,16 @@ export default function AdminDashboard() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#001f3f] flex items-center justify-center text-white">
-        <div className="text-xl animate-pulse font-medium">Verbinde mit globaler Regatta Manager API...</div>
-      </div>
-    );
-  }
+  // Safe Guard: Erst ab hier greifen wir auf Verzeichnisse der API-Antwort zu
+  const { stats, vereine = [], events = [], timeline = [] } = data || {};
+  const totalRevenue = events.reduce((sum: number, e: any) => sum + (e.revenue || 0), 0) || 0;
 
-  const { stats, vereine, events, timeline } = data || {};
-  const totalRevenue = events?.reduce((sum: number, e: any) => sum + (e.revenue || 0), 0) || 0;
+  // Daten für die MUI Diagramme mit strikten Fallbacks vorbereiten
+  const chartMonths = timeline.length > 0 ? timeline.map((t: any) => t.month) : ["Keine Daten"];
+  const chartZuwachs = timeline.length > 0 ? timeline.map((t: any) => t.zuwachs) : [0];
 
-  // Daten für die MUI Diagramme vorbereiten
-  const chartMonths = timeline?.map((t: any) => t.month) || ["2026-05"];
-  const chartZuwachs = timeline?.map((t: any) => t.zuwachs) || [0];
-
-  const eventNames = events?.map((e: any) => e.name) || ["Keine Events"];
-  const eventRevenues = events?.map((e: any) => e.revenue) || [0];
+  const eventNames = events.length > 0 ? events.map((e: any) => e.name) : ["Keine Events"];
+  const eventRevenues = events.length > 0 ? events.map((e: any) => e.revenue) : [0];
 
   return (
     <div className="flex h-screen bg-[#001f3f] text-slate-200 overflow-hidden">
@@ -198,7 +207,7 @@ export default function AdminDashboard() {
         {/* VEREINE TAB */}
         {activeTab === "vereine" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Vereine verwalten ({vereine?.length})</h2>
+            <h2 className="text-2xl font-bold text-white">Vereine verwalten ({vereine.length})</h2>
             
             <div className="bg-[#112d5c] rounded-2xl overflow-hidden border border-blue-900/40">
               <table className="w-full text-left border-collapse">
@@ -212,7 +221,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-blue-900/30 text-sm text-slate-300">
-                  {vereine?.map((v: any) => (
+                  {vereine.map((v: any) => (
                     <tr key={v.id} className="hover:bg-[#0b3d91]/20 transition-colors">
                       <td className="p-4 font-medium text-white">{v.name || "Kein Name"}</td>
                       <td className="p-4 font-mono text-xs text-blue-300">{v.kuerzel || "-"}</td>
@@ -242,7 +251,7 @@ export default function AdminDashboard() {
         {/* EVENTS TAB */}
         {activeTab === "events" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-white">Regatta Events & Einnahmen ({events?.length})</h2>
+            <h2 className="text-2xl font-bold text-white">Regatta Events & Einnahmen ({events.length})</h2>
 
             {/* ZEITDIAGRAMM: Einnahmen pro Regatta */}
             <div className="bg-[#112d5c] p-6 rounded-2xl border border-blue-900/40">
@@ -266,11 +275,11 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-blue-900/30 text-sm text-slate-300">
-                  {events?.map((e: any) => (
+                  {events.map((e: any) => (
                     <tr key={e.id} className="hover:bg-[#0b3d91]/20 transition-colors">
                       <td className="p-4 font-semibold text-white">{e.name}</td>
                       <td className="p-4 text-slate-400">
-                        {new Date(e.datumVon).toLocaleDateString("de-DE")} - {new Date(e.datumBis).toLocaleDateString("de-DE")}
+                        {e.datumVon ? new Date(e.datumVon).toLocaleDateString("de-DE") : "-"} - {e.datumBis ? new Date(e.datumBis).toLocaleDateString("de-DE") : "-"}
                       </td>
                       <td className="p-4 text-right font-mono font-bold text-emerald-400">
                         {e.revenue?.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
