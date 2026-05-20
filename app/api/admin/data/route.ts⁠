@@ -1,0 +1,62 @@
+import { NextRequest, NextResponse } from "next/server";
+import sql from '@/lib/db';
+
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
+export async function GET(req: NextRequest) {
+  try {
+    // 1. Statistiken aggregieren (Parallele DB-Abfragen für beste Performance)
+    const [
+      eventsCountResult,
+      seglerCountResult,
+      vereineCountResult,
+      testSeglerResult
+    ] = await Promise.all([
+      sql`SELECT COUNT(*)::int FROM events`,
+      sql`SELECT COUNT(*)::int FROM "Segler"`,
+      sql`SELECT COUNT(*)::int FROM "Verein"`,
+      sql`SELECT COUNT(*)::int FROM "Segler" WHERE test = true`
+    ]);
+
+    // 2. Die Listen für die Tabellen abfragen
+    const seglerList = await sql`
+      SELECT id, vorname, nachname, email, nation, geburtsdatum, test, "createdAt"
+      FROM "Segler" 
+      ORDER BY "createdAt" DESC
+    `;
+
+    const vereineList = await sql`
+      SELECT id, name, kuerzel, email, adresse, "isApproved", test, "createdAt"
+      FROM "Verein" 
+      ORDER BY "createdAt" DESC
+    `;
+
+    const eventsList = await sql`
+      SELECT id, name, datum_von as "datumVon", datum_bis as "datumBis"
+      FROM events 
+      ORDER BY datum_von DESC
+    `;
+
+    // 3. Kombinierte Daten zurückgeben
+    return NextResponse.json({
+      success: true,
+      stats: {
+        eventsCount: eventsCountResult[0].count,
+        seglerCount: seglerCountResult[0].count,
+        vereineCount: vereineCountResult[0].count,
+        testCount: testSeglerResult[0].count,
+      },
+      segler: seglerList,
+      vereine: vereineList,
+      events: eventsList
+    });
+
+  } catch (err) {
+    console.error("Admin-API Fehler:", err);
+    return NextResponse.json(
+      { success: false, message: "Fehler beim Laden der Admin-Daten" }, 
+      { status: 500 }
+    );
+  }
+}
