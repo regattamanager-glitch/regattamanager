@@ -15,6 +15,7 @@ const EventMap = dynamic(() => import("@/components/EventMap"), {
 type Extra = { name: string; price: number };
 type Document = { id: string; name: string; url: string };
 type Account = { id: string; name: string; email: string; adresse?: string };
+type GebuehrInfo = {  limit: number | null;  spaet: number;  gender: string;  maxAge: number | null;  minAge: number | null;  normal: number;};
 
 type Event = {
   id: string;
@@ -35,7 +36,7 @@ type Event = {
   latitude?: number;
   longitude?: number;
   notizen?: string;
-
+  gebuehren_pro_klasse: Record<string, GebuehrInfo>;
   segler?: Record<string, SeglerAnmeldung[]>; // ← WICHTIG
 };
 
@@ -236,13 +237,15 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
       }
 
       setEvent({
-        ...found,
-        vereinId: found.vereinId || found.verein_id,
-        segler: groupedSegler, // <--- DAS HAT GEFEHLT
-        notizen: found.notiz || "",
-        anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
-        anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
-      });
+  ...found,
+  vereinId: found.vereinId || found.verein_id,
+  segler: groupedSegler,
+  notizen: found.notiz || "",
+  anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
+  anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
+  // Hier das neue Feld hinzufügen:
+  gebuehren_pro_klasse: found.gebuehren_pro_klasse || {},
+});
 
       if (found.bootsklassen?.length > 0) {
         setSelectedClass(found.bootsklassen[0]);
@@ -651,35 +654,70 @@ return (
 
         {/* BOOTSKLASSEN */}
         {activeTab === "bootsklassen" && (
-          <div className="space-y-4">
-            {event!.alleKlassen ? (
-              <div className="flex justify-between bg-blue-800/40 p-4 rounded-xl">
-                <span>{t("regattaDetail.classes.openForAll")}</span>
-                <button
-                  onClick={() => goToRegister(event!.id, "GLOBAL")}
-                  className="bg-blue-700 px-5 py-2 rounded-lg"
-                >
-                  {t("regattaDetail.classes.registerNow")}
-                </button>
+  <div className="space-y-4">
+    {event?.alleKlassen ? (
+      <div className="flex justify-between bg-blue-800/40 p-6 rounded-2xl border border-white/5 items-center">
+        <span>{t("regattaDetail.classes.openForAll")}</span>
+        <button 
+          onClick={() => goToRegister(event.id, "GLOBAL")} 
+          className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-medium transition shadow-lg"
+        >
+          {t("regattaDetail.classes.registerNow")}
+        </button>
+      </div>
+    ) : event?.gebuehren_pro_klasse ? (
+      Object.entries(event.gebuehren_pro_klasse).map(([className, config], index) => {
+        const data = config as any; 
+
+        // Datum Logik: Prüfe auf spezifischen Zeitraum der Klasse, sonst Regatta-Zeitraum
+        const datumVon = data.datumVon || event.datumVon;
+        const datumBis = data.datumBis || event.datumBis;
+        
+        const displayDate = `${new Date(datumVon).toLocaleDateString("de-DE")} – ${new Date(datumBis).toLocaleDateString("de-DE")}`;
+
+        return (
+    <div
+      key={`${className}-${index}`} // <--- HIER ist die wichtige Änderung!
+      className="bg-blue-800/40 p-5 rounded-2xl border border-blue-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4"
+    >
+            <div className="flex flex-col gap-2">
+              <span className="font-bold text-xl text-white tracking-tight">{className}</span>
+              
+              <div className="flex flex-wrap gap-2 text-sm text-gray-300">
+                {/* Zeitraum Anzeige */}
+                <span className="bg-blue-950/50 px-3 py-1 rounded-full border border-blue-800 flex items-center gap-2">
+                  📅 <span className="text-white font-semibold">{displayDate}</span>
+                </span>
+                
+                {data.gender && (
+                  <span className="bg-indigo-900/30 px-3 py-1 rounded-full text-indigo-200 border border-indigo-800/50">
+                    {data.gender}
+                  </span>
+                )}
+                {(data.minAge || data.maxAge) && (
+                  <span className="bg-emerald-900/30 px-3 py-1 rounded-full text-emerald-200 border border-emerald-800/50">
+                    Alter: {data.minAge ?? '0'} - {data.maxAge ?? '∞'}
+                  </span>
+                )}
               </div>
-            ) : (
-              event!.bootsklassen.map((cls) => (
-                <div
-                  key={cls}
-                  className="flex justify-between bg-blue-800/40 p-4 rounded-xl"
-                >
-                  <span>{cls}</span>
-                  <button
-                    onClick={() => goToRegister(event!.id, cls)}
-                    className="bg-blue-700 px-5 py-2 rounded-lg"
-                  >
-                    {t("regattaDetail.classes.register")}
-                  </button>
-                </div>
-              ))
-            )}
+            </div>
+
+            <button
+              onClick={() => goToRegister(event.id, className)}
+              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg flex-shrink-0"
+            >
+              {t("regattaDetail.classes.register")}
+            </button>
           </div>
-        )}
+        );
+      })
+    ) : (
+      <p className="text-center text-gray-400 p-8">
+        {t("regattaDetail.classes.noClassesAvailable")}
+      </p>
+    )}
+  </div>
+)}
 
         {/* MELDUNGEN */}
         {activeTab === "meldungen" && (
@@ -688,18 +726,18 @@ return (
             {/* Klassenliste */}
             <ul className="space-y-2 border-r border-white/10 pr-4">
               {event!.bootsklassen.map((cls, index) => (
-                <li
-                  key={cls}
-                  onClick={() => setSelectedClass(cls)}
-                  className={`cursor-pointer p-2 rounded transition ${
-                    selectedClass === cls || (!selectedClass && index === 0)
-                      ? "bg-blue-700"
-                      : "hover:bg-blue-800/40"
-                  }`}
-                >
-                  {cls}
-                </li>
-              ))}
+  <li 
+    key={`${cls}-${index}`} 
+    onClick={() => setSelectedClass(cls)} 
+    className={`cursor-pointer p-2 rounded transition ${
+      selectedClass === cls || (!selectedClass && index === 0)
+        ? "bg-blue-700"
+        : "hover:bg-blue-800/40"
+    }`}
+  >
+    {cls}
+  </li>
+))}
             </ul>
         
     {/* Seglerliste */}

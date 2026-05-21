@@ -158,7 +158,16 @@ export default function EditEventPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Validierung: Mindestgebühr 10€ (Kein Hardcoded Text)
+    // 1. NEU: Validierung auf doppelte Klassennamen
+    const classNames = activeClasses.map(c => c.name.trim().toLowerCase());
+    const hasDuplicates = new Set(classNames).size !== classNames.length;
+
+    if (hasDuplicates) {
+      alert("Fehler: Es gibt Klassen mit identischen Namen. Bitte stelle sicher, dass jeder Klassenname einzigartig ist.");
+      return;
+    }
+
+    // 2. Validierung: Mindestgebühr 10€
     const feeTooLow = activeClasses.some(cls => 
       Number(cls.feeRegular) < 10 || Number(cls.feeLate) < 10
     );
@@ -168,7 +177,7 @@ export default function EditEventPage() {
       return;
     }
 
-    // 2. 8% Regel Validierung (Regatta Manager Richtlinie)
+    // 3. 8% Regel Validierung
     const invalidFees = activeClasses.some(cls => Number(cls.feeLate) < Number(cls.feeRegular) * 1.08);
     
     if (invalidFees) {

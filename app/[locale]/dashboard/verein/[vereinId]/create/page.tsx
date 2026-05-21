@@ -44,6 +44,8 @@ type ClassConfig = {
   maxParticipants: string;
   feeRegular: string;
   feeLate: string;
+  zeitraumVon: string;
+  zeitraumBis: string;
 };
 
 const TrashIcon = () => (
@@ -81,18 +83,20 @@ export default function CreateEventPage() {
   const [activeClasses, setActiveClasses] = useState<ClassConfig[]>([]);
 
   const addClass = (name: string = "") => {
-    const newClass: ClassConfig = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: name,
-      gender: "Offen",
-      minAge: "",
-      maxAge: "",
-      maxParticipants: "",
-      feeRegular: "30",
-      feeLate: "40",
-    };
-    setActiveClasses([...activeClasses, newClass]);
+  const newClass: ClassConfig = {
+    id: Math.random().toString(36).substr(2, 9),
+    name: name,
+    gender: "Offen",
+    minAge: "",
+    maxAge: "",
+    maxParticipants: "",
+    feeRegular: "30",
+    feeLate: "40",
+    zeitraumVon: form.datumVon, // Vorbelegung mit Regatta-Start
+    zeitraumBis: form.datumBis, // Vorbelegung mit Regatta-Ende
   };
+  setActiveClasses([...activeClasses, newClass]);
+};
 
   const updateClass = (id: string, field: keyof ClassConfig, value: string) => {
     setActiveClasses(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
@@ -215,7 +219,9 @@ export default function CreateEventPage() {
         gender: cls.gender,
         minAge: cls.minAge ? Number(cls.minAge) : null,
         maxAge: cls.maxAge ? Number(cls.maxAge) : null,
-        limit: cls.maxParticipants ? Number(cls.maxParticipants) : null
+        limit: cls.maxParticipants ? Number(cls.maxParticipants) : null,
+        von: cls.zeitraumVon,
+        bis: cls.zeitraumBis
       };
     });
     const payload = {
@@ -288,31 +294,60 @@ export default function CreateEventPage() {
   const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   
-  // 1. Validierungen
+  // 1. Validierung: Allgemeine Regatta-Daten
+  if (!form.name || !form.datumVon || !form.datumBis || !form.land || !form.location || !form.anmeldungVon || !form.anmeldungBis) {
+    alert("Bitte fülle alle Pflichtfelder der Regatta aus.");
+    return;
+  }
+
+  // 2. Validierung: Klassen vorhanden
   if (activeClasses.length === 0) {
     alert(t("addAtLeastOneClass"));
     return;
   }
 
-  // PRÜFUNG: Mindestgebühr von 10€
-  const feeTooLow = activeClasses.some(cls => 
-    Number(cls.feeRegular) < 10 || Number(cls.feeLate) < 10
+  // 3. Validierung: Alle Klassenfelder ausgefüllt
+  const isAnyClassEmpty = activeClasses.some(c => 
+    !c.name || !c.feeRegular || !c.feeLate || !c.zeitraumVon || !c.zeitraumBis
   );
 
+  if (isAnyClassEmpty) {
+    alert("Bitte fülle alle Pflichtfelder (Name, Gebühren, Zeitraum) in allen Bootsklassen aus.");
+    return;
+  }
+
+  // 4. Prüfung auf doppelte Klassennamen
+  const classNames = activeClasses.map(c => c.name.trim().toLowerCase());
+  const hasDuplicates = new Set(classNames).size !== classNames.length;
+
+  if (hasDuplicates) {
+    alert("Fehler: Es gibt Klassen mit identischen Namen.");
+    return;
+  }
+
+  // 5. Prüfung: Mindestgebühr
+  const feeTooLow = activeClasses.some(cls => Number(cls.feeRegular) < 10 || Number(cls.feeLate) < 10);
   if (feeTooLow) {
-      // Nutzt den Translation-Key für die Fehlermeldung
-      alert(t("minFeeError"));
-      return;
-    }
-  
-  // PRÜFUNG: 8% Aufschlag für Nachmeldegebühr
-  const invalidFees = activeClasses.some(cls => Number(cls.feeLate) < Number(cls.feeRegular) * 1.08);
-  
-  if (invalidFees) {
-    alert(t("lateFeeWarning"));
+    alert(t("minFeeError"));
+    return;
   }
   
-  // 2. Vertrag öffnen
+  // 6. Zeitrahmen-Validierung (Regatta vs. Klasse)
+  const regattaStart = new Date(form.datumVon).getTime();
+  const regattaEnd = new Date(form.datumBis).getTime();
+
+  const invalidDate = activeClasses.some(cls => {
+    const start = new Date(cls.zeitraumVon).getTime();
+    const end = new Date(cls.zeitraumBis).getTime();
+    return start < regattaStart || end > regattaEnd || start > end;
+  });
+
+  if (invalidDate) {
+    alert("Fehler: Der Zeitraum einer Klasse muss innerhalb des Regatta-Zeitraums liegen.");
+    return;
+  }
+
+  // Wenn alles okay ist:
   setLegalModalOpen(true);
 };
 
@@ -557,6 +592,18 @@ export default function CreateEventPage() {
                         <TrashIcon />
                       </button>
                     </div>
+
+                    {/* HIER MUSS DER NEUE CODE HIN: */}
+  <div className="md:col-span-12 grid grid-cols-2 gap-4 mt-4 border-t border-white/5 pt-4">
+    <div className="space-y-1">
+      <label className="text-[9px] uppercase text-white/40">{t('classStart')}</label>
+      <input type="date" className={inputStyle} value={cls.zeitraumVon} onChange={(e) => updateClass(cls.id, "zeitraumVon", e.target.value)} />
+    </div>
+    <div className="space-y-1">
+      <label className="text-[9px] uppercase text-white/40">{t('classEnd')}</label>
+      <input type="date" className={inputStyle} value={cls.zeitraumBis} onChange={(e) => updateClass(cls.id, "zeitraumBis", e.target.value)} />
+    </div>
+  </div>
                   </div>
                 </div>
               ))}
