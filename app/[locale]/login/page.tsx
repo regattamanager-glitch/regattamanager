@@ -38,13 +38,13 @@ async function handleLogin(e: React.FormEvent) {
     const data = await res.json();
     
     if (res.ok) {
-      // Wenn alles ok, weiter zum Code
       setStep("code");
+    } else if (res.status === 403) {
+      // Explizite Weiterleitung bei Status 403
+      router.replace("/dashboard/pending-approval");
     } else {
-      // Wenn der Status 403 (nicht freigegeben) zurückkommt
-      if (data.isApproved === false) {
-        router.replace("/dashboard/pending-approval");
-      }
+      // Andere Fehler (falsches Passwort etc.)
+      alert(data.message || "Login fehlgeschlagen");
     }
   } catch (error) {
     console.error("Login error:", error);
