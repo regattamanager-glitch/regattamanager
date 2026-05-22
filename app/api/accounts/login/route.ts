@@ -36,10 +36,15 @@ if (!user) {
 }
 
 // Wichtig: Status 403 setzen, damit das Frontend den 'else if (res.status === 403)' Block auslöst
+// Ändere diesen Teil in deiner API:
 if (userType === "verein" && user.isApproved === false) {
   return NextResponse.json(
-    { message: "Wartet auf Freigabe" }, 
-    { status: 403 } 
+    { 
+      success: false, 
+      message: "Wartet auf Freigabe", 
+      status: "pending" 
+    }, 
+    { status: 200 } 
   );
 }
 

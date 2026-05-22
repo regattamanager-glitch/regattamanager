@@ -38,14 +38,16 @@ async function handleLogin(e: React.FormEvent) {
     const data = await res.json();
     
     if (res.ok) {
-      setStep("code");
-    } else if (res.status === 403) {
-      // Explizite Weiterleitung bei Status 403
-      router.replace("/dashboard/pending-approval");
-    } else {
-      // Andere Fehler (falsches Passwort etc.)
-      alert(data.message || "Login fehlgeschlagen");
-    }
+  // Prüfe auf das neue Feld 'status' im JSON-Body
+  if (data.status === "pending") {
+    router.replace("/dashboard/pending-approval");
+  } else {
+    setStep("code");
+  }
+} else {
+  // Hier landen nur noch echte Fehler wie 401 oder 500
+  alert(data.message || "Login fehlgeschlagen");
+}
   } catch (error) {
     console.error("Login error:", error);
   } finally {
