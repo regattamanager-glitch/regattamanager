@@ -26,7 +26,7 @@ let user = seglerResult[0];
 let userType: "segler" | "verein" = "segler";
 
 if (!user) {
-  const vereinResult = await sql`SELECT id, passwort, is_approved FROM "Verein" WHERE email = ${email} LIMIT 1`;
+  const vereinResult = await sql`SELECT id, passwort, isApproved FROM "Verein" WHERE email = ${email} LIMIT 1`;
   user = vereinResult[0];
   userType = "verein";
 }
@@ -36,7 +36,7 @@ if (!user) {
 }
 
 // NEU: Prüfung auf Freigabestatus
-if (user.is_approved === false) {
+if (user.isApproved === false) {
   return NextResponse.json({ 
     success: false, 
     message: "Dein Account wartet noch auf Freigabe durch den Administrator.",
@@ -44,7 +44,6 @@ if (user.is_approved === false) {
     type: userType 
   }, { status: 403 });
 }
-
 
     // 3. Passwort prüfen
     const ok = await bcrypt.compare(passwort, user.passwort);
