@@ -929,7 +929,9 @@
   "classes": {
     "openForAll": "Open voor alle klassen",
     "registerNow": "Nu registreren",
-    "register": "Registreren"
+    "register": "Registreren",
+    "registrationNotYetOpen": "De inschrijving is nog niet geopend",
+    "registrationClosed": "Inschrijving gesloten"
   },
   "entries": {
     "title": "Inschrijvingen",

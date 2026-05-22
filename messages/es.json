@@ -929,7 +929,9 @@
   "classes": {
     "openForAll": "Abierto a todas las clases",
     "registerNow": "Regístrate ahora",
-    "register": "Registrarse"
+    "register": "Registrarse",
+    "registrationNotYetOpen": "La inscripción aún no está abierta",
+    "registrationClosed": "Inscripción cerrada"
   },
   "entries": {
     "title": "Inscripciones",

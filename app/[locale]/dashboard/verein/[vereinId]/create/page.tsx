@@ -144,19 +144,21 @@ export default function CreateEventPage() {
 
   const saveStripeAccountId = async (): Promise<boolean> => {
   if (!account) return false;
+  
+  // Validierung der Stripe-ID Formatierung
   if (!stripeId.startsWith("acct_")) {
     setStripeError(t("invalidStripe"));
     return false;
   }
 
-  // Passwort-Check entfernt, da wir die Session nutzen
   try {
     const res = await fetch("/api/accounts/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        // Wir senden nur die ID und das neue Feld. 
+        // Das Backend sollte via Session prüfen, ob der User berechtigt ist.
         id: account.id,
-        // currentPassword entfernt
         update: { 
           stripeAccountId: stripeId 
         },
@@ -169,6 +171,7 @@ export default function CreateEventPage() {
       throw new Error(data.message || t("saveStripeError"));
     }
 
+    // Erfolg: Account-State lokal aktualisieren
     setAccount(a => a ? { ...a, stripeAccountId: stripeId } : null);
     setIbanPopupOpen(false); 
     return true;
@@ -678,16 +681,18 @@ export default function CreateEventPage() {
                 </div>
           
                 <div className="flex flex-col gap-2 pt-2">
-                  <button 
-                    type="button" 
-                    className="w-full bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl transition-all" 
-                    onClick={async () => { 
-                      const success = await saveStripeAccountId(); 
-                      if (success) await submitFormData(); 
-                    }}
-                  >
-                    {t('saveAndContinue') || "ID speichern & Regatta erstellen"}
-                  </button>
+                  // Im Popup-JSX-Bereich:
+<button 
+  type="button" 
+  className="w-full bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl transition-all" 
+  onClick={async () => { 
+    // Hier wird KEIN Passwort übergeben
+    const success = await saveStripeAccountId(); 
+    if (success) await submitFormData(); 
+  }}
+>
+  {t('saveAndContinue') || "ID speichern & Regatta erstellen"}
+</button>
                   <button 
                     type="button" 
                     className="w-full text-gray-500 text-sm hover:text-gray-300 transition-colors" 

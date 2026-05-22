@@ -16,6 +16,7 @@ import {
 import dayjs from 'dayjs';
 import GroupsIcon from '@mui/icons-material/Groups';
 import { useTranslations } from 'next-intl';
+import { Copy, Check } from "lucide-react";
 
 type Event = {
   id: string;          
@@ -248,6 +249,7 @@ function StatCard({ label, value, color }: { label: string, value: number, color
 function EventCard({ ev, vereinId, isPast }: { ev: Event, vereinId: string, isPast?: boolean }) {
   const t = useTranslations("VereinsDashboard.eventCard");
   const router = useRouter();
+  const [copied, setCopied] = useState(false);
   
   const heute = dayjs().startOf('day');
   const startDatum = dayjs(ev.datumVon).startOf('day');
@@ -265,6 +267,14 @@ function EventCard({ ev, vereinId, isPast }: { ev: Event, vereinId: string, isPa
     } else {
       router.push(`/dashboard/verein/${vereinId}/registrationlist?eventId=${ev.id}`);
     }
+  };
+
+  const copyToClipboard = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/regatta/${ev.id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleButtonClick = (e: React.MouseEvent, path: string) => {
@@ -300,7 +310,16 @@ function EventCard({ ev, vereinId, isPast }: { ev: Event, vereinId: string, isPa
       {/* Button Bereich */}
       <div className="flex flex-wrap items-center gap-3 w-full md:w-auto relative z-10">
         
-        {/* MELDUNGEN (Blau) */}
+        {/* COPY LINK (Neu hinzugefügt) */}
+        <button
+          onClick={copyToClipboard}
+          title="Link kopieren"
+          className="flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 hover:scale-105 text-slate-400 hover:text-white px-3 py-2.5 rounded-xl font-bold text-sm transition-all border border-slate-700"
+        >
+          {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+        </button>
+
+        {/* MELDUNGEN */}
         {!isPast && (
           <button
             onClick={(e) => handleButtonClick(e, `/dashboard/verein/${vereinId}/registrationlist?eventId=${ev.id}`)}

@@ -33,6 +33,10 @@ type Event = {
   documents: Document[];
   anmeldungVon: string;
   anmeldungBis: string; 
+  anmeldungsZeitraum: {
+    von: string;
+    bis: string;
+  };
   latitude?: number;
   longitude?: number;
   notizen?: string;
@@ -674,6 +678,16 @@ return (
         const datumBis = data.datumBis || event.datumBis;
         
         const displayDate = `${new Date(datumVon).toLocaleDateString("de-DE")} – ${new Date(datumBis).toLocaleDateString("de-DE")}`;
+        // Aktuelles Datum für den Vergleich (auf 00:00:00 gesetzt für korrekte Tages-Vergleiche)
+const now = new Date();
+now.setHours(0, 0, 0, 0);
+
+// Anmeldezeitraum vom Event (oder spezifisch aus den Klassendaten, falls vorhanden)
+const anmeldungVon = new Date(event.anmeldungsZeitraum.von);
+const anmeldungBis = new Date(event.anmeldungsZeitraum.bis);
+
+// Prüfung: Ist das aktuelle Datum im erlaubten Bereich?
+const isRegistrationOpen = now >= anmeldungVon && now <= anmeldungBis;
 
         return (
     <div
@@ -702,12 +716,20 @@ return (
               </div>
             </div>
 
-            <button
-              onClick={() => goToRegister(event.id, className)}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg flex-shrink-0"
-            >
-              {t("regattaDetail.classes.register")}
-            </button>
+            {isRegistrationOpen ? (
+  <button
+    onClick={() => goToRegister(event.id, className)}
+    className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg flex-shrink-0"
+  >
+    {t("regattaDetail.classes.register")}
+  </button>
+) : (
+  <span className="text-gray-500 text-sm italic px-4">
+    {now > anmeldungBis 
+      ? t("regattaDetail.classes.registrationClosed") 
+      : t("regattaDetail.classes.registrationNotYetOpen")}
+  </span>
+)}
           </div>
         );
       })

@@ -904,7 +904,9 @@
   "classes": {
     "openForAll": "Ανοιχτό για όλες τις κατηγορίες",
     "registerNow": "Εγγραφείτε τώρα",
-    "register": "Εγγραφή"
+    "register": "Εγγραφή",
+    "registrationNotYetOpen": "Η εγγραφή δεν έχει ανοίξει ακόμα",
+    "registrationClosed": "Η εγγραφή έκλεισε"
   },
   "entries": {
     "title": "Εγγραφές",

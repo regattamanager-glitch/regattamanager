@@ -107,21 +107,23 @@ export default function RegisterToEventPage() {
           const accData = await accRes.json();
           
           if (accData && !accData.error) {
-            setSkipper(prev => ({
-              ...prev,
-              seglerId: accData.id || seglerIdFromPath,
-              name: accData.vorname ? `${accData.vorname} ${accData.nachname || ""}`.trim() : (accData.name || ""),
-              nation: accData.nation || "",
-              email: accData.email || "",
-              geburtsJahr: accData.geburtsjahr || "",
-              geburtsMonat: accData.geburtsmonat || "",
-              geburtsTag: accData.geburtstag || "",
-              telefon: accData.telefon || "",
-              verein: accData.verein || "",
-              lizenzNummer: accData.lizenzNummer || accData.lizenznummer || "",
-              worldSailingId: accData.worldSailingId || "",
-            }));
-          }
+  setSkipper(prev => ({
+    ...prev,
+    seglerId: accData.id || seglerIdFromPath,
+    name: accData.vorname ? `${accData.vorname} ${accData.nachname || ""}`.trim() : (accData.name || ""),
+    nation: accData.nation || "",
+    email: accData.email || "",
+    geburtsJahr: accData.geburtsjahr || "",
+    geburtsMonat: accData.geburtsmonat || "",
+    geburtsTag: accData.geburtstag || "",
+    telefon: accData.telefon || "",
+    verein: accData.verein || "",
+    lizenzNummer: accData.lizenzNummer || accData.lizenznummer || "",
+    worldSailingId: accData.worldSailingId || "",
+    notfallKontakt: accData.notfallKontakt || "",
+    sponsor: accData.sponsor || "",
+  }));
+}
         }
       } catch (err) {
         console.error("Fetch Error:", err);
@@ -141,25 +143,41 @@ export default function RegisterToEventPage() {
   };
 
   const calculateTotal = () => {
-    const defaultRes = { subtotal: 0, fee: 0, total: 0 };
-    if (!event) return defaultRes;
-    const decodedKlasse = decodeURIComponent(klasseFromUrl || "");
-    const baseFee = event.gebuehrenProKlasse?.[decodedKlasse]?.normal || 0;
-    const extrasFee = selectedExtras.reduce((sum, e) => sum + (e.price * e.quantity), 0);
-    const subtotal = baseFee + extrasFee;
-    const fee = subtotal * 0.08;
-    return { subtotal, fee, total: subtotal + fee };
-  };
+  const defaultRes = { subtotal: 0, fee: 0, total: 0 };
+  if (!event) return defaultRes;
+
+  // WENN PAYWALL DEAKTIVIERT IST -> Kosten auf 0 setzen
+  if (event.isPaywallActive === false) return defaultRes;
+
+  const decodedKlasse = decodeURIComponent(klasseFromUrl || "");
+  const baseFee = event.gebuehrenProKlasse?.[decodedKlasse]?.normal || 0;
+  const extrasFee = selectedExtras.reduce((sum, e) => sum + (e.price * e.quantity), 0);
+  const subtotal = baseFee + extrasFee;
+  const fee = subtotal * 0.08;
+  return { subtotal, fee, total: subtotal + fee };
+};
 
   const handleSubmit = async () => {
-  setSubmitting(true);
-  const usedKlasse = decodeURIComponent(klasseFromUrl || "");
+    setSubmitting(true);
+    const usedKlasse = decodeURIComponent(klasseFromUrl || "");
 
-  try {
-    const response = await fetch("/api/payment/create-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      // 1. Update Stammdaten
+      await fetch("/api/accounts/registationupdate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          seglerId: seglerIdFromPath,
+          worldSailingId: skipper.worldSailingId,
+          lizenzNummer: skipper.lizenzNummer,
+          telefonNummer: skipper.telefon,
+          notfallKontakt: skipper.notfallKontakt,
+          sponsor: skipper.sponsor,
+        }),
+      });
+
+      // 2. Registrierung (Free oder Stripe)
+      const registrationData = {
         eventId: event.id,
         seglerId: seglerIdFromPath,
         klasse: usedKlasse === "GLOBAL" ? customKlasse : usedKlasse,
@@ -167,30 +185,39 @@ export default function RegisterToEventPage() {
         boot,
         crew,
         extras: selectedExtras,
-      }),
-    });
+      };
 
-    const data = await response.json();
+      if (event.isPaywallActive === false) {
+        await fetch("/api/registrations/free", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(registrationData),
+        });
+        router.push(`/dashboard/segler/${seglerIdFromPath}`);
+      } else {
+        // Stripe Logik
+        const response = await fetch("/api/payment/create-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(registrationData),
+        });
 
-    if (!response.ok) {
-      // Wenn der Server einen Fehler meldet (z.B. 400 oder 500)
-      throw new Error(data.error || "Fehler beim Erstellen der Session");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Fehler beim Erstellen der Session");
+        
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error("Keine URL erhalten");
+        }
+      }
+    } catch (err: any) {
+      console.error("Fehler bei der Anmeldung:", err);
+      alert(`${t('errorPayment')}: ${err.message}`);
+    } finally {
+      setSubmitting(false);
     }
-
-    if (data.url) {
-      console.log("Redirecting to Stripe:", data.url);
-      window.location.href = data.url;
-    } else {
-      console.error("Keine URL in der Antwort erhalten:", data);
-      alert("Fehler: Stripe-URL konnte nicht generiert werden.");
-    }
-  } catch (err: any) {
-    console.error("Zahlungsfehler:", err);
-    alert(`${t('errorPayment')}: ${err.message}`);
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center">

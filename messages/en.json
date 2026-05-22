@@ -931,7 +931,9 @@
   "classes": {
     "openForAll": "Open for all classes",
     "registerNow": "Register now",
-    "register": "Register"
+    "register": "Register",
+      "registrationNotYetOpen": "Registration not yet open",
+      "registrationClosed": "Registration closed"
   },
   "entries": {
     "title": "Entries",

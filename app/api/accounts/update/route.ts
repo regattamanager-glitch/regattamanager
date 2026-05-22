@@ -6,48 +6,40 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
-  console.log(">>> UPDATE ROUTE TRIGGERED (FRONTEND-KOMPATIBEL) <<<");
-
   try {
     const body = await req.json().catch(() => ({}));
-    
-    // FLEXIBLER CHECK: Suche ID im Haupt-Body ODER im update-Objekt
     const id = body.id || (body.update && body.update.id);
     const { currentPassword, update } = body;
 
-    // 1. Pflichtfelder prüfen (mit deinen Statuscodes)
-    if (!id) {
-      console.log("Fehler: ID nicht gefunden im Payload", body);
-      return NextResponse.json({ success: false, message: "ID fehlt" }, { status: 410 });
-    }
-    if (!currentPassword) {
-      return NextResponse.json({ success: false, message: "Passwort fehlt" }, { status: 409 });
-    }
-    if (!update) {
-      return NextResponse.json({ success: false, message: "Update-Daten fehlen" }, { status: 408 });
-    }
+    // 1. Grundlegende Pflichtfelder
+    if (!id) return NextResponse.json({ success: false, message: "ID fehlt" }, { status: 410 });
+    if (!update) return NextResponse.json({ success: false, message: "Update-Daten fehlen" }, { status: 408 });
 
-    // 2. Benutzer suchen
+    // 2. Benutzer suchen (Logik beibehalten)
     let user;
     let userType: "segler" | "verein" = "segler";
-
     const usersSegler = await sql`SELECT * FROM "Segler" WHERE "id" = ${id} LIMIT 1`;
     user = usersSegler[0];
-
     if (!user) {
       const usersVerein = await sql`SELECT * FROM "Verein" WHERE "id" = ${id} LIMIT 1`;
       user = usersVerein[0];
       userType = "verein";
     }
+    if (!user) return NextResponse.json({ success: false, message: "Benutzer nicht gefunden" }, { status: 404 });
 
-    if (!user) {
-      return NextResponse.json({ success: false, message: "Benutzer nicht gefunden" }, { status: 404 });
-    }
+    // 3. Passwort-Prüfung ANPASSEN: 
+    // Nur prüfen, wenn es explizit mitgesendet wurde, ODER wenn ein "sensibles" Update stattfindet.
+    // Stripe-Updates erlauben wir nun ohne Passwort.
+    const isStripeUpdateOnly = update.stripeAccountId && Object.keys(update).length === 1;
 
-    // 3. Passwort prüfen
-    const match = await bcrypt.compare(currentPassword, user.passwort);
-    if (!match) {
-      return NextResponse.json({ success: false, message: "Aktuelles Passwort falsch" }, { status: 401 });
+    if (!isStripeUpdateOnly) {
+      if (!currentPassword) {
+        return NextResponse.json({ success: false, message: "Passwort fehlt" }, { status: 409 });
+      }
+      const match = await bcrypt.compare(currentPassword, user.passwort);
+      if (!match) {
+        return NextResponse.json({ success: false, message: "Aktuelles Passwort falsch" }, { status: 401 });
+      }
     }
 
     const now = new Date();

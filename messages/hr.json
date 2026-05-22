@@ -502,9 +502,6 @@
 },
 "Auth": {
   "months": { "01": "Siječanj", "02": "Veljača", "03": "Ožujak", "04": "Travanj", "05": "Svibanj", "06": "Lipanj", "07": "Srpanj", "08": "Kolovoz", "09": "Rujan", "10": "Listopad", "11": "Studeni", "12": "Prosinac" },
-  "dayPlaceholder": "Giorno",
-  "monthPlaceholder": "Mese",
-  "yearPlaceholder": "Anno",
   "dayPlaceholder": "Dan",
   "monthPlaceholder": "Mjesec",
   "yearPlaceholder": "Godina",
@@ -932,7 +929,9 @@
   "classes": {
     "openForAll": "Otvoreno za sve klase",
     "registerNow": "Registriraj se sada",
-    "register": "Registriraj se"
+    "register": "Registriraj se",
+    "registrationNotYetOpen": "Prijave još nisu otvorene",
+    "registrationClosed": "Prijave zatvorene"
   },
   "entries": {
     "title": "Prijave",

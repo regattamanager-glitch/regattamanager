@@ -929,7 +929,9 @@
   "classes": {
     "openForAll": "Tüm sınıflara açık",
     "registerNow": "Şimdi kaydol",
-    "register": "Kaydol"
+    "register": "Kaydol",
+    "registrationNotYetOpen": "Kayıt henüz açılmadı",
+    "registrationClosed": "Kayıt kapandı"
   },
   "entries": {
     "title": "Kayıtlar",
