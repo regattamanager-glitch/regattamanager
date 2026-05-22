@@ -211,26 +211,37 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
   useEffect(() => {
   async function load() {
     try {
-      // 1. Event UND Registrierungen parallel laden
       const [eventsRes, registrationsRes] = await Promise.all([
         fetch("/api/events"),
-        fetch(`/api/registrations?eventid=${id}`) // Hier die id aus params nutzen
+        fetch(`/api/registrations?eventid=${id}`)
       ]);
 
       const events: Event[] = await eventsRes.json();
       const allRegs = await registrationsRes.json();
-      const found: any = events.find(e => e.id === id);
+      const found = events.find(e => e.id === id);
       
       if (!found) return;
 
-      // Gruppiere die Segler nach Bootsklasse für das event-Objekt
+      // HIER DIE KORREKTUR: Zugriff auf verein_id (die Sie gefunden haben)
+      const vId = (found as any).verein_id;
+
+      if (vId) {
+  const vereinRes = await fetch(`/api/accounts?id=${vId}`);
+  if (vereinRes.ok) {
+    const vereinData = await vereinRes.json();
+    // Falls die API z.B. { data: { name: "..." } } zurückgibt:
+    // Nutzen Sie: setVerein(vereinData.data || vereinData);
+    setVerein(vereinData.data || vereinData); 
+  }
+}
+
+      // Gruppiere die Segler
       const groupedSegler: Record<string, SeglerAnmeldung[]> = {};
       if (Array.isArray(allRegs)) {
         allRegs.forEach((reg: any) => {
           const klasse = reg.klasse || "Unknown";
           if (!groupedSegler[klasse]) groupedSegler[klasse] = [];
           
-          // Mappe das flache DB-Objekt auf das SeglerAnmeldung Interface
           groupedSegler[klasse].push({
             skipper: typeof reg.skipper === 'string' ? JSON.parse(reg.skipper) : reg.skipper,
             boot: typeof reg.boot === 'string' ? JSON.parse(reg.boot) : reg.boot,
@@ -240,16 +251,16 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
         });
       }
 
+      // 3. Event-State setzen (mit korrekten Feldnamen)
       setEvent({
-  ...found,
-  vereinId: found.vereinId || found.verein_id,
-  segler: groupedSegler,
-  notizen: found.notiz || "",
-  anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
-  anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
-  // Hier das neue Feld hinzufügen:
-  gebuehren_pro_klasse: found.gebuehren_pro_klasse || {},
-});
+        ...found,
+        vereinId: vId, // Hier wird die ID für das Interface zugewiesen
+        segler: groupedSegler,
+        notizen: found.notizen || "",
+        anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
+        anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
+        gebuehren_pro_klasse: found.gebuehren_pro_klasse || {},
+      });
 
       if (found.bootsklassen?.length > 0) {
         setSelectedClass(found.bootsklassen[0]);
@@ -318,6 +329,11 @@ const sendInvitations = async () => {
       `/dashboard/segler/${seglerId}/registertoevent?eventId=${eventId}&klasse=${klasse}`
     );
   }
+
+  useEffect(() => {
+  console.log("Event-Daten:", event);
+  console.log("Verein-Daten:", verein);
+}, [event, verein]);
 
   useEffect(() => {
   if (activeTab !== "meldungen" || !event?.id) return;
