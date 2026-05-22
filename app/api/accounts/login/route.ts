@@ -18,21 +18,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: "Fehlende Daten" }, { status: 400 });
     }
 
-    // 2. Nutzer suchen (Zuerst Segler, dann Verein)
-    const seglerResult = await sql`SELECT * FROM "Segler" WHERE email = ${email} LIMIT 1`;
-    let user = seglerResult[0];
-    let userType: "segler" | "verein" = "segler";
+    // ... in deiner POST-Funktion ...
 
-    if (!user) {
-      const vereinResult = await sql`SELECT * FROM "Verein" WHERE email = ${email} LIMIT 1`;
-      user = vereinResult[0];
-      userType = "verein";
-    }
+// 2. Nutzer suchen
+const seglerResult = await sql`SELECT id, passwort, is_approved FROM "Segler" WHERE email = ${email} LIMIT 1`;
+let user = seglerResult[0];
+let userType: "segler" | "verein" = "segler";
 
-    // Falls Nutzer gar nicht existiert
-    if (!user) {
-      return NextResponse.json({ success: false, message: "Ungültige Anmeldedaten" }, { status: 401 });
-    }
+if (!user) {
+  const vereinResult = await sql`SELECT id, passwort, is_approved FROM "Verein" WHERE email = ${email} LIMIT 1`;
+  user = vereinResult[0];
+  userType = "verein";
+}
+
+if (!user) {
+  return NextResponse.json({ success: false, message: "Ungültige Anmeldedaten" }, { status: 401 });
+}
+
+// NEU: Prüfung auf Freigabestatus
+if (user.is_approved === false) {
+  return NextResponse.json({ 
+    success: false, 
+    message: "Dein Account wartet noch auf Freigabe durch den Administrator.",
+    isApproved: false,
+    type: userType 
+  }, { status: 403 });
+}
+
 
     // 3. Passwort prüfen
     const ok = await bcrypt.compare(passwort, user.passwort);

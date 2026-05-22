@@ -38,17 +38,15 @@ async function handleLogin(e: React.FormEvent) {
     const data = await res.json();
     
     if (res.ok) {
-      // NEU: Prüfung auf Freigabestatus für Vereins-Accounts
-      // (Wir setzen voraus, dass dein API-Endpunkt 'isApproved' und 'type' zurückgibt)
-      if (data.type === "verein" && data.isApproved === false) {
-        router.replace("/dashboard/pending-approval");
-        return;
-      }
-
-      // Wenn freigegeben oder Segler -> Wechsel zur 2FA-Code-Eingabe
+      // Wenn alles ok, weiter zum Code
       setStep("code");
     } else {
-      alert(data.error || "Login fehlgeschlagen");
+      // Wenn der Status 403 (nicht freigegeben) zurückkommt
+      if (data.isApproved === false) {
+        router.replace("/dashboard/pending-approval");
+      } else {
+        alert(data.message || "Login fehlgeschlagen");
+      }
     }
   } catch (error) {
     console.error("Login error:", error);
