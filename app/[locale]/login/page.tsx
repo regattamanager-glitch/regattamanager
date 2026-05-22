@@ -22,33 +22,40 @@ export default function LoginPage() {
   const [message, setMessage] = useState(""); // Für Erfolgsmeldungen (z.B. E-Mail gesendet)
 
   /**
-   * 1. Login-Versuch (E-Mail & Passwort)
-   */
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+ * 1. Login-Versuch (E-Mail & Passwort)
+ */
+async function handleLogin(e: React.FormEvent) {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const res = await fetch("/api/accounts/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, passwort }),
-      });
+  try {
+    const res = await fetch("/api/accounts/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, passwort }),
+    });
 
-      const data = await res.json();
-      
-      if (res.ok) {
-        // Wechsel zur 2FA-Code-Eingabe
-        setStep("code");
-      } else {
-        alert(data.error || "Login fehlgeschlagen");
+    const data = await res.json();
+    
+    if (res.ok) {
+      // NEU: Prüfung auf Freigabestatus für Vereins-Accounts
+      // (Wir setzen voraus, dass dein API-Endpunkt 'isApproved' und 'type' zurückgibt)
+      if (data.type === "verein" && data.isApproved === false) {
+        router.replace("/dashboard/pending-approval");
+        return;
       }
-    } catch (error) {
-      console.error("Login error:", error);
-    } finally {
-      setLoading(false);
+
+      // Wenn freigegeben oder Segler -> Wechsel zur 2FA-Code-Eingabe
+      setStep("code");
+    } else {
+      alert(data.error || "Login fehlgeschlagen");
     }
+  } catch (error) {
+    console.error("Login error:", error);
+  } finally {
+    setLoading(false);
   }
+}
 
     /**
    * 2. 2FA-Code Verifizierung
