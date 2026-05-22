@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     // ... in deiner POST-Funktion ...
 
 // 2. Nutzer suchen
-const seglerResult = await sql`SELECT id, passwort, is_approved FROM "Segler" WHERE email = ${email} LIMIT 1`;
+const seglerResult = await sql`SELECT id, passwort FROM "Segler" WHERE email = ${email} LIMIT 1`;
 let user = seglerResult[0];
 let userType: "segler" | "verein" = "segler";
 
