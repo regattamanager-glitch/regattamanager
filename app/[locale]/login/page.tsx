@@ -45,7 +45,7 @@ async function handleLogin(e: React.FormEvent) {
       if (data.isApproved === false) {
         router.replace("/dashboard/pending-approval");
       } else {
-        alert(data.message || "Login fehlgeschlagen");
+        alert("Warten auf Freigabe");
       }
     }
   } catch (error) {
