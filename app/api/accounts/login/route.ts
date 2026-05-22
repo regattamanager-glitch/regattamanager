@@ -35,13 +35,12 @@ if (!user) {
   return NextResponse.json({ success: false, message: "Ungültige Anmeldedaten" }, { status: 401 });
 }
 
+// Wichtig: Status 403 setzen, damit das Frontend den 'else if (res.status === 403)' Block auslöst
 if (userType === "verein" && user.isApproved === false) {
-  return NextResponse.json({ 
-    success: false, 
-    message: "Dein Account wartet noch auf Freigabe.",
-    isApproved: false,
-    type: "verein" 
-  }, { status: 403 });
+  return NextResponse.json(
+    { message: "Wartet auf Freigabe" }, 
+    { status: 403 } 
+  );
 }
 
     // 3. Passwort prüfen
