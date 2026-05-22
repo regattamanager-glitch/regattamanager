@@ -26,7 +26,7 @@ let user = seglerResult[0];
 let userType: "segler" | "verein" = "segler";
 
 if (!user) {
-  const vereinResult = await sql`SELECT id, passwort, isApproved FROM "Verein" WHERE email = ${email} LIMIT 1`;
+const vereinResult = await sql`SELECT id, passwort, "isApproved" FROM "Verein" WHERE email = ${email} LIMIT 1`;
   user = vereinResult[0];
   userType = "verein";
 }
@@ -35,13 +35,12 @@ if (!user) {
   return NextResponse.json({ success: false, message: "Ungültige Anmeldedaten" }, { status: 401 });
 }
 
-// NEU: Prüfung auf Freigabestatus
-if (user.isApproved === false) {
+if (userType === "verein" && user.isApproved === false) {
   return NextResponse.json({ 
     success: false, 
-    message: "Dein Account wartet noch auf Freigabe durch den Administrator.",
+    message: "Dein Account wartet noch auf Freigabe.",
     isApproved: false,
-    type: userType 
+    type: "verein" 
   }, { status: 403 });
 }
 
