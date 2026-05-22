@@ -18,18 +18,24 @@ export default async function middleware(req: NextRequest) {
   const localePattern = `^\\/(${locales.join('|')})\\/dashboard`;
   const isDashboardPath = pathname.match(new RegExp(localePattern)) || pathname.startsWith('/dashboard');
 
-  // 3. Dashboard-Schutz (Unverändert übernommen)
-  if (isDashboardPath) {
-    const sessionId = req.cookies.get("session_id")?.value || req.cookies.get("session")?.value;
-
-    if (!sessionId) {
-      const segments = pathname.split('/');
-      const currentLocale = locales.includes(segments[1]) ? segments[1] : 'en';
-      
-      const loginUrl = new URL(`/${currentLocale}/login`, req.url);
-      return NextResponse.redirect(loginUrl);
-    }
+  // 3. Dashboard-Schutz (Angepasst)
+if (isDashboardPath) {
+  // AUSNAHME: Wenn der User auf dem Weg zur "Pending"-Seite ist, lassen wir ihn durch,
+  // auch ohne Session-Cookie.
+  if (pathname.endsWith('/dashboard/pending-approval')) {
+    return NextResponse.next();
   }
+
+  const sessionId = req.cookies.get("session_id")?.value || req.cookies.get("session")?.value;
+
+  if (!sessionId) {
+    const segments = pathname.split('/');
+    const currentLocale = locales.includes(segments[1]) ? segments[1] : 'en';
+    
+    const loginUrl = new URL(`/${currentLocale}/login`, req.url);
+    return NextResponse.redirect(loginUrl);
+  }
+}
 
   // 4. Internationalisierung anwenden (Unverändert übernommen)
   return intlMiddleware(req);
