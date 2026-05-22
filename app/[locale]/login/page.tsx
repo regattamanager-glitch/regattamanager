@@ -44,8 +44,6 @@ async function handleLogin(e: React.FormEvent) {
       // Wenn der Status 403 (nicht freigegeben) zurückkommt
       if (data.isApproved === false) {
         router.replace("/dashboard/pending-approval");
-      } else {
-        alert("Warten auf Freigabe");
       }
     }
   } catch (error) {
