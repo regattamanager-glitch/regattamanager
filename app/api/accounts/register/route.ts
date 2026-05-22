@@ -63,17 +63,26 @@ export async function POST(req: NextRequest) {
       `;
       newUser = rows[0];
     } else {
-      const rows = await sql`
-        INSERT INTO "Verein" (
-          id, email, passwort, name, kuerzel, adresse, "createdAt", "updatedAt"
-        )
-        VALUES (
-          ${newUserId}, ${email}, ${hashedPassword}, ${name || ""}, ${kuerzel || ""}, ${adresse || ""}, ${now}, ${now}
-        )
-        RETURNING id
-      `;
-      newUser = rows[0];
-    }
+  // Verein registrieren
+  const rows = await sql`
+    INSERT INTO "Verein" (
+      id, email, passwort, name, kuerzel, adresse, "createdAt", "updatedAt", "isApproved"
+    )
+    VALUES (
+      ${newUserId}, 
+      ${email}, 
+      ${hashedPassword}, 
+      ${name || ""}, 
+      ${kuerzel || ""}, 
+      ${adresse || ""}, 
+      ${now}, 
+      ${now}, 
+      FALSE  // Hier wird der Standardwert auf FALSE gesetzt
+    )
+    RETURNING id
+  `;
+  newUser = rows[0];
+}
 
     // 7. LoginCode speichern
     await sql`

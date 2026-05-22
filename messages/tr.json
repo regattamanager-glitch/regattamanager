@@ -501,6 +501,7 @@
   "copyright": "Regatta Manager - Profesyonel Faturalama Sistemi"
 },
 "Auth": {
+  "months": { "01": "Ocak", "02": "Şubat", "03": "Mart", "04": "Nisan", "05": "Mayıs", "06": "Haziran", "07": "Temmuz", "08": "Ağustos", "09": "Eylül", "10": "Ekim", "11": "Kasım", "12": "Aralık" },
   "dayPlaceholder": "Gün",
   "monthPlaceholder": "Ay",
   "yearPlaceholder": "Yıl",
@@ -966,6 +967,11 @@
     "previewTitle": "Belge önizlemesi",
     "selectToPreview": "Önizlemek için listeden bir belge seçin."
   }
+},
+"PendingApproval": {
+  "title": "Doğrulama bekleniyor",
+  "description": "Hesabınız başarıyla kaydedildi, ancak bir yönetici tarafından onaylanmayı bekliyor. Lütfen biraz sabırlı olun. Hesabınız onaylandığında panele erişiminiz sağlanacaktır.",
+  "backToLogin": "Giriş ekranına dön"
 }
 
 }

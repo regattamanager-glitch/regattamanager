@@ -501,6 +501,7 @@
   "copyright": "Regatta Manager - Sistema de Faturamento Profissional"
 },
 "Auth": {
+  "months": { "01": "Janeiro", "02": "Fevereiro", "03": "Março", "04": "Abril", "05": "Maio", "06": "Junho", "07": "Julho", "08": "Agosto", "09": "Setembro", "10": "Outubro", "11": "Novembro", "12": "Dezembro" },
   "dayPlaceholder": "Dia",
   "monthPlaceholder": "Mês",
   "yearPlaceholder": "Ano",
@@ -966,6 +967,11 @@
     "previewTitle": "Pré-visualização do documento",
     "selectToPreview": "Selecione um documento da lista para visualizá-lo."
   }
+},
+"PendingApproval": {
+  "title": "Verificação pendente",
+  "description": "A sua conta foi registada com sucesso, mas ainda aguarda a aprovação de um administrador. Por favor, seja paciente. Assim que a sua conta for aprovada, terá acesso ao painel de controlo.",
+  "backToLogin": "Voltar ao login"
 }
 
 }

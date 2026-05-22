@@ -81,7 +81,7 @@ export default function RegisterVerein() {
         }
 
         setMessage(t("verifySuccess"));
-        router.replace(`/dashboard/verein/${data.id}`);
+        router.replace(`/dashboard/pending-approval`);
       } catch (error) {
         console.error(error);
         setLoading(false);

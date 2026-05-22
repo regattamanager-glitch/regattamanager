@@ -24,10 +24,10 @@ export default function RegisterSegler() {
   const [loading, setLoading] = useState(false);
 
   // Monatsnamen Liste
-  const monthNames = [
-    "Januar", "Februar", "März", "April", "Mai", "Juni",
-    "Juli", "August", "September", "Oktober", "November", "Dezember"
-  ];
+  const months = [
+  "01", "02", "03", "04", "05", "06", 
+  "07", "08", "09", "10", "11", "12"
+];
 
   // Dynamische Berechnung der Tage im Monat
   const [daysArray, setDaysArray] = useState<string[]>([]);
@@ -173,17 +173,17 @@ export default function RegisterSegler() {
               </select>
 
               <select
-                className={`${inputStyle} flex-[2] cursor-pointer`}
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-              >
-                <option value="" disabled>{t("monthPlaceholder")}</option>
-                {monthNames.map((name, i) => (
-                  <option key={name} value={(i + 1).toString().padStart(2, '0')} className="bg-[#0b2545]">
-                    {name}
-                  </option>
-                ))}
-              </select>
+  className={`${inputStyle} flex-[2] cursor-pointer`}
+  value={month}
+  onChange={(e) => setMonth(e.target.value)}
+>
+  <option value="" disabled>{t("monthPlaceholder")}</option>
+  {months.map((m) => (
+    <option key={m} value={m} className="bg-[#0b2545]">
+      {t(`months.${m}`)} 
+    </option>
+  ))}
+</select>
 
               <select
                 className={`${inputStyle} flex-[1.5] cursor-pointer`}

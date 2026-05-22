@@ -501,6 +501,7 @@
   "copyright": "Regatta Manager - Professioneel Facturatiesysteem"
 },
 "Auth": {
+  "months": { "01": "Januari", "02": "Februari", "03": "Maart", "04": "April", "05": "Mei", "06": "Juni", "07": "Juli", "08": "Augustus", "09": "September", "10": "Oktober", "11": "November", "12": "December" },
   "dayPlaceholder": "Dag",
   "monthPlaceholder": "Maand",
   "yearPlaceholder": "Jaar",
@@ -966,6 +967,11 @@
     "previewTitle": "Documentvoorbeeld",
     "selectToPreview": "Selecteer een document uit de lijst om te bekijken."
   }
+},
+"PendingApproval": {
+  "title": "Verificatie in afwachting",
+  "description": "Je account is succesvol geregistreerd, maar wacht nog op goedkeuring door een beheerder. Even geduld a.u.b. Zodra je account is goedgekeurd, krijg je toegang tot het dashboard.",
+  "backToLogin": "Terug naar inloggen"
 }
 
 }
