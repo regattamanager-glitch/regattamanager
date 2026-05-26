@@ -187,38 +187,45 @@ export default function ManualRegistrationPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedKlasse) return alert(t('errorSelectClass'));
-    if (!confirm(t('confirmManualEntry'))) return;
-    
-    setSubmitting(true);
-    try {
-      const response = await fetch("/api/registrations/manual", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eventId: event.id,
-          klasse: selectedKlasse,
-          skipper,
-          boot,
-          crew,
-          extras: selectedExtras.filter(e => e.quantity > 0),
-          status: "PAID",
-          paymentMethod: "MANUAL_ENTRY"
-        }),
-      });
+  if (!selectedKlasse) return alert(t('errorSelectClass'));
+  if (!confirm(t('confirmManualEntry'))) return;
+  
+  setSubmitting(true);
+  try {
+    // Hier fügen wir ein Flag hinzu, damit das Backend weiß, 
+    // dass ein neuer Benutzer angelegt werden soll, falls keine ID existiert
+    const payload = {
+      eventId: event.id,
+      klasse: selectedKlasse,
+      skipper: {
+        ...skipper,
+        createIfMissing: !skipper.seglerId // Neu: Flag für das Backend
+      },
+      boot,
+      crew,
+      extras: selectedExtras.filter(e => e.quantity > 0),
+      status: "PAID",
+      paymentMethod: "MANUAL_ENTRY"
+    };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Save error");
-      }
-      
-      router.push(`/dashboard/verein/${vereinId}/registrationlist?eventId=${eventId}`);
-    } catch (err: any) {
-      alert(`Error: ${err.message}`);
-    } finally {
-      setSubmitting(false);
+    const response = await fetch("/api/registrations/manual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Save error");
     }
-  };
+    
+    router.push(`/dashboard/verein/${vereinId}/registrationlist?eventId=${eventId}`);
+  } catch (err: any) {
+    alert(`Error: ${err.message}`);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (loading) return (
     <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center text-sky-400 font-black italic">
