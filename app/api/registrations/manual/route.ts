@@ -4,15 +4,23 @@ import sql from "@/lib/db";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { eventId, klasse, skipper, boot, crew, extras } = body;
+    const { 
+      eventId, 
+      klasse, 
+      skipper, 
+      boot, 
+      crew, 
+      extras 
+    } = body;
 
+    // 1. Prüfen, ob eine seglerId vorhanden ist. Wenn nicht, neuen User in der Tabelle 'users' anlegen.
+    // Hinweis: Falls deine Tabelle anders heißt (z.B. "Users"), passe den Namen hier an.
     let targetSeglerId = skipper.seglerId;
 
-    // 1. Logik: Prüfen, ob ein neuer User angelegt werden muss
-    if (!targetSeglerId) {
-      // Splitte den Namen in Vor- und Nachname
-      const [vorname, ...nachnameParts] = skipper.name.split(' ');
-      const nachname = nachnameParts.join(' ');
+    if (!targetSeglerId || targetSeglerId === "") {
+      const nameParts = skipper.name ? skipper.name.split(' ') : ["", ""];
+      const vorname = nameParts[0];
+      const nachname = nameParts.slice(1).join(' ');
 
       const newUser = await sql`
         INSERT INTO users (
@@ -21,23 +29,21 @@ export async function POST(req: Request) {
           email, 
           nation, 
           telefon, 
-          "lizenzNummer",
-          "isPrivate" -- Dein Wunsch: Nicht als private Person gelistet
+          "lizenzNummer"
         ) VALUES (
           ${vorname},
-          ${nachname || ''},
+          ${nachname},
           ${skipper.email || null},
-          ${skipper.nation},
+          ${skipper.nation || 'DE'},
           ${skipper.telefon || null},
-          ${skipper.lizenzNummer || null},
-          true 
+          ${skipper.lizenzNummer || null}
         )
         RETURNING id
       `;
       targetSeglerId = newUser[0].id;
     }
 
-    // 2. Speichern der Registrierung
+    // 2. Registrierung in der Datenbank speichern
     const result = await sql`
       INSERT INTO registrations (
         "eventId",
@@ -48,7 +54,8 @@ export async function POST(req: Request) {
         "crew",
         "extras",
         "paidAt",
-        "paymentIntent"
+        "paymentIntent",
+        "status"
       ) VALUES (
         ${eventId},
         ${targetSeglerId},
@@ -58,7 +65,8 @@ export async function POST(req: Request) {
         ${JSON.stringify(crew || [])},
         ${JSON.stringify(extras || [])},
         NOW(),
-        ${'MANUAL_' + Math.random().toString(36).substr(2, 9)}
+        ${'MANUAL_' + Math.random().toString(36).substr(2, 9)},
+        'PAID'
       )
       RETURNING id
     `;
@@ -69,7 +77,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error("Datenbank-Fehler:", error.message);
+    console.error("API-Fehler bei manueller Registrierung:", error);
     return NextResponse.json(
       { error: "DB-Fehler: " + error.message }, 
       { status: 500 }
