@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import sql from '@/lib/db';
+import { requireAuth, stripSensitive } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -7,6 +8,11 @@ export const fetchCache = "force-no-store";
 
 export async function GET(req: Request) {
   try {
+    // Login erforderlich; sensible Felder (Passwort-Hash, Reset-Token) werden
+    // unten via stripSensitive() entfernt, bevor etwas zurückgegeben wird.
+    const auth = await requireAuth();
+    if (auth instanceof NextResponse) return auth;
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -38,18 +44,19 @@ export async function GET(req: Request) {
         }
 
         const vereine = segler.vereine || [];
-        return NextResponse.json({
+        return NextResponse.json(stripSensitive({
           ...segler,
           type: "segler",
           // Diese Keys werden von deiner RegisterToEventPage erwartet
           geburtstag: tag,
           geburtsmonat: monat,
           geburtsjahr: jahr,
+          vereine: stripSensitive(vereine),
           vereinsNamen: vereine.map((v: any) => v.kuerzel || v.name),
-          verein: vereine.length > 0 
-            ? (vereine[0].kuerzel || vereine[0].name) 
+          verein: vereine.length > 0
+            ? (vereine[0].kuerzel || vereine[0].name)
             : "",
-        });
+        }));
       }
 
       // Falls kein Segler, als Verein suchen
@@ -57,10 +64,10 @@ export async function GET(req: Request) {
       const verein = vereinRows[0];
 
       if (verein) {
-        return NextResponse.json({
+        return NextResponse.json(stripSensitive({
           ...verein,
           type: "verein"
-        });
+        }));
       }
 
       return NextResponse.json({ error: "Nutzer nicht gefunden" }, { status: 404 });
@@ -88,19 +95,20 @@ export async function GET(req: Request) {
           jahr = d.getFullYear().toString();
         }
       }
-      return { 
-        ...s, 
+      return {
+        ...s,
         type: "segler",
+        vereine: stripSensitive(s.vereine || []),
         geburtstag: tag,
         geburtsmonat: monat,
         geburtsjahr: jahr
       };
     });
 
-    const combined = [
+    const combined = stripSensitive([
       ...mappedSegler,
       ...allVereine.map((v: any) => ({ ...v, type: "verein" }))
-    ];
+    ]);
 
     return NextResponse.json(combined);
 

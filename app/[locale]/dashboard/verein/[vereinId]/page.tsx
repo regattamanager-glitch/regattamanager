@@ -49,19 +49,24 @@ export default function VereinsDashboard() {
   useEffect(() => {
     const loadAccount = async () => {
       try {
-        const res = await fetch('/api/accounts/session');
+        const res = await fetch('/api/accounts/session', { cache: 'no-store' });
         if (!res.ok) {
           router.push('/login');
           return;
         }
         const data = await res.json();
+        // IDOR-Schutz: Nur das eigene Vereins-Dashboard anzeigen.
+        if (data?.id && vereinId && String(vereinId) !== String(data.id)) {
+          router.replace(`/dashboard/verein/${data.id}`);
+          return;
+        }
         setAccount(data);
       } catch (err) {
         router.push('/login');
       }
     };
     loadAccount();
-  }, [router]);
+  }, [router, vereinId]);
 
   useEffect(() => {
     if (!vereinId) return;

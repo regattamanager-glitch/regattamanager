@@ -1,29 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import sql from '@/lib/db';
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
   try {
+    // Autorisierung: Es darf NUR das eigene Konto bearbeitet werden.
+    // Die ID kommt aus der Session, nicht aus dem Request-Body.
+    const auth = await requireAuth();
+    if (auth instanceof NextResponse) return auth;
+    const id = auth.userId;
+
     const body = await req.json().catch(() => ({}));
-    const id = body.id || (body.update && body.update.id);
     const { currentPassword, update } = body;
 
     // 1. Grundlegende Pflichtfelder
-    if (!id) return NextResponse.json({ success: false, message: "ID fehlt" }, { status: 410 });
     if (!update) return NextResponse.json({ success: false, message: "Update-Daten fehlen" }, { status: 408 });
 
-    // 2. Benutzer suchen (Logik beibehalten)
+    // 2. Benutzer aus der Session laden (Typ ergibt sich aus der Session)
     let user;
-    let userType: "segler" | "verein" = "segler";
-    const usersSegler = await sql`SELECT * FROM "Segler" WHERE "id" = ${id} LIMIT 1`;
-    user = usersSegler[0];
-    if (!user) {
+    const userType: "segler" | "verein" = auth.userType;
+    if (userType === "segler") {
+      const usersSegler = await sql`SELECT * FROM "Segler" WHERE "id" = ${id} LIMIT 1`;
+      user = usersSegler[0];
+    } else {
       const usersVerein = await sql`SELECT * FROM "Verein" WHERE "id" = ${id} LIMIT 1`;
       user = usersVerein[0];
-      userType = "verein";
     }
     if (!user) return NextResponse.json({ success: false, message: "Benutzer nicht gefunden" }, { status: 404 });
 

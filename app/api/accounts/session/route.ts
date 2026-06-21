@@ -65,10 +65,15 @@ export async function GET() {
     }
 
     // 4. Kombiniertes Objekt zurückgeben
+    // WICHTIG: no-store, damit der Browser die Session-Antwort NICHT cached.
+    // Sonst bekommt ein frisch erstellter Account die gecachte Session des
+    // zuvor angemeldeten Users zurück und landet auf dessen Dashboard.
     return NextResponse.json({
       ...user,
       vereine: vereine, // Dieses Feld fehlte bisher
       type: session.userType
+    }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" }
     });
 
   } catch (error) {

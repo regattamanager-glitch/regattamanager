@@ -123,7 +123,12 @@ export default function RegisterSegler() {
         }
 
         setMessage(t("verifySuccess"));
-        router.replace(`/dashboard/segler/${data.id}`);
+        // Router-Cache leeren, damit die frisch gesetzte Session-Cookie greift
+        // und nicht das Dashboard des zuvor angemeldeten Users angezeigt wird.
+        router.refresh();
+        setTimeout(() => {
+          router.replace(`/dashboard/segler/${data.id}`);
+        }, 100);
       } catch (error) {
         console.error(error);
         setLoading(false);

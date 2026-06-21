@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import sql from "@/lib/db";
+import { requireAuth, forbidden } from "@/lib/auth";
 
 /* ================================================= */
 /* ======================= GET ===================== */
@@ -58,6 +59,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Nur der ausrichtende Verein darf Ergebnisse für sein Event speichern.
+    const auth = await requireAuth();
+    if (auth instanceof NextResponse) return auth;
+
     const { eventId, klasse, results } = await req.json();
 
     if (!eventId || !klasse || !Array.isArray(results)) {
@@ -65,6 +70,15 @@ export async function POST(req: NextRequest) {
         success: false,
         error: "eventId, klasse oder results fehlen"
       });
+    }
+
+    // Ownership-Check: Gehört das Event dem eingeloggten Verein?
+    const eventRows = await sql`SELECT verein_id FROM events WHERE id = ${eventId} LIMIT 1`;
+    if (eventRows.length === 0) {
+      return NextResponse.json({ success: false, error: "Event nicht gefunden" }, { status: 404 });
+    }
+    if (auth.userType !== "verein" || String(eventRows[0].verein_id) !== String(auth.userId)) {
+      return forbidden("Nur der ausrichtende Verein darf Ergebnisse speichern");
     }
 
     // Da Neon HTTP keine .begin() Methode auf dem Standard-Query-Objekt hat,
