@@ -45,11 +45,21 @@ export async function GET(request: Request) {
     let vereine: any[] = [];
     try {
       vereine = await sql`
-        SELECT id, name, kuerzel, email, "stripeAccountId", "isApproved" 
-        FROM "Verein" 
+        SELECT id, name, kuerzel, email, "stripeAccountId", "isApproved"
+        FROM "Verein"
         ORDER BY name ASC
       `;
     } catch (e) { console.error("[SQL ERROR] Vereine Select:", e); }
+
+    // 2b. Föderationen abfragen
+    let federations: any[] = [];
+    try {
+      federations = await sql`
+        SELECT id, name, kuerzel, email, region, "isApproved"
+        FROM "Federation"
+        ORDER BY name ASC
+      `;
+    } catch (e) { console.error("[SQL ERROR] Federations Select:", e); }
 
 
     // 3. Rohdaten laden
@@ -259,8 +269,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      stats: { seglerCount, vereineCount, eventsCount },
+      stats: { seglerCount, vereineCount, eventsCount, federationsCount: federations.length },
       vereine,
+      federations,
       events,
       timeline,
       revenueTimeline,
@@ -286,8 +297,21 @@ export async function POST(request: Request) {
 
     if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL ist nicht definiert.");
     const body = await request.json();
-    const { vereinId, isApproved } = body;
-    if (!vereinId || typeof isApproved !== "boolean") return NextResponse.json({ success: false, message: "Ungültige Parameter." }, { status: 400 });
+    const { vereinId, federationId, isApproved } = body;
+
+    if (typeof isApproved !== "boolean") {
+      return NextResponse.json({ success: false, message: "Ungültige Parameter." }, { status: 400 });
+    }
+
+    if (federationId) {
+      const updateResult = await sql`UPDATE "Federation" SET "isApproved" = ${isApproved} WHERE id = ${federationId} RETURNING id`;
+      if (updateResult.length === 0) return NextResponse.json({ success: false, message: "Föderation nicht gefunden." }, { status: 404 });
+      return NextResponse.json({ success: true });
+    }
+
+    if (!vereinId) {
+      return NextResponse.json({ success: false, message: "Ungültige Parameter." }, { status: 400 });
+    }
 
     const updateResult = await sql`UPDATE "Verein" SET "isApproved" = ${isApproved} WHERE id = ${vereinId} RETURNING id`;
     if (updateResult.length === 0) return NextResponse.json({ success: false, message: "Verein nicht gefunden." }, { status: 404 });

@@ -229,9 +229,11 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
   const vereinRes = await fetch(`/api/accounts?id=${vId}`);
   if (vereinRes.ok) {
     const vereinData = await vereinRes.json();
-    // Falls die API z.B. { data: { name: "..." } } zurückgibt:
-    // Nutzen Sie: setVerein(vereinData.data || vereinData);
-    setVerein(vereinData.data || vereinData); 
+    setVerein(vereinData.data || vereinData);
+  } else {
+    // Öffentlich (nicht eingeloggt): nur der Vereinsname aus der Events-API.
+    // Kontaktdaten (E-Mail/Adresse) sind bewusst login-geschützt.
+    setVerein({ name: (found as any).vereinName || "—" } as any);
   }
 }
 

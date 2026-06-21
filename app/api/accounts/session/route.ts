@@ -29,11 +29,19 @@ export async function GET() {
     let vereine: string[] = [];
 
     // 3. Daten je nach Nutzertyp laden
-    if (session.userType === "verein") {
+    if (session.userType === "federation") {
       const users = await sql`
-        SELECT id, name, email, kuerzel, "stripeAccountId" 
-        FROM "Verein" 
-        WHERE id = ${session.userId} 
+        SELECT id, name, email, kuerzel, region, "isApproved"
+        FROM "Federation"
+        WHERE id = ${session.userId}
+        LIMIT 1
+      `;
+      user = users[0];
+    } else if (session.userType === "verein") {
+      const users = await sql`
+        SELECT id, name, email, kuerzel, "stripeAccountId"
+        FROM "Verein"
+        WHERE id = ${session.userId}
         LIMIT 1
       `;
       user = users[0];

@@ -11,7 +11,8 @@ import {
   Edit3, 
   ChevronRight, 
   LayoutDashboard,
-  Anchor
+  Anchor,
+  Gauge
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -147,6 +148,7 @@ const vergangene = events.filter(ev => {
                     <MenuLink icon={<LayoutDashboard size={18} />} label={t('nav.dashboard')} onClick={() => router.push(`/dashboard/verein/${vereinId}`)} />
                     <MenuLink icon={<PlusCircle size={18} />} label={t('nav.newEvent')} onClick={() => router.push(`/dashboard/verein/${vereinId}/create`)} />
                     <MenuLink icon={<Trophy size={18} />} label={t('nav.performance')} onClick={() => router.push(`/dashboard/verein/${vereinId}/athlet/performance`)} />
+                    <MenuLink icon={<Gauge size={18} />} label="Yardstick" onClick={() => router.push(`/dashboard/verein/${vereinId}/yardstick`)} />
                     <MenuLink icon={<GroupsIcon />} label={t('nav.members')} onClick={() => router.push(`/dashboard/verein/${vereinId}/vereinsMitglieder`)} />
                     <MenuLink icon={<Settings size={18} />} label={t('nav.profile')} onClick={() => router.push(`/dashboard/verein/${vereinId}/profil`)} />
                     <hr className="border-slate-700 my-2" />

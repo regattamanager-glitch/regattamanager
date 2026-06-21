@@ -18,14 +18,12 @@ export default async function middleware(req: NextRequest) {
   const localePattern = `^\\/(${locales.join('|')})\\/dashboard`;
   const isDashboardPath = pathname.match(new RegExp(localePattern)) || pathname.startsWith('/dashboard');
 
-  // /admin ebenfalls schützen. Die echte Admin-Rechteprüfung erfolgt
-  // serverseitig in /api/admin/data (requireAdmin); hier wird nur eine
-  // gültige Session verlangt, damit die Seite nicht offen zugänglich ist.
-  const adminPattern = `^\\/(${locales.join('|')})\\/admin`;
-  const isAdminPath = pathname.match(new RegExp(adminPattern)) || pathname.startsWith('/admin');
+  // Hinweis: /admin wird NICHT in der Middleware blockiert, damit die Seite
+  // ihr eigenes Admin-Login-Formular zeigen kann. Die echte Rechteprüfung
+  // erfolgt serverseitig in /api/admin/* (requireAdmin).
 
   // 3. Dashboard-Schutz (Angepasst)
-if (isDashboardPath || isAdminPath) {
+if (isDashboardPath) {
   // AUSNAHME: Wenn der User auf dem Weg zur "Pending"-Seite ist, lassen wir ihn durch,
   // auch ohne Session-Cookie.
   if (pathname.endsWith('/dashboard/pending-approval')) {

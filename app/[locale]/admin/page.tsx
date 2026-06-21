@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { LineChart } from "@mui/x-charts";
 
-type ActiveTab = "overview" | "vereine" | "events";
+type ActiveTab = "overview" | "vereine" | "federations" | "events";
 
 interface VereinRow {
   id: string;
@@ -11,6 +11,15 @@ interface VereinRow {
   kuerzel: string | null;
   email: string | null;
   stripeAccountId: string | null;
+  isApproved: boolean;
+}
+
+interface FederationRow {
+  id: string;
+  name: string | null;
+  kuerzel: string | null;
+  email: string | null;
+  region: string | null;
   isApproved: boolean;
 }
 
@@ -24,8 +33,9 @@ interface EventRow {
 
 interface AdminData {
   success: boolean;
-  stats: { seglerCount: number; vereineCount: number; eventsCount: number };
+  stats: { seglerCount: number; vereineCount: number; eventsCount: number; federationsCount?: number };
   vereine: VereinRow[];
+  federations: FederationRow[];
   events: EventRow[];
   timeline: { date: string; zuwachs: number }[];
   revenueTimeline: { date: string; revenue: number }[];
@@ -62,6 +72,12 @@ export default function AdminDashboard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Admin-Login-Formular
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const fetchAdminData = useCallback(async (selectedDays: string, isFirstLoad: boolean) => {
     if (isFirstLoad) setLoading(true);
@@ -105,42 +121,49 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, fetchAdminData]);
 
-  async function handleStatusToggle(vereinId: string, currentStatus: boolean) {
-    setUpdatingId(vereinId);
-    // Optimistisches Update
-    setData((prev) =>
-      prev
-        ? {
+  async function handleStatusToggle(
+    id: string,
+    currentStatus: boolean,
+    kind: "verein" | "federation"
+  ) {
+    setUpdatingId(id);
+
+    // Optimistisches Update (passende Liste)
+    const applyStatus = (status: boolean) =>
+      setData((prev) => {
+        if (!prev) return prev;
+        if (kind === "verein") {
+          return {
             ...prev,
-            vereine: prev.vereine.map((v) =>
-              v.id === vereinId ? { ...v, isApproved: !currentStatus } : v
-            ),
-          }
-        : prev
-    );
+            vereine: prev.vereine.map((v) => (v.id === id ? { ...v, isApproved: status } : v)),
+          };
+        }
+        return {
+          ...prev,
+          federations: prev.federations.map((f) =>
+            f.id === id ? { ...f, isApproved: status } : f
+          ),
+        };
+      });
+
+    applyStatus(!currentStatus);
 
     try {
+      const payload =
+        kind === "verein"
+          ? { vereinId: id, isApproved: !currentStatus }
+          : { federationId: id, isApproved: !currentStatus };
       const res = await fetch("/api/admin/data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vereinId, isApproved: !currentStatus }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) {
         throw new Error(json.message || "Status-Update fehlgeschlagen.");
       }
     } catch (err) {
-      // Rollback bei Fehler
-      setData((prev) =>
-        prev
-          ? {
-              ...prev,
-              vereine: prev.vereine.map((v) =>
-                v.id === vereinId ? { ...v, isApproved: currentStatus } : v
-              ),
-            }
-          : prev
-      );
+      applyStatus(currentStatus); // Rollback
       alert(err instanceof Error ? err.message : "Status-Update fehlgeschlagen.");
     } finally {
       setUpdatingId(null);
@@ -158,18 +181,81 @@ export default function AdminDashboard() {
     );
   }
 
-  // --- Zustand: Kein Admin-Zugriff ---
+  // --- Zustand: Kein Admin-Zugriff → Admin-Login-Formular ---
   if (forbidden) {
+    const handleAdminLogin = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoginError(null);
+      setLoggingIn(true);
+      try {
+        const res = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.success) {
+          throw new Error(json.message || "Login fehlgeschlagen.");
+        }
+        // Erfolg: Daten laden
+        setForbidden(false);
+        setLoginPassword("");
+        fetchAdminData(days, true);
+      } catch (err) {
+        setLoginError(err instanceof Error ? err.message : "Login fehlgeschlagen.");
+      } finally {
+        setLoggingIn(false);
+      }
+    };
+
     return (
       <div className="min-h-screen bg-[#001f3f] flex flex-col items-center justify-center p-4 text-white">
-        <div className="bg-amber-950/40 border border-amber-500/50 p-6 rounded-2xl max-w-md w-full text-center shadow-xl">
-          <span className="text-4xl">🔒</span>
-          <h2 className="text-xl font-bold mt-3 text-amber-400">Kein Admin-Zugriff</h2>
-          <p className="text-sm text-slate-300 mt-2">
-            Dieser Account ist nicht als Administrator hinterlegt. Bitte mit einem
-            Admin-Konto anmelden (in <span className="font-mono">ADMIN_EMAILS</span> eingetragen).
-          </p>
-        </div>
+        <form
+          onSubmit={handleAdminLogin}
+          className="bg-[#112d5c] border border-blue-900/40 p-8 rounded-2xl max-w-sm w-full shadow-xl"
+        >
+          <div className="text-center mb-6">
+            <span className="text-4xl">🔒</span>
+            <h2 className="text-xl font-bold mt-2 text-white">Admin-Login</h2>
+            <p className="text-xs text-slate-400 mt-1">Regatta Manager – geschützter Bereich</p>
+          </div>
+
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+            E-Mail
+          </label>
+          <input
+            type="email"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+            required
+            className="w-full mb-4 bg-[#0a192f] text-white text-sm rounded-lg px-3 py-2.5 border border-blue-900/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="admin@example.com"
+          />
+
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+            Passwort
+          </label>
+          <input
+            type="password"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            required
+            className="w-full mb-5 bg-[#0a192f] text-white text-sm rounded-lg px-3 py-2.5 border border-blue-900/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="••••••••"
+          />
+
+          {loginError && (
+            <p className="text-sm text-red-400 mb-4 text-center">{loginError}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loggingIn}
+            className="w-full bg-[#2563eb] text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50"
+          >
+            {loggingIn ? "Anmelden..." : "Anmelden"}
+          </button>
+        </form>
       </div>
     );
   }
@@ -197,6 +283,7 @@ export default function AdminDashboard() {
 
   const stats = data?.stats ?? { seglerCount: 0, vereineCount: 0, eventsCount: 0 };
   const vereine = data?.vereine ?? [];
+  const federations = data?.federations ?? [];
   const events = data?.events ?? [];
   const timeline = data?.timeline ?? [];
   const revenueTimeline = data?.revenueTimeline ?? [];
@@ -220,6 +307,7 @@ export default function AdminDashboard() {
               [
                 { key: "overview", label: "Dashboard Übersicht" },
                 { key: "vereine", label: "Vereine verwalten" },
+                { key: "federations", label: "Föderationen" },
                 { key: "events", label: "Events & Finanzen" },
               ] as { key: ActiveTab; label: string }[]
             ).map((tab) => (
@@ -247,6 +335,7 @@ export default function AdminDashboard() {
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             {activeTab === "overview" && "Dashboard Übersicht"}
             {activeTab === "vereine" && `Vereine verwalten (${vereine.length})`}
+            {activeTab === "federations" && `Föderationen verwalten (${federations.length})`}
             {activeTab === "events" && `Regatta Events & Einnahmen (${events.length})`}
             {refreshing && (
               <span className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
@@ -363,7 +452,7 @@ export default function AdminDashboard() {
                         <td className="p-4 text-center">
                           <button
                             disabled={updatingId === v.id}
-                            onClick={() => handleStatusToggle(v.id, v.isApproved)}
+                            onClick={() => handleStatusToggle(v.id, v.isApproved, "verein")}
                             className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all disabled:opacity-50 ${
                               v.isApproved
                                 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/40"
@@ -373,6 +462,60 @@ export default function AdminDashboard() {
                             {updatingId === v.id
                               ? "Speichert..."
                               : v.isApproved
+                              ? "✓ Freigeschaltet"
+                              : "⏳ Gesperrt"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* FÖDERATIONEN TAB */}
+        {activeTab === "federations" && (
+          <div className="space-y-6">
+            <div className="bg-[#112d5c] rounded-2xl overflow-hidden border border-blue-900/40">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-[#0b3d91] text-blue-100 text-xs font-semibold uppercase tracking-wider">
+                  <tr>
+                    <th className="p-4">Föderation</th>
+                    <th className="p-4">Kürzel</th>
+                    <th className="p-4">Region</th>
+                    <th className="p-4">E-Mail</th>
+                    <th className="p-4 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-blue-900/30 text-sm text-slate-300">
+                  {federations.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-slate-500">
+                        Keine Föderationen vorhanden.
+                      </td>
+                    </tr>
+                  ) : (
+                    federations.map((f) => (
+                      <tr key={f.id} className="hover:bg-[#0b3d91]/20 transition-colors">
+                        <td className="p-4 font-medium text-white">{f.name || "Kein Name"}</td>
+                        <td className="p-4 font-mono text-xs text-teal-300">{f.kuerzel || "-"}</td>
+                        <td className="p-4 text-slate-400">{f.region || "-"}</td>
+                        <td className="p-4 text-slate-400">{f.email || "-"}</td>
+                        <td className="p-4 text-center">
+                          <button
+                            disabled={updatingId === f.id}
+                            onClick={() => handleStatusToggle(f.id, f.isApproved, "federation")}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all disabled:opacity-50 ${
+                              f.isApproved
+                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/40"
+                                : "bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/40"
+                            }`}
+                          >
+                            {updatingId === f.id
+                              ? "Speichert..."
+                              : f.isApproved
                               ? "✓ Freigeschaltet"
                               : "⏳ Gesperrt"}
                           </button>

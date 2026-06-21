@@ -30,12 +30,18 @@ export async function POST(req: Request) {
     // 2. Nutzer suchen und Typ bestimmen
     let userResult = await sql`SELECT * FROM "Segler" WHERE email = ${email} LIMIT 1`;
     let user = userResult[0];
-    let userType: "segler" | "verein" = "segler";
+    let userType: "segler" | "verein" | "federation" = "segler";
 
     if (!user) {
       userResult = await sql`SELECT * FROM "Verein" WHERE email = ${email} LIMIT 1`;
       user = userResult[0];
       userType = "verein";
+    }
+
+    if (!user) {
+      userResult = await sql`SELECT * FROM "Federation" WHERE email = ${email} LIMIT 1`;
+      user = userResult[0];
+      userType = "federation";
     }
 
     if (!user) {

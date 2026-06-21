@@ -43,19 +43,15 @@ export default function RegattaÜbersicht() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [resEvents, resAccounts] = await Promise.all([
-          fetch("/api/events"),
-          fetch("/api/accounts")
-        ]);
-        const eventsData: Event[] = await resEvents.json();
-        const accounts: any[] = await resAccounts.json();
+        const resEvents = await fetch("/api/events");
+        const eventsRaw = await resEvents.json();
+        const eventsData: Event[] = Array.isArray(eventsRaw) ? eventsRaw : [];
 
-        const mapped = eventsData.map((e) => {
-          const vID = e.verein_id || e.vereinId;
-          const account = accounts.find(acc => String(acc.id || acc._id) === String(vID));
+        const mapped = eventsData.map((e: any) => {
+          // Vereinsname kommt jetzt direkt aus der (öffentlichen) Events-API.
           return {
             ...e,
-            verein: account ? (account.name || account.username || account.verein) : "—",
+            verein: e.vereinName || "—",
           };
         });
         setEvents(mapped);

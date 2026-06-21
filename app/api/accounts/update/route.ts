@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import sql from '@/lib/db';
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, type UserType } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,10 +22,13 @@ export async function POST(req: NextRequest) {
 
     // 2. Benutzer aus der Session laden (Typ ergibt sich aus der Session)
     let user;
-    const userType: "segler" | "verein" = auth.userType;
+    const userType: UserType = auth.userType;
     if (userType === "segler") {
       const usersSegler = await sql`SELECT * FROM "Segler" WHERE "id" = ${id} LIMIT 1`;
       user = usersSegler[0];
+    } else if (userType === "federation") {
+      const usersFed = await sql`SELECT * FROM "Federation" WHERE "id" = ${id} LIMIT 1`;
+      user = usersFed[0];
     } else {
       const usersVerein = await sql`SELECT * FROM "Verein" WHERE "id" = ${id} LIMIT 1`;
       user = usersVerein[0];
@@ -71,11 +74,25 @@ export async function POST(req: NextRequest) {
           if (vId) await sql`INSERT INTO "_SeglerVereine" ("A", "B") VALUES (${user.id}, ${vId})`;
         }
       }
+    } else if (userType === "federation") {
+      // UPDATE FÜR FÖDERATION
+      await sql`
+        UPDATE "Federation"
+        SET
+          "name" = ${update.name !== undefined ? update.name : user.name},
+          "kuerzel" = ${update.kuerzel !== undefined ? update.kuerzel : user.kuerzel},
+          "region" = ${update.region !== undefined ? update.region : user.region},
+          "instagram" = ${update.instagram !== undefined ? update.instagram : user.instagram},
+          "tiktok" = ${update.tiktok !== undefined ? update.tiktok : user.tiktok},
+          "profilbild" = ${update.profilbild !== undefined ? update.profilbild : (user.profilbild || null)},
+          "updatedAt" = ${now}
+        WHERE "id" = ${user.id}
+      `;
     } else {
       // UPDATE FÜR VEREIN
       await sql`
         UPDATE "Verein"
-        SET 
+        SET
           "name" = ${update.name !== undefined ? update.name : user.name},
           "kuerzel" = ${update.kuerzel !== undefined ? update.kuerzel : user.kuerzel},
           "adresse" = ${update.adresse !== undefined ? update.adresse : user.adresse},
@@ -91,6 +108,8 @@ export async function POST(req: NextRequest) {
     // 5. Response
     const reload = userType === "segler"
       ? await sql`SELECT * FROM "Segler" WHERE "id" = ${user.id} LIMIT 1`
+      : userType === "federation"
+      ? await sql`SELECT * FROM "Federation" WHERE "id" = ${user.id} LIMIT 1`
       : await sql`SELECT * FROM "Verein" WHERE "id" = ${user.id} LIMIT 1`;
     
     const updatedUser = reload[0];

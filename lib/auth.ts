@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import sql from "@/lib/db";
 
 /**
@@ -9,7 +10,7 @@ import sql from "@/lib/db";
  * Body/Query stützen, sondern ausschließlich auf die hier ermittelte Session.
  */
 
-export type UserType = "segler" | "verein";
+export type UserType = "segler" | "verein" | "federation";
 
 export interface AuthContext {
   sessionId: string;
@@ -73,10 +74,72 @@ function getAdminEmails(): string[] {
     .filter(Boolean);
 }
 
+/* ----------------------------------------------------------------------- */
+/* Eigenständiger Admin-Login (E-Mail + Passwort aus Env)                  */
+/* ----------------------------------------------------------------------- */
+
+export const ADMIN_COOKIE_NAME = "admin_auth";
+
+function adminSecret(): string {
+  return process.env.ADMIN_PASSWORD || "";
+}
+
 /**
- * Verlangt eine eingeloggte Session, deren E-Mail in ADMIN_EMAILS steht.
+ * Erstellt ein signiertes Admin-Token (payload.HMAC). Gibt null zurück,
+ * wenn kein ADMIN_PASSWORD konfiguriert ist.
  */
-export async function requireAdmin(): Promise<AuthContext | NextResponse> {
+export function signAdminToken(email: string): string | null {
+  const secret = adminSecret();
+  if (!secret) return null;
+  const payload = Buffer.from(email.toLowerCase()).toString("base64url");
+  const mac = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  return `${payload}.${mac}`;
+}
+
+/**
+ * Prüft ein Admin-Token gegen Signatur UND die konfigurierte ADMIN_EMAIL.
+ * Gibt die E-Mail zurück, wenn gültig, sonst null.
+ */
+function verifyAdminToken(token: string | undefined): string | null {
+  if (!token) return null;
+  const secret = adminSecret();
+  if (!secret) return null;
+
+  const [payload, mac] = token.split(".");
+  if (!payload || !mac) return null;
+
+  const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  try {
+    if (mac.length !== expected.length) return null;
+    if (!crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(expected))) return null;
+  } catch {
+    return null;
+  }
+
+  const email = Buffer.from(payload, "base64url").toString("utf8").toLowerCase();
+  const expectedEmail = (process.env.ADMIN_EMAIL || "").toLowerCase();
+  if (!expectedEmail || email !== expectedEmail) return null;
+  return email;
+}
+
+export interface AdminContext {
+  via: "session" | "password";
+  userId: string | null;
+}
+
+/**
+ * Verlangt Admin-Rechte. Zwei Wege werden akzeptiert:
+ *  1) Gültiges Admin-Cookie (eigenständiger Admin-Login via E-Mail+Passwort).
+ *  2) Eingeloggte Session, deren E-Mail in ADMIN_EMAILS steht.
+ */
+export async function requireAdmin(): Promise<AdminContext | NextResponse> {
+  const cookieStore = await cookies();
+
+  // Weg 1: Admin-Cookie
+  const adminEmail = verifyAdminToken(cookieStore.get(ADMIN_COOKIE_NAME)?.value);
+  if (adminEmail) return { via: "password", userId: null };
+
+  // Weg 2: Session + ADMIN_EMAILS-Allowlist
   const auth = await getAuth();
   if (!auth) return unauthorized();
 
@@ -91,7 +154,7 @@ export async function requireAdmin(): Promise<AuthContext | NextResponse> {
   if (!email || admins.length === 0 || !admins.includes(email)) {
     return forbidden("Adminrechte erforderlich");
   }
-  return auth;
+  return { via: "session", userId: auth.userId };
 }
 
 /** Felder, die niemals an den Client gelangen dürfen. */
