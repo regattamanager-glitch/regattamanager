@@ -5,11 +5,11 @@ import { useParams } from 'next/navigation';
 import { Trophy, Calendar, Flag } from 'lucide-react';
 
 type StandingRow = { seglerId: string; name: string; perEvent: (number | null)[]; total: number; rank: number };
-type ClassStanding = { klasse: string; rows: StandingRow[] };
+type ClassStanding = { klasse: string; events: LinkedEvent[]; rows: StandingRow[] };
 type LinkedEvent = { eventId: string; name: string | null; datumVon: string | null };
 
 type Detail = {
-  championship: { id: string; name: string; level: string | null; scoringMode: string; discardCount: number };
+  championship: { id: string; name: string; level: string | null; scoringMode: string; discardCount: number; scoringSystem?: string };
   events: LinkedEvent[];
   standings: ClassStanding[];
 };
@@ -18,6 +18,12 @@ const MODE_LABEL: Record<string, string> = {
   sum: 'Summe aller Regatten',
   discard: 'Summe mit Streichern',
   best: 'Nur beste Regatta',
+};
+
+const SYSTEM_LABEL: Record<string, string> = {
+  low_point: 'Low-Point',
+  high_point: 'High-Point',
+  bonus_point: 'Bonus-Point',
 };
 
 export default function PublicChampionshipPage() {
@@ -62,9 +68,14 @@ export default function PublicChampionshipPage() {
       </div>
       <p className="text-slate-400 text-sm flex items-center gap-3 mb-8 ml-1">
         {c.level && <span className="flex items-center gap-1"><Flag className="w-3.5 h-3.5 text-teal-400" /> {c.level}</span>}
+        {c.scoringSystem && (
+          <span className="px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 text-xs font-bold">
+            {SYSTEM_LABEL[c.scoringSystem] || c.scoringSystem}
+          </span>
+        )}
         <span className="px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 text-xs font-bold">
           {MODE_LABEL[c.scoringMode] || c.scoringMode}
-          {c.scoringMode === 'discard' ? ` (${c.discardCount} Streicher)` : ''}
+          {c.scoringMode === 'discard' ? ` (${c.discardCount} Regatten)` : ''}
         </span>
       </p>
 
@@ -97,7 +108,7 @@ export default function PublicChampionshipPage() {
                     <tr>
                       <th className="px-6 py-3">Rang</th>
                       <th className="px-6 py-3">Segler</th>
-                      {detail.events.map((ev, i) => (
+                      {cls.events.map((ev, i) => (
                         <th key={ev.eventId} className="px-3 py-3 text-center" title={ev.name || ''}>
                           R{i + 1}
                         </th>

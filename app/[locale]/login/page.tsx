@@ -88,10 +88,12 @@ async function handleLogin(e: React.FormEvent) {
         setTimeout(() => {
           if (data.type === "segler") {
             router.replace(`/dashboard/segler/${data.id}`);
+          } else if (data.type === "federation") {
+            router.replace(`/dashboard/federation/${data.id}`);
           } else {
             router.replace(`/dashboard/verein/${data.id}`);
           }
-        }, 100); 
+        }, 100);
 
       } else {
         alert(data.error || "Fehler beim Verifizieren");

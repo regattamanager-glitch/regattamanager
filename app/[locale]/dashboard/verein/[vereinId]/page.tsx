@@ -56,6 +56,15 @@ export default function VereinsDashboard() {
           return;
         }
         const data = await res.json();
+        // Falscher Account-Typ -> auf das passende Dashboard umleiten.
+        if (data?.type === 'federation') {
+          router.replace(`/dashboard/federation/${data.id}`);
+          return;
+        }
+        if (data?.type === 'segler') {
+          router.replace(`/dashboard/segler/${data.id}`);
+          return;
+        }
         // IDOR-Schutz: Nur das eigene Vereins-Dashboard anzeigen.
         if (data?.id && vereinId && String(vereinId) !== String(data.id)) {
           router.replace(`/dashboard/verein/${data.id}`);

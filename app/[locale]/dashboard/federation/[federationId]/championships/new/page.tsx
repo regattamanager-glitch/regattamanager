@@ -3,11 +3,18 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ChevronLeft, Trophy } from 'lucide-react';
+import BootsklassenMultiSelect from '@/components/BootsklassenMultiSelect';
 
 const SCORING_MODES = [
-  { value: 'sum', label: 'Summe aller Regatten', hint: 'Alle Regatta-Platzierungen werden addiert (Low-Point).' },
+  { value: 'sum', label: 'Summe aller Regatten', hint: 'Alle Regatta-Ergebnisse werden addiert.' },
   { value: 'discard', label: 'Summe mit Streichern', hint: 'Wie Summe, aber die schlechtesten X Regatten werden gestrichen.' },
   { value: 'best', label: 'Nur beste Regatta', hint: 'Nur das beste Einzelergebnis zählt.' },
+] as const;
+
+const SCORING_SYSTEMS = [
+  { value: 'low_point', label: 'Low-Point', hint: 'Platz = Punkte, wenig ist besser (Standard).' },
+  { value: 'high_point', label: 'High-Point', hint: 'Der 1. bekommt die meisten Punkte, viel ist besser.' },
+  { value: 'bonus_point', label: 'Bonus-Point', hint: 'Klassische Bonus-Punkte-Tabelle (1.=0, 2.=3, 3.=5,7 …).' },
 ] as const;
 
 export default function NewChampionshipPage() {
@@ -19,6 +26,9 @@ export default function NewChampionshipPage() {
   const [level, setLevel] = useState('');
   const [scoringMode, setScoringMode] = useState<'sum' | 'discard' | 'best'>('sum');
   const [discardCount, setDiscardCount] = useState(1);
+  const [scoringSystem, setScoringSystem] = useState<'low_point' | 'high_point' | 'bonus_point'>('low_point');
+  const [racesPerDiscard, setRacesPerDiscard] = useState(4);
+  const [bootsklassen, setBootsklassen] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,6 +49,9 @@ export default function NewChampionshipPage() {
           level,
           scoring_mode: scoringMode,
           discard_count: scoringMode === 'discard' ? discardCount : 0,
+          scoring_system: scoringSystem,
+          races_per_discard: racesPerDiscard,
+          bootsklassen,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -132,7 +145,7 @@ export default function NewChampionshipPage() {
           {scoringMode === 'discard' && (
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
-                Anzahl Streicher
+                Gestrichene Regatten
               </label>
               <input
                 type="number"
@@ -143,6 +156,64 @@ export default function NewChampionshipPage() {
               />
             </div>
           )}
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+              Wertungssystem
+            </label>
+            <div className="space-y-2">
+              {SCORING_SYSTEMS.map((s) => (
+                <label
+                  key={s.value}
+                  className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                    scoringSystem === s.value
+                      ? 'border-teal-500 bg-teal-500/10'
+                      : 'border-slate-700 hover:border-slate-600'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="scoringSystem"
+                    value={s.value}
+                    checked={scoringSystem === s.value}
+                    onChange={() => setScoringSystem(s.value)}
+                    className="mt-1 accent-teal-500"
+                  />
+                  <div>
+                    <div className="font-bold text-white text-sm">{s.label}</div>
+                    <div className="text-xs text-slate-400">{s.hint}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+              Streicher pro Klasse
+            </label>
+            <div className="flex items-center gap-2 text-sm text-slate-300">
+              <span>1 Streichresultat je</span>
+              <input
+                type="number"
+                min={0}
+                className={`${inputCls} w-20`}
+                value={racesPerDiscard}
+                onChange={(e) => setRacesPerDiscard(Math.max(0, Number(e.target.value)))}
+              />
+              <span>Wettfahrten</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Skaliert je Klasse mit deren Rennanzahl. 0 = keine Streicher.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+              Gewertete Bootsklassen
+            </label>
+            <BootsklassenMultiSelect value={bootsklassen} onChange={setBootsklassen} accent="teal" />
+          </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 

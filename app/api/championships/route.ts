@@ -61,6 +61,12 @@ export async function POST(req: Request) {
       ? Math.max(0, Math.floor(Number(body.discard_count)))
       : 0;
     const bootsklassen = Array.isArray(body.bootsklassen) ? body.bootsklassen : [];
+    const system = ["low_point", "high_point", "bonus_point"].includes(body.scoring_system)
+      ? body.scoring_system
+      : "low_point";
+    const racesPerDiscard = Number.isFinite(Number(body.races_per_discard))
+      ? Math.max(0, Math.floor(Number(body.races_per_discard)))
+      : 4;
 
     if (!name) {
       return NextResponse.json({ error: "Name fehlt" }, { status: 400 });
@@ -69,9 +75,9 @@ export async function POST(req: Request) {
     const id = randomUUID();
     await sql`
       INSERT INTO championships
-        (id, federation_id, name, level, scoring_mode, discard_count, bootsklassen)
+        (id, federation_id, name, level, scoring_mode, discard_count, scoring_system, races_per_discard, bootsklassen)
       VALUES
-        (${id}, ${auth.userId}, ${name}, ${level}, ${mode}, ${discardCount}, ${JSON.stringify(bootsklassen)})
+        (${id}, ${auth.userId}, ${name}, ${level}, ${mode}, ${discardCount}, ${system}, ${racesPerDiscard}, ${JSON.stringify(bootsklassen)})
     `;
 
     return NextResponse.json({ success: true, id });

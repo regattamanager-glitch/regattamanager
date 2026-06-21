@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ChevronLeft, Trophy, Plus, Trash2, Calendar, Flag } from 'lucide-react';
+import { ChevronLeft, Trophy, Plus, Trash2, Calendar, Flag, Search, X, Sailboat, Pencil } from 'lucide-react';
+import BootsklassenMultiSelect from '@/components/BootsklassenMultiSelect';
 
 type LinkedEvent = { eventId: string; name: string | null; datumVon: string | null };
 type StandingRow = { seglerId: string; name: string; perEvent: (number | null)[]; total: number; rank: number };
-type ClassStanding = { klasse: string; rows: StandingRow[] };
+type ClassStanding = { klasse: string; events: LinkedEvent[]; rows: StandingRow[] };
 
 type Detail = {
   championship: {
@@ -16,18 +17,34 @@ type Detail = {
     level: string | null;
     scoringMode: string;
     discardCount: number;
+    scoringSystem: string;
+    racesPerDiscard: number;
     bootsklassen: string[];
   };
   events: LinkedEvent[];
   standings: ClassStanding[];
 };
 
-type AvailableEvent = { id: string; name?: string; vereinName?: string; datumVon?: string };
+type AvailableEvent = {
+  id: string;
+  name?: string;
+  vereinName?: string;
+  datumVon?: string;
+  location?: string;
+  land?: string;
+  bootsklassen?: string[];
+};
 
 const MODE_LABEL: Record<string, string> = {
   sum: 'Summe aller Regatten',
   discard: 'Summe mit Streichern',
   best: 'Nur beste Regatta',
+};
+
+const SYSTEM_LABEL: Record<string, string> = {
+  low_point: 'Low-Point',
+  high_point: 'High-Point',
+  bonus_point: 'Bonus-Point',
 };
 
 export default function ChampionshipManagePage() {
@@ -38,9 +55,20 @@ export default function ChampionshipManagePage() {
 
   const [detail, setDetail] = useState<Detail | null>(null);
   const [available, setAvailable] = useState<AvailableEvent[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  // Bootsklassen-Bearbeitung
+  const [editClasses, setEditClasses] = useState(false);
+  const [klassenDraft, setKlassenDraft] = useState<string[]>([]);
+  const [savingClasses, setSavingClasses] = useState(false);
+
+  // Filter für die Regatten-Auswahl
+  const [search, setSearch] = useState('');
+  const [classFilter, setClassFilter] = useState('');
+  const [regionFilter, setRegionFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const loadDetail = useCallback(async () => {
     const res = await fetch(`/api/championships/${championshipId}`, { cache: 'no-store' });
@@ -57,18 +85,57 @@ export default function ChampionshipManagePage() {
   }, [loadDetail]);
 
   const linkedIds = new Set((detail?.events || []).map((e) => e.eventId));
-  const selectable = available.filter((e) => !linkedIds.has(e.id));
+  const notLinked = useMemo(
+    () => available.filter((e) => !linkedIds.has(e.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [available, detail?.events]
+  );
 
-  const addEvent = async () => {
-    if (!selectedEvent) return;
+  // Bootsklassen-Optionen aus den verfügbaren Regatten
+  const classOptions = useMemo(() => {
+    const set = new Set<string>();
+    notLinked.forEach((e) => (e.bootsklassen || []).forEach((b) => b && set.add(b)));
+    return [...set].sort();
+  }, [notLinked]);
+
+  // Gefilterte Auswahl
+  const selectable = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const region = regionFilter.trim().toLowerCase();
+    return notLinked.filter((e) => {
+      if (q) {
+        const hay = `${e.name || ''} ${e.vereinName || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (classFilter && !(e.bootsklassen || []).includes(classFilter)) return false;
+      if (region) {
+        const loc = `${e.location || ''} ${e.land || ''}`.toLowerCase();
+        if (!loc.includes(region)) return false;
+      }
+      if (dateFrom && (!e.datumVon || e.datumVon < dateFrom)) return false;
+      if (dateTo && (!e.datumVon || e.datumVon > dateTo)) return false;
+      return true;
+    });
+  }, [notLinked, search, classFilter, regionFilter, dateFrom, dateTo]);
+
+  const hasActiveFilter = !!(search || classFilter || regionFilter || dateFrom || dateTo);
+  const resetFilters = () => {
+    setSearch('');
+    setClassFilter('');
+    setRegionFilter('');
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const addEvent = async (eventId: string) => {
+    if (!eventId) return;
     setBusy(true);
     try {
       await fetch(`/api/championships/${championshipId}/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: selectedEvent }),
+        body: JSON.stringify({ eventId }),
       });
-      setSelectedEvent('');
       await loadDetail();
     } finally {
       setBusy(false);
@@ -91,6 +158,26 @@ export default function ChampionshipManagePage() {
     if (!confirm('Diese Meisterschaft wirklich löschen?')) return;
     await fetch(`/api/championships/${championshipId}`, { method: 'DELETE' });
     router.replace(`/dashboard/federation/${federationId}`);
+  };
+
+  const startEditClasses = () => {
+    setKlassenDraft(detail?.championship.bootsklassen || []);
+    setEditClasses(true);
+  };
+
+  const saveClasses = async () => {
+    setSavingClasses(true);
+    try {
+      await fetch(`/api/championships/${championshipId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bootsklassen: klassenDraft }),
+      });
+      await loadDetail();
+      setEditClasses(false);
+    } finally {
+      setSavingClasses(false);
+    }
   };
 
   if (loading) {
@@ -132,8 +219,11 @@ export default function ChampionshipManagePage() {
               <p className="text-slate-400 text-sm flex items-center gap-2 mt-1">
                 {c.level && <span className="flex items-center gap-1"><Flag className="w-3.5 h-3.5 text-teal-400" /> {c.level}</span>}
                 <span className="px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 text-xs font-bold">
+                  {SYSTEM_LABEL[c.scoringSystem] || c.scoringSystem}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 text-xs font-bold">
                   {MODE_LABEL[c.scoringMode] || c.scoringMode}
-                  {c.scoringMode === 'discard' ? ` (${c.discardCount} Streicher)` : ''}
+                  {c.scoringMode === 'discard' ? ` (${c.discardCount} Regatten)` : ''}
                 </span>
               </p>
             </div>
@@ -145,6 +235,59 @@ export default function ChampionshipManagePage() {
             <Trash2 className="w-4 h-4" /> Löschen
           </button>
         </div>
+
+        {/* Gewertete Bootsklassen */}
+        <section className="bg-[#112d5c]/40 border border-slate-700/50 rounded-3xl p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-teal-400 flex items-center gap-2">
+              <Sailboat className="w-4 h-4" /> Gewertete Bootsklassen
+            </h2>
+            {!editClasses && (
+              <button
+                onClick={startEditClasses}
+                className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Bearbeiten
+              </button>
+            )}
+          </div>
+
+          {!editClasses ? (
+            c.bootsklassen.length === 0 ? (
+              <p className="text-slate-500 text-sm italic">Alle Bootsklassen werden gewertet.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {c.bootsklassen.map((k) => (
+                  <span
+                    key={k}
+                    className="text-xs font-bold px-2.5 py-1 rounded-lg border bg-teal-500/20 text-teal-200 border-teal-500/40"
+                  >
+                    {k}
+                  </span>
+                ))}
+              </div>
+            )
+          ) : (
+            <div>
+              <BootsklassenMultiSelect value={klassenDraft} onChange={setKlassenDraft} accent="teal" />
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  onClick={saveClasses}
+                  disabled={savingClasses}
+                  className="bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-black uppercase text-xs px-5 py-2.5 rounded-xl transition-all"
+                >
+                  {savingClasses ? 'Speichert…' : 'Speichern'}
+                </button>
+                <button
+                  onClick={() => setEditClasses(false)}
+                  className="text-slate-400 hover:text-white text-sm transition-colors"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
 
         {/* Regatten verknüpfen */}
         <section className="bg-[#112d5c]/40 border border-slate-700/50 rounded-3xl p-6 mb-8">
@@ -181,27 +324,104 @@ export default function ChampionshipManagePage() {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select
-              value={selectedEvent}
-              onChange={(e) => setSelectedEvent(e.target.value)}
-              className="flex-1 rounded-xl bg-[#0a192f] text-white text-sm px-4 py-3 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Regatta auswählen…</option>
-              {selectable.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name || e.id.slice(0, 8)}
-                  {e.vereinName ? ` — ${e.vereinName}` : ''}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={addEvent}
-              disabled={!selectedEvent || busy}
-              className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-black uppercase text-xs px-5 py-3 rounded-xl transition-all"
-            >
-              <Plus className="w-4 h-4" /> Verknüpfen
-            </button>
+          {/* Regatta suchen & filtern */}
+          <div className="border-t border-slate-700/50 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">
+                Regatta hinzufügen
+              </h3>
+              {hasActiveFilter && (
+                <button
+                  onClick={resetFilters}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors"
+                >
+                  <X className="w-3 h-3" /> Filter zurücksetzen
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              {/* Suche */}
+              <div className="sm:col-span-2 relative">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Regatta oder Verein suchen…"
+                  className="w-full rounded-xl bg-[#0a192f] text-white text-sm pl-10 pr-4 py-3 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              {/* Bootsklasse */}
+              <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="rounded-xl bg-[#0a192f] text-white text-sm px-3 py-3 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                <option value="">Alle Bootsklassen</option>
+                {classOptions.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+              {/* Region */}
+              <input
+                value={regionFilter}
+                onChange={(e) => setRegionFilter(e.target.value)}
+                placeholder="Region / Ort / Land"
+                className="rounded-xl bg-[#0a192f] text-white text-sm px-3 py-3 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+              {/* Zeitraum */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="flex-1 rounded-xl bg-[#0a192f] text-white text-sm px-3 py-3 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <span className="text-slate-500 text-xs">bis</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="flex-1 rounded-xl bg-[#0a192f] text-white text-sm px-3 py-3 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+            </div>
+
+            {/* Ergebnisliste */}
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {selectable.length === 0 ? (
+                <p className="text-slate-500 text-sm italic py-4 text-center">
+                  {notLinked.length === 0
+                    ? 'Keine weiteren Regatten verfügbar.'
+                    : 'Keine Regatta passt zu den Filtern.'}
+                </p>
+              ) : (
+                selectable.map((e) => (
+                  <div
+                    key={e.id}
+                    className="flex items-center justify-between bg-[#0a192f]/60 rounded-xl px-4 py-3 border border-slate-800"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-bold text-white text-sm truncate">
+                        {e.name || e.id.slice(0, 8)}
+                      </div>
+                      <div className="text-xs text-slate-500 flex flex-wrap gap-x-3">
+                        {e.vereinName && <span>{e.vereinName}</span>}
+                        {(e.location || e.land) && <span>{[e.location, e.land].filter(Boolean).join(', ')}</span>}
+                        {e.datumVon && <span>{new Date(e.datumVon).toLocaleDateString('de-DE')}</span>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => addEvent(e.id)}
+                      disabled={busy}
+                      className="flex items-center gap-1.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-black uppercase text-[10px] px-3 py-2 rounded-lg transition-all shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Verknüpfen
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </section>
 
@@ -227,7 +447,7 @@ export default function ChampionshipManagePage() {
                       <tr>
                         <th className="px-6 py-3">Rang</th>
                         <th className="px-6 py-3">Segler</th>
-                        {detail.events.map((ev, i) => (
+                        {cls.events.map((ev, i) => (
                           <th key={ev.eventId} className="px-3 py-3 text-center" title={ev.name || ''}>
                             R{i + 1}
                           </th>
