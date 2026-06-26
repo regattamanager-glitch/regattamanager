@@ -185,24 +185,24 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
       idx === discardIndex ? sum : sum + val, 0
     );
 
-    // Hilfswert für Tie-Break: Sortierte Liste der Netto-Ergebnisse (beste zuerst)
-    const tieBreakScores = numericScores
-      .filter((_, idx) => idx !== discardIndex)
-      .sort((a, b) => a - b);
-
-    return { entry, scoresRaw, totalPoints, discardIndex, tieBreakScores };
+    // Tie-Break: Ergebnisse in Wettfahrt-Reihenfolge (für den Vergleich der
+    // zuletzt gefahrenen Wettfahrt). NICHT sortieren, Reihenfolge bleibt erhalten.
+    return { entry, scoresRaw, totalPoints, discardIndex, raceScores: numericScores };
   });
 
-  // Sortierung: 1. Punkte (weniger ist besser), 2. Tie-Break (bessere Einzelplatzierungen)
+  // Maximale Anzahl gefahrener Wettfahrten (für den Countback-Vergleich)
+  const maxRaces = Math.max(0, ...scoredSegler.map(s => s.raceScores.length));
+
+  // Sortierung: 1. Punkte (weniger ist besser), 2. Tie-Break: beste Platzierung
+  // in der zuletzt gefahrenen Wettfahrt (danach Countback rückwärts).
   return scoredSegler.sort((a, b) => {
     if (a.totalPoints !== b.totalPoints) {
       return a.totalPoints - b.totalPoints;
     }
-    // Tie-Break Logik (A8.1): Vergleiche nacheinander die besten Plätze
-    for (let i = 0; i < a.tieBreakScores.length; i++) {
-      if (a.tieBreakScores[i] !== b.tieBreakScores[i]) {
-        return a.tieBreakScores[i] - b.tieBreakScores[i];
-      }
+    for (let idx = maxRaces - 1; idx >= 0; idx--) {
+      const sa = a.raceScores[idx] ?? Infinity;
+      const sb = b.raceScores[idx] ?? Infinity;
+      if (sa !== sb) return sa - sb;
     }
     return 0;
   });
@@ -229,9 +229,11 @@ function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<st
   const vereinRes = await fetch(`/api/accounts?id=${vId}`);
   if (vereinRes.ok) {
     const vereinData = await vereinRes.json();
-    // Falls die API z.B. { data: { name: "..." } } zurückgibt:
-    // Nutzen Sie: setVerein(vereinData.data || vereinData);
-    setVerein(vereinData.data || vereinData); 
+    setVerein(vereinData.data || vereinData);
+  } else {
+    // Öffentlich (nicht eingeloggt): nur der Vereinsname aus der Events-API.
+    // Kontaktdaten (E-Mail/Adresse) sind bewusst login-geschützt.
+    setVerein({ name: (found as any).vereinName || "—" } as any);
   }
 }
 

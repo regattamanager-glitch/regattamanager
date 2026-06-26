@@ -18,6 +18,10 @@ export default async function middleware(req: NextRequest) {
   const localePattern = `^\\/(${locales.join('|')})\\/dashboard`;
   const isDashboardPath = pathname.match(new RegExp(localePattern)) || pathname.startsWith('/dashboard');
 
+  // Hinweis: /admin wird NICHT in der Middleware blockiert, damit die Seite
+  // ihr eigenes Admin-Login-Formular zeigen kann. Die echte Rechteprüfung
+  // erfolgt serverseitig in /api/admin/* (requireAdmin).
+
   // 3. Dashboard-Schutz (Angepasst)
 if (isDashboardPath) {
   // AUSNAHME: Wenn der User auf dem Weg zur "Pending"-Seite ist, lassen wir ihn durch,

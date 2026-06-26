@@ -84,9 +84,15 @@ const handleInviteAction = async (inviteId: string, action: 'accept' | 'decline'
   useEffect(() => {
     const loadAccount = async () => {
       try {
-        const res = await fetch('/api/accounts/session');
+        const res = await fetch('/api/accounts/session', { cache: 'no-store' });
         if (!res.ok) throw new Error();
         const data = await res.json();
+        // IDOR-Schutz: Nur das eigene Dashboard darf angezeigt werden.
+        // Passt die URL-ID nicht zur Session, auf das eigene Dashboard umleiten.
+        if (data?.id && urlId && urlId !== "undefined" && String(urlId) !== String(data.id)) {
+          router.replace(`/dashboard/segler/${data.id}`);
+          return;
+        }
         setAccount(data);
       } catch (err) {
         router.push('/login');
@@ -238,15 +244,20 @@ const copyIdToClipboard = () => {
       label={t('menu.events')} 
       href={`/dashboard/segler/${effectiveId}/events`} 
     />
-    <MenuLink 
-      icon={<Trophy />} 
-      label={t('menu.results')} 
-      href={`/dashboard/segler/${effectiveId}/results`} 
+    <MenuLink
+      icon={<Trophy />}
+      label={t('menu.results')}
+      href={`/dashboard/segler/${effectiveId}/results`}
     />
-    <MenuLink 
-      icon={<Calendar />} 
-      label={t('menu.calendar')} 
-      href={`/dashboard/segler/${effectiveId}/calender`} 
+    <MenuLink
+      icon={<Anchor />}
+      label="RigLog (Material)"
+      href={`/dashboard/segler/${effectiveId}/material`}
+    />
+    <MenuLink
+      icon={<Calendar />}
+      label={t('menu.calendar')}
+      href={`/dashboard/segler/${effectiveId}/calender`}
     />
     <MenuLink 
       icon={<GroupsIcon />} 
@@ -534,18 +545,20 @@ function calculatePlacement(seglerList: any[], eventResults: Record<string, any[
       idx === discardIndex ? sum : sum + val, 0
     );
 
-    const tieBreakScores = numericScores
-      .filter((_, idx) => idx !== discardIndex)
-      .sort((a, b) => a - b);
-
-    return { sId, totalPoints, tieBreakScores };
+    // Tie-Break: Ergebnisse in Wettfahrt-Reihenfolge belassen, damit die
+    // zuletzt gefahrene Wettfahrt verglichen werden kann.
+    return { sId, totalPoints, raceScores: numericScores };
   });
+
+  const maxRaces = Math.max(0, ...scoredSegler.map(s => s.raceScores.length));
 
   const sorted = [...scoredSegler].sort((a, b) => {
     if (a.totalPoints !== b.totalPoints) return a.totalPoints - b.totalPoints;
-    for (let i = 0; i < a.tieBreakScores.length; i++) {
-      const scoreA = a.tieBreakScores[i] || 0;
-      const scoreB = b.tieBreakScores[i] || 0;
+    // Gleichstand: beste Platzierung in der zuletzt gefahrenen Wettfahrt zuerst,
+    // danach Countback rückwärts.
+    for (let idx = maxRaces - 1; idx >= 0; idx--) {
+      const scoreA = a.raceScores[idx] ?? Infinity;
+      const scoreB = b.raceScores[idx] ?? Infinity;
       if (scoreA !== scoreB) return scoreA - scoreB;
     }
     return 0;

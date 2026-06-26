@@ -11,7 +11,8 @@ import {
   Edit3, 
   ChevronRight, 
   LayoutDashboard,
-  Anchor
+  Anchor,
+  Gauge
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -49,19 +50,33 @@ export default function VereinsDashboard() {
   useEffect(() => {
     const loadAccount = async () => {
       try {
-        const res = await fetch('/api/accounts/session');
+        const res = await fetch('/api/accounts/session', { cache: 'no-store' });
         if (!res.ok) {
           router.push('/login');
           return;
         }
         const data = await res.json();
+        // Falscher Account-Typ -> auf das passende Dashboard umleiten.
+        if (data?.type === 'federation') {
+          router.replace(`/dashboard/federation/${data.id}`);
+          return;
+        }
+        if (data?.type === 'segler') {
+          router.replace(`/dashboard/segler/${data.id}`);
+          return;
+        }
+        // IDOR-Schutz: Nur das eigene Vereins-Dashboard anzeigen.
+        if (data?.id && vereinId && String(vereinId) !== String(data.id)) {
+          router.replace(`/dashboard/verein/${data.id}`);
+          return;
+        }
         setAccount(data);
       } catch (err) {
         router.push('/login');
       }
     };
     loadAccount();
-  }, [router]);
+  }, [router, vereinId]);
 
   useEffect(() => {
     if (!vereinId) return;
@@ -142,6 +157,7 @@ const vergangene = events.filter(ev => {
                     <MenuLink icon={<LayoutDashboard size={18} />} label={t('nav.dashboard')} onClick={() => router.push(`/dashboard/verein/${vereinId}`)} />
                     <MenuLink icon={<PlusCircle size={18} />} label={t('nav.newEvent')} onClick={() => router.push(`/dashboard/verein/${vereinId}/create`)} />
                     <MenuLink icon={<Trophy size={18} />} label={t('nav.performance')} onClick={() => router.push(`/dashboard/verein/${vereinId}/athlet/performance`)} />
+                    <MenuLink icon={<Gauge size={18} />} label="Yardstick" onClick={() => router.push(`/dashboard/verein/${vereinId}/yardstick`)} />
                     <MenuLink icon={<GroupsIcon />} label={t('nav.members')} onClick={() => router.push(`/dashboard/verein/${vereinId}/vereinsMitglieder`)} />
                     <MenuLink icon={<Settings size={18} />} label={t('nav.profile')} onClick={() => router.push(`/dashboard/verein/${vereinId}/profil`)} />
                     <hr className="border-slate-700 my-2" />

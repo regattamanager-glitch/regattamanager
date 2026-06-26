@@ -97,6 +97,13 @@ export async function GET(req: Request) {
       return NextResponse.json([]);
     }
 
+    // Vereinsnamen einmalig laden (öffentlich anzeigbar, keine sensiblen Daten).
+    // So muss das Frontend nicht die geschützte /api/accounts-Liste abrufen.
+    const vereinRows = await sql`SELECT id, name, kuerzel FROM "Verein"`.catch(() => []);
+    const vereinMap = new Map(
+      (vereinRows as any[]).map((v: any) => [String(v.id), v.name || v.kuerzel || ""])
+    );
+
     const enrichedEvents = await Promise.all(events.map(async (event) => {
       try {
         const extrasRaw = await sql`SELECT * FROM event_extras WHERE event_id=${event.id}`.catch(() => []);
@@ -125,6 +132,8 @@ export async function GET(req: Request) {
           location: event.location || "",
           privat: Boolean(event.privat),
           notiz: event.notiz || "",
+          // Öffentlicher Vereinsname (für Listen/Startseite)
+          vereinName: vereinMap.get(String(event.verein_id)) || "",
           
           // 2. JSON-Felder parsen
           bootsklassen: safeParse(event.bootsklassen, []),
@@ -149,13 +158,14 @@ export async function GET(req: Request) {
         };
       } catch (err) {
         console.error("Fehler beim Enrichen des Events:", event.id, err);
-        return { 
-          ...event, 
-          extras: [], 
-          documents: [], 
+        return {
+          ...event,
+          vereinName: vereinMap.get(String(event.verein_id)) || "",
+          extras: [],
+          documents: [],
           anmeldungsZeitraum: { von: "", bis: "" },
           datumVon: "",
-          datumBis: "" 
+          datumBis: ""
         };
       }
     }));

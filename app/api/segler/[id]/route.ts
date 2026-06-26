@@ -1,13 +1,15 @@
 // app/api/segler/[id]/route.ts
 import { NextResponse } from 'next/server';
 import query from '@/lib/db';
+import { requireAuth, stripSensitive } from '@/lib/auth';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  // Login erforderlich; Passwort-Hash & Reset-Token werden entfernt.
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
   const result = await query`SELECT * FROM "Segler" WHERE id = ${id}`;
-  
-  // Logge das hier, um zu sehen, wie die Spalten wirklich heißen!
-  console.log("Segler Daten aus DB:", result[0]); 
-  
-  return NextResponse.json(result[0] || {});
+
+  return NextResponse.json(stripSensitive(result[0] || {}));
 }

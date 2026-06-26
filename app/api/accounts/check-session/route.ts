@@ -27,7 +27,10 @@ export async function POST(req: Request) {
 
     // 4. User-Daten laden basierend auf userType
     let user = null;
-    if (session.userType === "verein") {
+    if (session.userType === "federation") {
+      const users = await sql`SELECT * FROM "Federation" WHERE id = ${session.userId} LIMIT 1`;
+      user = users[0];
+    } else if (session.userType === "verein") {
       const users = await sql`SELECT * FROM "Verein" WHERE id = ${session.userId} LIMIT 1`;
       user = users[0];
     } else {
@@ -43,13 +46,13 @@ export async function POST(req: Request) {
     // 6. Erfolg: Daten strukturiert zurückgeben
     return NextResponse.json({ 
       ok: true, 
-      user: { 
-        id: user.id, 
-        name: session.userType === "verein" 
-          ? user.name 
+      user: {
+        id: user.id,
+        name: (session.userType === "verein" || session.userType === "federation")
+          ? user.name
           : `${user.vorname} ${user.nachname}`,
-        role: session.userType 
-      } 
+        role: session.userType
+      }
     });
 
   } catch (e) {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,6 +9,10 @@ const sql = neon(process.env.DATABASE_URL || "");
 
 export async function GET(request: Request) {
   try {
+    // Nur Admins dürfen die Plattform-Auswertung sehen.
+    const auth = await requireAdmin();
+    if (auth instanceof NextResponse) return auth;
+
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL ist nicht definiert.");
     }
@@ -40,11 +45,21 @@ export async function GET(request: Request) {
     let vereine: any[] = [];
     try {
       vereine = await sql`
-        SELECT id, name, kuerzel, email, "stripeAccountId", "isApproved" 
-        FROM "Verein" 
+        SELECT id, name, kuerzel, email, "stripeAccountId", "isApproved"
+        FROM "Verein"
         ORDER BY name ASC
       `;
     } catch (e) { console.error("[SQL ERROR] Vereine Select:", e); }
+
+    // 2b. Föderationen abfragen
+    let federations: any[] = [];
+    try {
+      federations = await sql`
+        SELECT id, name, kuerzel, email, region, "isApproved"
+        FROM "Federation"
+        ORDER BY name ASC
+      `;
+    } catch (e) { console.error("[SQL ERROR] Federations Select:", e); }
 
 
     // 3. Rohdaten laden
@@ -230,40 +245,33 @@ export async function GET(request: Request) {
     const laufendesDatum = new Date();
     laufendesDatum.setDate(heute.getDate() - i);
     laufendesDatum.setHours(0, 0, 0, 0); // Wichtig für Vergleich
-    
-    const displayDate = `${String(laufendesDatum.getDate()).padStart(2, '0')}.${String(laufendesDatum.getMonth() + 1).padStart(2, '0')}.`;
 
-    // Zähle Events, die an diesem Tag aktiv sind
-    // Ein Event ist aktiv, wenn (datum_von <= laufendesDatum) UND (datum_bis >= laufendesDatum)
-    const tagesAktiveEvents = eventsRaw.filter(e => {
-        if (!e.datum_von) return false;
-        const von = new Date(e.datum_von);
-        const bis = e.datum_bis ? new Date(e.datum_bis) : new Date(von); // Fallback falls kein Bis-Datum
-        
-        return laufendesDatum >= von && laufendesDatum <= bis;
-    }).length;
+    const tag = String(laufendesDatum.getDate()).padStart(2, '0');
+    const monat = String(laufendesDatum.getMonth() + 1).padStart(2, '0');
+    const jahr = laufendesDatum.getFullYear();
 
-    // Nur für die Timeline (jetzt nicht mehr kumuliert, sondern der Tageswert)
-    eventTimeline.push({ date: displayDate, count: tagesAktiveEvents });
-        laufendesDatum.setDate(heute.getDate() - i);
-        const dateStr = laufendesDatum.toISOString().split('T')[0];
+    const displayDate = `${tag}.${monat}.`;
+    // WICHTIG: dateStr lokal bilden (identisch zu den Map-Keys oben).
+    // toISOString() würde wegen UTC-Konvertierung den Tag verschieben.
+    const dateStr = `${jahr}-${monat}-${tag}`;
 
-        // User
-        kumulierteSeglerAnzahl += (seglerDailyMap[dateStr] || 0);
-        timeline.push({ date: displayDate, zuwachs: kumulierteSeglerAnzahl });
+    // User (kumuliert)
+    kumulierteSeglerAnzahl += (seglerDailyMap[dateStr] || 0);
+    timeline.push({ date: displayDate, zuwachs: kumulierteSeglerAnzahl });
 
-        // Umsatz
-        revenueTimeline.push({ date: displayDate, revenue: dailyRevenueMap[dateStr] || 0 });
+    // Umsatz (Tageswert)
+    revenueTimeline.push({ date: displayDate, revenue: dailyRevenueMap[dateStr] || 0 });
 
-        // Events
-        kumulierteEventAnzahl += (eventDailyMap[dateStr] || 0); // Hier passiert das NaN, wenn keine Initialisierung
-        eventTimeline.push({ date: displayDate, count: kumulierteEventAnzahl });
+    // Events (kumuliert) – nur EIN Push pro Tag.
+    kumulierteEventAnzahl += (eventDailyMap[dateStr] || 0);
+    eventTimeline.push({ date: displayDate, count: kumulierteEventAnzahl });
     }
 
     return NextResponse.json({
       success: true,
-      stats: { seglerCount, vereineCount, eventsCount },
+      stats: { seglerCount, vereineCount, eventsCount, federationsCount: federations.length },
       vereine,
+      federations,
       events,
       timeline,
       revenueTimeline,
@@ -283,10 +291,27 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    // Verein-Freischaltung ist eine reine Admin-Aktion.
+    const auth = await requireAdmin();
+    if (auth instanceof NextResponse) return auth;
+
     if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL ist nicht definiert.");
     const body = await request.json();
-    const { vereinId, isApproved } = body;
-    if (!vereinId || typeof isApproved !== "boolean") return NextResponse.json({ success: false, message: "Ungültige Parameter." }, { status: 400 });
+    const { vereinId, federationId, isApproved } = body;
+
+    if (typeof isApproved !== "boolean") {
+      return NextResponse.json({ success: false, message: "Ungültige Parameter." }, { status: 400 });
+    }
+
+    if (federationId) {
+      const updateResult = await sql`UPDATE "Federation" SET "isApproved" = ${isApproved} WHERE id = ${federationId} RETURNING id`;
+      if (updateResult.length === 0) return NextResponse.json({ success: false, message: "Föderation nicht gefunden." }, { status: 404 });
+      return NextResponse.json({ success: true });
+    }
+
+    if (!vereinId) {
+      return NextResponse.json({ success: false, message: "Ungültige Parameter." }, { status: 400 });
+    }
 
     const updateResult = await sql`UPDATE "Verein" SET "isApproved" = ${isApproved} WHERE id = ${vereinId} RETURNING id`;
     if (updateResult.length === 0) return NextResponse.json({ success: false, message: "Verein nicht gefunden." }, { status: 404 });

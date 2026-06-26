@@ -11,17 +11,18 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Daten aus dem Request holen
     const body = await req.json().catch(() => ({}));
-    const { 
-      type, 
-      email, 
-      passwort, 
-      vorname, 
-      nachname, 
-      geburtsdatum, 
-      nation, 
-      name, 
-      kuerzel, 
-      adresse 
+    const {
+      type,
+      email,
+      passwort,
+      vorname,
+      nachname,
+      geburtsdatum,
+      nation,
+      name,
+      kuerzel,
+      adresse,
+      region
     } = body;
 
     // 2. Pflichtfelder prüfen
@@ -62,12 +63,24 @@ export async function POST(req: NextRequest) {
         RETURNING id
       `;
       newUser = rows[0];
+    } else if (type === "federation") {
+      // Föderation registrieren
+      const rows = await sql`
+        INSERT INTO "Federation" (
+          id, email, passwort, name, kuerzel, region, "createdAt", "updatedAt", "isApproved"
+        )
+        VALUES (
+          ${newUserId}, ${email}, ${hashedPassword}, ${name}, ${kuerzel || ""}, ${region || ""}, ${now}, ${now}, ${false}
+        )
+        RETURNING id
+      `;
+      newUser = rows[0];
     } else {
       // Verein registrieren
       const rows = await sql`
         INSERT INTO "Verein" (
           id, email, passwort, name, kuerzel, adresse, "createdAt", "updatedAt", "isApproved"
-        ) 
+        )
         VALUES (
           ${newUserId}, ${email}, ${hashedPassword}, ${name}, ${kuerzel}, ${adresse}, ${now}, ${now}, ${false}
         )

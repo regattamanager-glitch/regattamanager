@@ -29,11 +29,19 @@ export async function GET() {
     let vereine: string[] = [];
 
     // 3. Daten je nach Nutzertyp laden
-    if (session.userType === "verein") {
+    if (session.userType === "federation") {
       const users = await sql`
-        SELECT id, name, email, kuerzel, "stripeAccountId" 
-        FROM "Verein" 
-        WHERE id = ${session.userId} 
+        SELECT id, name, email, kuerzel, region, "isApproved"
+        FROM "Federation"
+        WHERE id = ${session.userId}
+        LIMIT 1
+      `;
+      user = users[0];
+    } else if (session.userType === "verein") {
+      const users = await sql`
+        SELECT id, name, email, kuerzel, "stripeAccountId"
+        FROM "Verein"
+        WHERE id = ${session.userId}
         LIMIT 1
       `;
       user = users[0];
@@ -65,10 +73,15 @@ export async function GET() {
     }
 
     // 4. Kombiniertes Objekt zurückgeben
+    // WICHTIG: no-store, damit der Browser die Session-Antwort NICHT cached.
+    // Sonst bekommt ein frisch erstellter Account die gecachte Session des
+    // zuvor angemeldeten Users zurück und landet auf dessen Dashboard.
     return NextResponse.json({
       ...user,
       vereine: vereine, // Dieses Feld fehlte bisher
       type: session.userType
+    }, {
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" }
     });
 
   } catch (error) {

@@ -193,6 +193,21 @@ useEffect(() => {
     return points;
   };
 
+  // Punktewert einer EINZELNEN Wettfahrt (für den Tie-Break "letzte Wettfahrt").
+  // Leere Wettfahrten zählen als schlechtester Wert (Infinity), damit sie den
+  // Vergleich nicht verfälschen.
+  const cellToPoints = (s: string | undefined, allScores: (string | undefined)[][]) => {
+    if (!s || s === "") return Infinity;
+    if (!isNaN(Number(s))) return Number(s);
+    const numStarted = allScores.length - allScores.filter(row => row.every(v => v === "DNC")).length;
+    switch (s.toUpperCase()) {
+      case "DNS": case "DNF": case "OCS": case "DSQ": case "RET": return numStarted + 1;
+      case "DNC": return allScores.length + 1;
+      case "RDG": return 0;
+      default: return 0;
+    }
+  };
+
   if (!event) return <div className="text-white">{t('loading')}</div>;
 
   const sailors = selectedClass ? event.segler[selectedClass] || [] : [];
@@ -203,7 +218,19 @@ useEffect(() => {
       scores: savedResults[i] || [],
       total: calculateScore(savedResults[i] || [], savedResults)
     }))
-    .sort((a,b)=>Number(a.total||0)-Number(b.total||0));
+    .sort((a,b)=>{
+      const diff = Number(a.total||0) - Number(b.total||0);
+      if (diff !== 0) return diff;
+      // Gleichstand: Wer in der zuletzt gefahrenen Wettfahrt besser war, kommt
+      // zuerst. Bei erneutem Gleichstand wird Wettfahrt für Wettfahrt
+      // rückwärts verglichen (Countback ab der letzten Wettfahrt).
+      for (let raceIdx = raceCount - 1; raceIdx >= 0; raceIdx--) {
+        const pa = cellToPoints(a.scores[raceIdx], savedResults);
+        const pb = cellToPoints(b.scores[raceIdx], savedResults);
+        if (pa !== pb) return pa - pb;
+      }
+      return 0;
+    });
 
   return (
   <div className="min-h-screen bg-[#0a192f]/90 md:rounded-[2.5rem] text-white p-4 md:p-8 font-sans">

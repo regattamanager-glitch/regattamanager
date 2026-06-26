@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 // 2. Nutzer suchen
 const seglerResult = await sql`SELECT id, passwort FROM "Segler" WHERE email = ${email} LIMIT 1`;
 let user = seglerResult[0];
-let userType: "segler" | "verein" = "segler";
+let userType: "segler" | "verein" | "federation" = "segler";
 
 if (!user) {
 const vereinResult = await sql`SELECT id, passwort, "isApproved" FROM "Verein" WHERE email = ${email} LIMIT 1`;
@@ -32,19 +32,24 @@ const vereinResult = await sql`SELECT id, passwort, "isApproved" FROM "Verein" W
 }
 
 if (!user) {
+const federationResult = await sql`SELECT id, passwort, "isApproved" FROM "Federation" WHERE email = ${email} LIMIT 1`;
+  user = federationResult[0];
+  userType = "federation";
+}
+
+if (!user) {
   return NextResponse.json({ success: false, message: "Ungültige Anmeldedaten" }, { status: 401 });
 }
 
-// Wichtig: Status 403 setzen, damit das Frontend den 'else if (res.status === 403)' Block auslöst
-// Ändere diesen Teil in deiner API:
-if (userType === "verein" && user.isApproved === false) {
+// Vereine UND Föderationen benötigen eine Admin-Freigabe.
+if ((userType === "verein" || userType === "federation") && user.isApproved === false) {
   return NextResponse.json(
-    { 
-      success: false, 
-      message: "Wartet auf Freigabe", 
-      status: "pending" 
-    }, 
-    { status: 200 } 
+    {
+      success: false,
+      message: "Wartet auf Freigabe",
+      status: "pending"
+    },
+    { status: 200 }
   );
 }
 

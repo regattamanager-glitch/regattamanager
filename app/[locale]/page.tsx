@@ -69,23 +69,19 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [eventsRes, accountsRes] = await Promise.all([
-          fetch("/api/events"),
-          fetch("/api/accounts")
-        ]);
-        const events = await eventsRes.json();
-        const accounts: Account[] = await accountsRes.json();
+        const eventsRes = await fetch("/api/events");
+        const eventsData = await eventsRes.json();
+        const events: any[] = Array.isArray(eventsData) ? eventsData : [];
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const mappedEvents = events
           .filter((event: any) => event.privat !== true && event.datumVon)
           .map((event: any) => {
-            const vID = event.verein_id || event.vereinId; 
-            const foundAccount = accounts.find((acc: any) => String(acc.id || acc._id) === String(vID));
+            // Vereinsname kommt jetzt direkt aus der (öffentlichen) Events-API.
             return {
               ...event,
-              verein: foundAccount ? (foundAccount.name || foundAccount.username || foundAccount.verein) : "—",
+              verein: event.vereinName || "—",
             };
           });
 
