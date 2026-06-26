@@ -1,8 +1,10 @@
 import './globals.css'
 import 'leaflet/dist/leaflet.css'
+import type { Metadata, Viewport } from 'next'
 import BackgroundWrapper from '@/components/BackgroundWrapper'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import PwaRegister from '@/components/PwaRegister'
 import { neon } from '@neondatabase/serverless';
 
 import { cookies } from "next/headers"
@@ -17,6 +19,31 @@ import { routing } from '@/navigation';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+// PWA / Mobile-App-Metadaten (iPhone + Android installierbar)
+export const metadata: Metadata = {
+  applicationName: 'Regatta Manager',
+  title: { default: 'Regatta Manager', template: '%s · Regatta Manager' },
+  description: 'Regatten, Meldungen, Ergebnisse & Material – alles an Bord.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Regatta Manager',
+  },
+  formatDetection: { telephone: false },
+  icons: {
+    icon: [{ url: '/app-icon.png', type: 'image/png' }],
+    apple: [{ url: '/app-icon.png' }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#001f3f',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 type Session = {
   id: string
@@ -82,6 +109,7 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className="relative min-h-screen overflow-x-hidden flex flex-col">
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <PwaRegister />
           <BackgroundWrapper />
           <div className="relative z-10 flex-grow">
             {/* Jetzt sind beide Variablen hier bekannt */}

@@ -2,12 +2,16 @@
   "name": "regatta-frontend-v3",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "vercel-build": "next build"
+    "vercel-build": "next build",
+    "desktop": "electron electron/main.js",
+    "desktop:dev": "concurrently -k \"next dev\" \"wait-on http://localhost:3000 && electron electron/main.js\"",
+    "desktop:build": "electron-builder --win"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -44,11 +48,29 @@
     "@types/pg": "^8.18.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.1.0",
     "dotenv": "^17.3.1",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.regattamanager.desktop",
+    "productName": "Regatta Manager",
+    "directories": { "output": "dist-desktop" },
+    "files": ["electron/**/*", "public/app-icon.png", "package.json"],
+    "win": {
+      "target": "nsis",
+      "icon": "build/app-icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

@@ -1,0 +1,17 @@
+{
+  "name": "Regatta Manager",
+  "short_name": "Regatta",
+  "description": "Regatten, Meldungen, Ergebnisse & Material – alles an Bord.",
+  "lang": "de",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a2340",
+  "theme_color": "#0a2340",
+  "icons": [
+    { "src": "/app-icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -244,15 +244,20 @@ const copyIdToClipboard = () => {
       label={t('menu.events')} 
       href={`/dashboard/segler/${effectiveId}/events`} 
     />
-    <MenuLink 
-      icon={<Trophy />} 
-      label={t('menu.results')} 
-      href={`/dashboard/segler/${effectiveId}/results`} 
+    <MenuLink
+      icon={<Trophy />}
+      label={t('menu.results')}
+      href={`/dashboard/segler/${effectiveId}/results`}
     />
-    <MenuLink 
-      icon={<Calendar />} 
-      label={t('menu.calendar')} 
-      href={`/dashboard/segler/${effectiveId}/calender`} 
+    <MenuLink
+      icon={<Anchor />}
+      label="RigLog (Material)"
+      href={`/dashboard/segler/${effectiveId}/material`}
+    />
+    <MenuLink
+      icon={<Calendar />}
+      label={t('menu.calendar')}
+      href={`/dashboard/segler/${effectiveId}/calender`}
     />
     <MenuLink 
       icon={<GroupsIcon />} 
