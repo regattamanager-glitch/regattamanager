@@ -4,10 +4,12 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
+  // Eigenständiger Server-Build -> wird in die Desktop-App (Electron) gebündelt,
+  // damit die App lokal läuft (kein Vercel/Webseiten-Umweg).
+  output: "standalone",
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Wir lassen env weg, da es offenbar ignoriert wird
 };
 
 export default withNextIntl(nextConfig);
