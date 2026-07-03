@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { useTranslations } from 'next-intl';
+import { useToast } from "@/components/ToastProvider";
 
 type Mitglied = { id: string; name: string; email?: string; rolle?: string; vorname?: string; nachname?: string; nation?: string };
 type Anfrage = { 
@@ -23,6 +24,8 @@ type Anfrage = {
 
 export default function VereinsMitgliederPage() {
   const t = useTranslations("VereinsMitglieder");
+  const tCommon = useTranslations("Common");
+  const toast = useToast();
   const params = useParams();
   const vereinId = params?.vereinId as string;
   const router = useRouter();
@@ -63,11 +66,14 @@ export default function VereinsMitgliederPage() {
         body: JSON.stringify({ clubId: vereinId, message })
       });
       if (res.ok) {
-        alert(t('broadcastSuccess'));
+        toast(t('broadcastSuccess'), "success");
         setMessage("");
+      } else {
+        toast(t('broadcastError'));
       }
     } catch (err) {
       console.error("Broadcast failed:", err);
+      toast(tCommon('networkError'));
     }
   };
 
@@ -87,10 +93,11 @@ export default function VereinsMitgliederPage() {
         if (action === 'APPROVE') loadData();
       } else {
         const err = await res.json();
-        alert("Fehler: " + err.error);
+        toast(err.error || tCommon('error'));
       }
     } catch (err) {
       console.error("Action failed:", err);
+      toast(tCommon('networkError'));
     }
   };
 
@@ -105,10 +112,11 @@ export default function VereinsMitgliederPage() {
       if (res.ok) setMitglieder(prev => prev.filter(m => m.id !== userId));
       else {
         const err = await res.json();
-        alert("Fehler: " + err.error);
+        toast(err.error || tCommon('error'));
       }
     } catch (err) {
       console.error("Entfernen fehlgeschlagen:", err);
+      toast(tCommon('networkError'));
     }
   };
 

@@ -7,7 +7,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: NextRequest) {
-  console.log("🚀 Webhook-Request erhalten!");
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
   let event: Stripe.Event;
@@ -21,7 +20,6 @@ export async function POST(req: NextRequest) {
 
   // Sofort filtern
   if (event.type !== "checkout.session.completed") {
-    console.log(`ℹ️ Ignoriere Event: ${event.type}`);
     return NextResponse.json({ received: true });
   }
 
@@ -34,7 +32,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    console.log(`🔎 Suche ID ${registrationId} in pending_registrations...`);
     
     // 1. Daten abrufen
     const pendingRows = await sql`
@@ -51,7 +48,6 @@ export async function POST(req: NextRequest) {
     const { skipper, boot, crew, extras, seglerId, klasse } = data;
 
     // 2. In finale Tabelle einfügen
-    console.log("📝 Übertrage Daten in registrations...");
     await sql`
       INSERT INTO registrations (
         "seglerId", 
@@ -79,7 +75,6 @@ export async function POST(req: NextRequest) {
     // 3. Aus pending_registrations löschen
     await sql`DELETE FROM pending_registrations WHERE id = ${registrationId}`;
 
-    console.log(`✅ Registrierung für Segler ${seglerId} erfolgreich abgeschlossen.`);
     return NextResponse.json({ received: true });
 
   } catch (dbError: any) {

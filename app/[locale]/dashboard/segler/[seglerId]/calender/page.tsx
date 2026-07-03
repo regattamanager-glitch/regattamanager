@@ -38,18 +38,6 @@ export default function SeglerCalendarPage() {
     const allEvents = await resEvents.json(); 
     const { myRegistrations, invitations } = await resInfo.json();
 
-    // --- DIAGNOSE START ---
-    console.log("1. Alle Events vom Server:", allEvents.length);
-    console.log("2. Meine Registrierungen (Rohdaten):", myRegistrations);
-    console.log("3. Gesuchte Segler-ID im Frontend:", seglerId);
-    
-    if (myRegistrations && myRegistrations.length > 0) {
-       const firstRegId = String(myRegistrations[0].eventid || myRegistrations[0].eventId);
-       const matchTest = allEvents.find((e: any) => String(e.id) === firstRegId);
-       console.log("4. Test-Match mit erstem Event:", matchTest ? "ERFOLGREICH ✅" : "FEHLGESCHLAGEN ❌");
-    }
-    // --- DIAGNOSE ENDE ---
-
     if (Array.isArray(allEvents)) {
       const processed = allEvents.map((event: any) => {
         const eId = String(event.id).trim().toLowerCase();
@@ -77,7 +65,6 @@ export default function SeglerCalendarPage() {
         };
       }).filter((event: any) => event.status !== 'neutral');
 
-      console.log("5. Finale Events für Kalender:", processed);
       setEvents(processed);
     }
   } catch (err) {

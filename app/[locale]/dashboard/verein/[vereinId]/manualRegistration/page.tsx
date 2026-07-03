@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import { useToast } from "@/components/ToastProvider";
 
 // --- Interfaces ---
 interface Person {
@@ -50,6 +51,7 @@ type CrewMember = Person & {
 
 export default function ManualRegistrationPage() {
   const t = useTranslations("Register");
+  const toast = useToast();
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -187,7 +189,7 @@ export default function ManualRegistrationPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedKlasse) return alert(t('errorSelectClass'));
+    if (!selectedKlasse) return toast(t('errorSelectClass'));
     if (!confirm(t('confirmManualEntry'))) return;
     
     setSubmitting(true);
@@ -214,7 +216,7 @@ export default function ManualRegistrationPage() {
       
       router.push(`/dashboard/verein/${vereinId}/registrationlist?eventId=${eventId}`);
     } catch (err: any) {
-      alert(`Error: ${err.message}`);
+      toast(`${t('errorSaving')} ${err.message}`);
     } finally {
       setSubmitting(false);
     }

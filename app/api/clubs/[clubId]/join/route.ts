@@ -45,7 +45,6 @@ export async function POST(
       'PENDING'
     ]);
 
-    console.log(`✅ Erfolg: Bewerbung ${requestId} für Club ${clubId} in Neon gespeichert.`);
 
     return NextResponse.json({ success: true, requestId }, { status: 201 });
 

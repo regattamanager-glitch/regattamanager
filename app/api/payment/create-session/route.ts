@@ -18,7 +18,6 @@ if (eventRows.length === 0) throw new Error("Event nicht gefunden");
 const event = eventRows[0];
 
 // DIAGNOSE: Was steht in der verein_id?
-console.log("Suche Verein mit ID:", event.verein_id);
 
 // 2. Verein laden (Tabellenname "Verein" in Anführungszeichen)
 const vereinRows = await sql`SELECT * FROM "Verein" WHERE id = ${event.verein_id}`;

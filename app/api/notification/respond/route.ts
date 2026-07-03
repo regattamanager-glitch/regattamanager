@@ -42,7 +42,6 @@ export async function POST(req: Request) {
       VALUES (${id1}, ${id2})
       ON CONFLICT DO NOTHING
     `;
-    console.log("Erfolg: Relation in _SeglerFriends mit A und B erstellt.");
   } catch (dbErr: any) {
     // Falls das auch fehlschlägt, loggen wir den Fehler, 
     // aber löschen die Einladung nicht, damit man es erneut versuchen kann.

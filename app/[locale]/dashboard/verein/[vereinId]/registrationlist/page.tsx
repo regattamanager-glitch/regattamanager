@@ -71,7 +71,6 @@ function RegistrationListContent() {
         const regRes = await fetch(`/api/registrations?eventId=${eventId}`);
         const regs = regRes.ok ? await regRes.json() : [];
         
-        if (regs.length > 0) console.log("Backend Check:", regs[0]);
 
         const eventRes = await fetch(`/api/events/${eventId}`);
         const event = eventRes.ok ? await eventRes.json() : { name: "Regatta Event" };

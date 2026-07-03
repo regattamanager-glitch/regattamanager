@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useToast } from "@/components/ToastProvider";
 
 export default function ResetPasswordPage() {
   const t = useTranslations("Auth");
+  const toast = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -19,7 +21,7 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      alert(t("passwordsDoNotMatch")); // Neuer Key
+      toast(t("passwordsDoNotMatch"));
       return;
     }
 

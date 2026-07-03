@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "@/navigation";
 import { useTranslations } from "next-intl";
+import { useToast } from "@/components/ToastProvider";
 
 interface SeglerAnmeldung {
   skipper: { seglerId: string; name: string };
@@ -20,6 +21,7 @@ interface EventData {
 
 export default function PublishResultsPage() {
   const t = useTranslations('PublishResults');
+  const toast = useToast();
   const params = useParams() as { vereinId: string; id: string };
   const router = useRouter();
   const vereinId = params.vereinId;
@@ -161,7 +163,7 @@ useEffect(() => {
       }
     } catch (err) {
       console.error(err);
-      alert(`${t('errorSaving')} ${(err as Error).message}`);
+      toast(`${t('errorSaving')} ${(err as Error).message}`);
     }
   };
 

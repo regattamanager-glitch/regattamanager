@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useRouter } from "@/navigation";
 import { useTranslations } from 'next-intl';
+import { useToast } from "@/components/ToastProvider";
 
 /* ============================== KONSTANTEN ============================== */
 
@@ -28,6 +29,8 @@ const TrashIcon = () => (
 
 export default function EditEventPage() {
   const t = useTranslations('CreateEvent');
+  const tCommon = useTranslations('Common');
+  const toast = useToast();
   const params = useParams();
   const router = useRouter();
   const eventId = params.id as string;
@@ -163,7 +166,7 @@ export default function EditEventPage() {
     const hasDuplicates = new Set(classNames).size !== classNames.length;
 
     if (hasDuplicates) {
-      alert("Fehler: Es gibt Klassen mit identischen Namen. Bitte stelle sicher, dass jeder Klassenname einzigartig ist.");
+      toast(t("duplicateClassNames"));
       return;
     }
 
@@ -173,7 +176,7 @@ export default function EditEventPage() {
     );
 
     if (feeTooLow) {
-      alert(t("minFeeError"));
+      toast(t("minFeeError"));
       return;
     }
 
@@ -181,7 +184,7 @@ export default function EditEventPage() {
     const invalidFees = activeClasses.some(cls => Number(cls.feeLate) < Number(cls.feeRegular) * 1.08);
     
     if (invalidFees) {
-      alert(t("lateFeeWarning"));
+      toast(t("lateFeeWarning"));
       return; 
     }
 
@@ -217,10 +220,11 @@ export default function EditEventPage() {
       if (res.ok) {
         router.push(`/dashboard/verein/${vereinId}`);
       } else {
-        alert(t("saveError"));
+        toast(t("saveError"));
       }
     } catch (error) {
       console.error("Submit Error:", error);
+      toast(tCommon("networkError"));
     }
   };
 

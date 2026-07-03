@@ -1,1116 +1,344 @@
 "use client";
 
-import { useSearchParams, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-import { Link, useRouter } from "@/navigation";
+import { useRouter } from "@/navigation";
 import { useTranslations } from "next-intl";
 
-const EventMap = dynamic(() => import("@/components/EventMap"), { 
-  ssr: false,
-  loading: () => <div className="h-full w-full bg-blue-900/20 animate-pulse rounded-2xl" />
-});
-
-
-type Extra = { name: string; price: number };
-type Document = { id: string; name: string; url: string };
-type Account = { id: string; name: string; email: string; adresse?: string };
-type GebuehrInfo = {  limit: number | null;  spaet: number;  gender: string;  maxAge: number | null;  minAge: number | null;  normal: number;};
-
-type Event = {
-  id: string;
-  name: string;
-  datumVon: string;
-  datumBis: string;
-  land: string;
-  location: string;
-  vereinId: string;
-  alleKlassen: boolean;
-  bootsklassen: string[];
-  gebuehrNormal: number;
-  gebuehrSpaet: number;
-  extras: Extra[];
-  documents: Document[];
-  anmeldungVon: string;
-  anmeldungBis: string; 
-  anmeldungsZeitraum: {
-    von: string;
-    bis: string;
-  };
-  latitude?: number;
-  longitude?: number;
-  notizen?: string;
-  gebuehren_pro_klasse: Record<string, GebuehrInfo>;
-  segler?: Record<string, SeglerAnmeldung[]>; // ← WICHTIG
-};
-
-
-type Meldung = {
-  id: string;
-  skipperName: string;
-  skipperCountry: string;
-  sailCountry: string;
-  sailNumber: string | number;
-  bootName?: string;
-  bezahlt?: boolean;
-  bootsklasse?: string;
-  crew?: string; 
-};
-
-type Person = {
-  seglerId: string;
-  name: string;
-  countryCode: string;
-};
-
-type BootInfo = {
-  bootName?: string;
-  segelnummer: string | number;
-  countryCode: string;
-  bootsklasse?: string;
-};
-
-type SeglerAnmeldung = {
-  skipper: Person;
-  boot: BootInfo;
-  bezahlt?: boolean;
-  createdAt: string;
-};
-
-type ResultsData = Record<
-  string, 
-  Record<
-    string, 
-    Record<
-      string,
-      string[]
-    >
-  >
->;
-
-type Friend = {
-  id: string;
-  vorname?: string; 
-  nachname?: string; 
-  name?: string;     
-};
-
+import DetailsTab from "./components/DetailsTab";
+import ClassesTab from "./components/ClassesTab";
+import EntriesTab from "./components/EntriesTab";
+import ResultsTab from "./components/ResultsTab";
+import DocumentsTab from "./components/DocumentsTab";
+import InviteFriendsModal from "./components/InviteFriendsModal";
+import type { Account, Meldung, RegattaEvent, ResultsData, SeglerAnmeldung } from "./types";
 
 export default function RegattaDetailPage() {
-  const t = useTranslations("");
+  const t = useTranslations("regattaDetail");
+  const tCommon = useTranslations("Common");
   const router = useRouter();
 
   const params = useParams<{ id: string; locale: string }>();
   const id = params.id;
 
-  const searchParams = useSearchParams();
-
   const [seglerId, setSeglerId] = useState<string | null>(null);
 
+  // Eingeloggten Segler aus der Server-Session ermitteln (nicht aus localStorage,
+  // damit die Anzeige nie von einem veralteten lokalen Wert abhängt).
   useEffect(() => {
-  // Prüfe, unter welchem Namen du die ID speicherst (z.B. "seglerId", "userId" oder "user")
-  const storedId = localStorage.getItem("seglerId"); 
-  if (storedId) {
-    setSeglerId(storedId);
-  }
-}, []);
+    let cancelled = false;
+    fetch("/api/accounts/session")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((session) => {
+        if (!cancelled && session?.type === "segler" && session?.id) {
+          setSeglerId(String(session.id));
+        }
+      })
+      .catch(() => {
+        // Nicht eingeloggt/offline: Segler-Funktionen bleiben ausgeblendet
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [event, setEvent] = useState<Event | null>(null);
+  const [event, setEvent] = useState<RegattaEvent | null>(null);
   const [verein, setVerein] = useState<Account | null>(null);
   const [activeTab, setActiveTab] = useState("details");
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [meldungen, setMeldungen] = useState<Record<string, Meldung[]>>({});
   const [resultsData, setResultsData] = useState<ResultsData>({});
-  const [selectedDoc, setSelectedDoc] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [userFriends, setUserFriends] = useState<Friend[]>([]);
-  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
-  const [isSending, setIsSending] = useState(false);
-
-const sailCountryToFlag: Record<string, string> = {
-  ABD: "um", // ggf. wenn Sonderfälle im Backend auftauchen
-
-  // World Sailing Sail Codes → ISO 3166‑1 Alpha‑2
-  ALG: "dz",ASA: "as",AND: "ad",ANG: "ao",ANT: "ag",
-  ARG: "ar",ARM: "am",ARU: "aw",AUS: "au",AUT: "at",
-  AZE: "az",BAH: "bs",BRN: "bh",BAR: "bb",BLR: "by",
-  BEL: "be",BIZ: "bz",BER: "bm",BHR: "bh",VIN: "vc",
-  BOL: "bo",BOT: "bw",BRA: "br",BRB: "bb",BUL: "bg",
-  CAN: "ca",CAY: "ky",CHI: "cl",CHN: "cn",COL: "co",
-  COK: "ck",CRO: "hr",CUB: "cu",CYP: "cy",CZE: "cz",
-  DEN: "dk",DJI: "dj",DOM: "do",ECU: "ec",EGY: "eg",
-  ESA: "sv",EST: "ee",ESP : "es",FIJ: "fj",FIN: "fi",FRA: "fr",
-  GEO: "ge",GER: "de",GBR: "gb",GRE: "gr",GRN: "gd",
-  GUM: "gu",GUA: "gt",HKG: "hk",HUN: "hu",ISL: "is",
-  IND: "in",INA: "id",IRL: "ie",ISR: "il",ITA: "it",
-  JAM: "jm",JPN: "jp",KAZ: "kz",KEN: "ke",KOR: "kr",
-  PRK: "kp",KOS: "xk",KUW: "kw",KGZ: "kg",LAT: "lv",
-  LIB: "lb",LBA: "ly",LIE: "li",LTU: "lt",LUX: "lu",
-  MAD: "mg",MAS: "my",MLT: "mt",MRI: "mu",MEX: "mx",
-  MDA: "md",MON: "mc",MNE: "me",MOZ: "mz",MYA: "mm",
-  NAM: "na",NCA: "ni",NED: "nl",NGR: "ng",NOR: "no",
-  OMA: "om",PAN: "pa",PER: "pe",PHI: "ph",POL: "pl",
-  POR: "pt",QAT: "qa",RSA: "za",SRI: "lk",SKN: "kn",
-  SUD: "sd",SWE: "se",SUI: "ch",TAN: "tz",TAH: "pm",
-  TJK: "tj",TKA: "to",TUN: "tn",TUR: "tr",TCA: "tc",
-  UAE: "ae",UKR: "ua",URU: "uy",USA: "us",USV: "vi",
-  VEN: "ve",VIE: "vn",ZIM: "zw"
-};
-
-function getSortedResults(seglerList: SeglerAnmeldung[], eventResults: Record<string, string[]>) {
-  const numParticipants = seglerList.length;
-
-  const scoredSegler = seglerList.map(entry => {
-    const scoresRaw = eventResults[entry.skipper.seglerId] ?? [];
-    
-    // Umwandlung in numerische Werte für Berechnung & Tie-Break
-    const numericScores = scoresRaw.map(s => {
-      const n = parseFloat(s);
-      if (!isNaN(n)) return n;
-      // World Sailing: DNC = Teilnehmer + 1, Andere (DNF, DNS, etc.) = Starter + 1
-      // Vereinfacht für dieses System:
-      if (s === "DNC") return numParticipants + 1;
-      return numParticipants + 1; 
-    });
-
-    // Streichergebnis berechnen (ab 4 Rennen)
-    let discardIndex = -1;
-    if (numericScores.length >= 4) {
-      const maxVal = Math.max(...numericScores);
-      discardIndex = numericScores.indexOf(maxVal);
-    }
-
-    const totalPoints = numericScores.reduce((sum, val, idx) => 
-      idx === discardIndex ? sum : sum + val, 0
-    );
-
-    // Tie-Break: Ergebnisse in Wettfahrt-Reihenfolge (für den Vergleich der
-    // zuletzt gefahrenen Wettfahrt). NICHT sortieren, Reihenfolge bleibt erhalten.
-    return { entry, scoresRaw, totalPoints, discardIndex, raceScores: numericScores };
-  });
-
-  // Maximale Anzahl gefahrener Wettfahrten (für den Countback-Vergleich)
-  const maxRaces = Math.max(0, ...scoredSegler.map(s => s.raceScores.length));
-
-  // Sortierung: 1. Punkte (weniger ist besser), 2. Tie-Break: beste Platzierung
-  // in der zuletzt gefahrenen Wettfahrt (danach Countback rückwärts).
-  return scoredSegler.sort((a, b) => {
-    if (a.totalPoints !== b.totalPoints) {
-      return a.totalPoints - b.totalPoints;
-    }
-    for (let idx = maxRaces - 1; idx >= 0; idx--) {
-      const sa = a.raceScores[idx] ?? Infinity;
-      const sb = b.raceScores[idx] ?? Infinity;
-      if (sa !== sb) return sa - sb;
-    }
-    return 0;
-  });
-}
 
   useEffect(() => {
-  async function load() {
-    try {
-      const [eventsRes, registrationsRes] = await Promise.all([
-        fetch("/api/events"),
-        fetch(`/api/registrations?eventid=${id}`)
-      ]);
+    async function load() {
+      try {
+        const [eventsRes, registrationsRes] = await Promise.all([
+          fetch("/api/events"),
+          fetch(`/api/registrations?eventid=${id}`),
+        ]);
 
-      const events: Event[] = await eventsRes.json();
-      const allRegs = await registrationsRes.json();
-      const found = events.find(e => e.id === id);
-      
-      if (!found) return;
+        const events: RegattaEvent[] = await eventsRes.json();
+        const allRegs = await registrationsRes.json();
+        const found = events.find((e) => e.id === id);
 
-      // HIER DIE KORREKTUR: Zugriff auf verein_id (die Sie gefunden haben)
-      const vId = (found as any).verein_id;
+        if (!found) return;
 
-      if (vId) {
-  const vereinRes = await fetch(`/api/accounts?id=${vId}`);
-  if (vereinRes.ok) {
-    const vereinData = await vereinRes.json();
-    setVerein(vereinData.data || vereinData);
-  } else {
-    // Öffentlich (nicht eingeloggt): nur der Vereinsname aus der Events-API.
-    // Kontaktdaten (E-Mail/Adresse) sind bewusst login-geschützt.
-    setVerein({ name: (found as any).vereinName || "—" } as any);
-  }
-}
+        const vId = (found as any).verein_id;
 
-      // Gruppiere die Segler
-      const groupedSegler: Record<string, SeglerAnmeldung[]> = {};
-      if (Array.isArray(allRegs)) {
-        allRegs.forEach((reg: any) => {
-          const klasse = reg.klasse || "Unknown";
-          if (!groupedSegler[klasse]) groupedSegler[klasse] = [];
-          
-          groupedSegler[klasse].push({
-            skipper: typeof reg.skipper === 'string' ? JSON.parse(reg.skipper) : reg.skipper,
-            boot: typeof reg.boot === 'string' ? JSON.parse(reg.boot) : reg.boot,
-            bezahlt: !!reg.paidAt,
-            createdAt: reg.createdAt
+        if (vId) {
+          const vereinRes = await fetch(`/api/accounts?id=${vId}`);
+          if (vereinRes.ok) {
+            const vereinData = await vereinRes.json();
+            setVerein(vereinData.data || vereinData);
+          } else {
+            // Öffentlich (nicht eingeloggt): nur der Vereinsname aus der Events-API.
+            // Kontaktdaten (E-Mail/Adresse) sind bewusst login-geschützt.
+            setVerein({ name: (found as any).vereinName || "—" } as any);
+          }
+        }
+
+        // Gruppiere die Segler
+        const groupedSegler: Record<string, SeglerAnmeldung[]> = {};
+        if (Array.isArray(allRegs)) {
+          allRegs.forEach((reg: any) => {
+            const klasse = reg.klasse || "Unknown";
+            if (!groupedSegler[klasse]) groupedSegler[klasse] = [];
+
+            groupedSegler[klasse].push({
+              skipper: typeof reg.skipper === "string" ? JSON.parse(reg.skipper) : reg.skipper,
+              boot: typeof reg.boot === "string" ? JSON.parse(reg.boot) : reg.boot,
+              bezahlt: !!reg.paidAt,
+              createdAt: reg.createdAt,
+            });
           });
+        }
+
+        setEvent({
+          ...found,
+          vereinId: vId,
+          segler: groupedSegler,
+          notizen: found.notizen || "",
+          anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
+          anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
+          gebuehren_pro_klasse: found.gebuehren_pro_klasse || {},
         });
+
+        if (found.bootsklassen?.length > 0) {
+          setSelectedClass(found.bootsklassen[0]);
+        }
+      } catch (err) {
+        console.error("Fehler beim Laden:", err);
       }
-
-      // 3. Event-State setzen (mit korrekten Feldnamen)
-      setEvent({
-        ...found,
-        vereinId: vId, // Hier wird die ID für das Interface zugewiesen
-        segler: groupedSegler,
-        notizen: found.notizen || "",
-        anmeldungVon: found.anmeldungsZeitraum?.von || found.anmeldungVon,
-        anmeldungBis: found.anmeldungsZeitraum?.bis || found.anmeldungBis,
-        gebuehren_pro_klasse: found.gebuehren_pro_klasse || {},
-      });
-
-      if (found.bootsklassen?.length > 0) {
-        setSelectedClass(found.bootsklassen[0]);
-      }
-    } catch (err) {
-      console.error("Fehler beim Laden:", err);
     }
-  }
-  load();
-}, [id]);
+    load();
+  }, [id]);
 
-  useEffect(() => {
-  if (isInviteModalOpen && seglerId) {
-    fetch(`/api/segler/${seglerId}/friends`)
-  .then(res => {
-    if (!res.ok) {
-      console.error("Friends API Fehler:", res.status);
-      return [];
-    }
-    return res.json();
-  })
-  .then(data => setUserFriends(data))
-  .catch(err => console.error("Fehler beim Laden der Freunde", err));
-
-  }
-}, [isInviteModalOpen, seglerId]);
-
-const sendInvitations = async () => {
-  if (selectedFriends.length === 0) return;
-  setIsSending(true);
-
-  try {
-    const res = await fetch('/api/friends/invite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        senderId: seglerId,
-        friendIds: selectedFriends,
-        eventId: event?.id,
-        eventName: event?.name
-      })
-    });
-
-    if (res.ok) {
-      setIsInviteModalOpen(false);
-      setSelectedFriends([]);
-      // Optional: Freundesliste neu laden, falls Status sich ändern soll
-      // fetchFriends(); → diese Funktion musst du ggf. selbst implementieren
-    } else {
-    }
-  } catch (error) {
-    console.error(t("regattaDetail.inviteError"), error);
-  } finally {
-    setIsSending(false);
-  }
-};
-
-
-  function goToRegister(eventId: string, klasse: string) {
+  function goToRegister(klasse: string) {
     if (!seglerId) {
       router.push("/login");
       return;
     }
 
     router.push(
-      `/dashboard/segler/${seglerId}/registertoevent?eventId=${eventId}&klasse=${klasse}`
+      `/dashboard/segler/${seglerId}/registertoevent?eventId=${event!.id}&klasse=${klasse}`
     );
   }
 
+  // Meldungen laden, sobald der Tab aktiv ist
   useEffect(() => {
-  console.log("Event-Daten:", event);
-  console.log("Verein-Daten:", verein);
-}, [event, verein]);
+    if (activeTab !== "meldungen" || !event?.id) return;
 
-  useEffect(() => {
-  if (activeTab !== "meldungen" || !event?.id) return;
+    const currentClass: string = event.alleKlassen
+      ? "GLOBAL"
+      : (selectedClass || event.bootsklassen?.[0] || "Unknown");
 
-  // Fix für Fehler 1: Sicherstellen, dass currentClass immer ein string ist
-  const currentClass: string = event.alleKlassen 
-    ? "GLOBAL" 
-    : (selectedClass || event.bootsklassen?.[0] || "Unknown");
+    const eventId = event.id;
 
-  // Lokale Kopie der ID für Typsicherheit in async Funktionen
-  const eventId = event.id;
+    async function loadMeldungen() {
+      if (!currentClass || meldungen[currentClass]) return;
 
-  async function loadMeldungen() {
-    // Sicherheits-Check: Verhindert Zugriff auf undefined Keys
-    if (!currentClass || meldungen[currentClass]) return;
+      try {
+        const response = await fetch(`/api/registrations?eventid=${eventId}`);
+        const data = await response.json();
 
-    try {
-      // Nutze die lokale eventId Konstante
-      const response = await fetch(`/api/registrations?eventid=${eventId}`);
-      const data = await response.json();
+        const allRegistrations = Array.isArray(data) ? data : (data.registrations || []);
 
-      const allRegistrations = Array.isArray(data) ? data : (data.registrations || []);
+        const filteredList = allRegistrations.filter((reg: any) => {
+          if (currentClass === "GLOBAL" || event?.alleKlassen) return true;
+          return reg.klasse === currentClass;
+        });
 
-      const filteredList = allRegistrations.filter((reg: any) => {
-        if (currentClass === "GLOBAL" || event?.alleKlassen) return true;
-        return reg.klasse === currentClass;
-      });
+        const mapped = filteredList.map((entry: any) => {
+          const safeParse = (data: any) => {
+            if (!data) return [];
+            if (typeof data === "string") {
+              try { return JSON.parse(data); } catch { return []; }
+            }
+            return data;
+          };
 
-      const mapped = filteredList.map((entry: any) => {
-        const safeParse = (data: any) => {
-          if (!data) return [];
-          if (typeof data === 'string') {
-            try { return JSON.parse(data); } catch { return []; }
-          }
-          return data;
-        };
-      
-        const skipperData = safeParse(entry.skipper);
-        const bootData = safeParse(entry.boot);
-        
-        // Da deine Daten exakt so aussehen wie im JSON oben:
-        const rawCrew = entry.crew || skipperData.crew || [];
-        
-        // Wir mappen durch das Array und holen nur den "name"
-        const crewNames = Array.isArray(rawCrew) 
-          ? rawCrew.map((person: any) => person.name).filter(Boolean).join(", ")
-          : "";
-      
-        return {
-          id: entry.id,
-          skipperName: skipperData.name || "Unbekannt",
-          skipperCountry: skipperData.nation || "??",
-          sailCountry: bootData.countryCode || "??",
-          sailNumber: bootData.segelnummer || "0",
-          bootName: bootData.bootName || "",
-          // Hier ist jetzt die saubere Liste: "Pablo Sanz, Luis Navarro, Ana Castro"
-          crew: crewNames, 
-          bezahlt: !!entry.paidAt,
-          bootsklasse: entry.klasse || currentClass,
-        };
-      });
+          const skipperData = safeParse(entry.skipper);
+          const bootData = safeParse(entry.boot);
 
-      // Fix für Fehler 2: Computed Property Name sicherstellen
-      setMeldungen(prev => ({ 
-        ...prev, 
-        [currentClass]: mapped 
-      }));
-    } catch (err) {
-      console.error("Fehler beim Laden der Segler:", err);
-    }
-  }
+          const rawCrew = entry.crew || skipperData.crew || [];
 
-  loadMeldungen();
-  
-  // Nur setSelectedClass aufrufen, wenn sich der Wert tatsächlich ändert, 
-  // um unnötige Re-Renders zu vermeiden.
-  if (selectedClass !== currentClass) {
-    setSelectedClass(currentClass);
-  }
+          // Nur die Namen der Crew-Mitglieder: "Pablo Sanz, Luis Navarro"
+          const crewNames = Array.isArray(rawCrew)
+            ? rawCrew.map((person: any) => person.name).filter(Boolean).join(", ")
+            : "";
 
-}, [activeTab, event, selectedClass, event?.id]);
+          return {
+            id: entry.id,
+            skipperName: skipperData.name || "Unbekannt",
+            skipperCountry: skipperData.nation || "??",
+            sailCountry: bootData.countryCode || "??",
+            sailNumber: bootData.segelnummer || "0",
+            bootName: bootData.bootName || "",
+            crew: crewNames,
+            bezahlt: !!entry.paidAt,
+            bootsklasse: entry.klasse || currentClass,
+          };
+        });
 
-useEffect(() => {
-  // Wir laden die Ergebnisse, sobald der Tab aktiv ist
-  if (activeTab !== "ergebnisse" || !event) return;
-
-  async function loadResults() {
-    // Wenn keine Klasse gewählt ist, nimm die erste verfügbare
-    const klasseToLoad = selectedClass || event?.bootsklassen[0];
-    if (!klasseToLoad) return;
-
-    try {
-      if (!event) return;
-      const res = await fetch(`/api/events/results?eventId=${event.id}&klasse=${encodeURIComponent(klasseToLoad)}`);
-      const data = await res.json();
-
-      if (data.success && data.results) {
-        setResultsData(prev => ({
+        setMeldungen((prev) => ({
           ...prev,
-          [event.id]: {
-            ...(prev[event.id] ?? {}),
-            [klasseToLoad]: data.results
-          }
+          [currentClass]: mapped,
         }));
+      } catch (err) {
+        console.error("Fehler beim Laden der Segler:", err);
       }
-    } catch (err) {
-      console.error("Fehler beim Laden der Ergebnisse:", err);
     }
-  }
 
-  loadResults();
-}, [activeTab, event, selectedClass]);
+    loadMeldungen();
+
+    // Nur setSelectedClass aufrufen, wenn sich der Wert tatsächlich ändert,
+    // um unnötige Re-Renders zu vermeiden.
+    if (selectedClass !== currentClass) {
+      setSelectedClass(currentClass);
+    }
+  }, [activeTab, event, selectedClass, event?.id]);
+
+  // Ergebnisse laden, sobald der Tab aktiv ist
+  useEffect(() => {
+    if (activeTab !== "ergebnisse" || !event) return;
+
+    async function loadResults() {
+      const klasseToLoad = selectedClass || event?.bootsklassen[0];
+      if (!klasseToLoad) return;
+
+      try {
+        if (!event) return;
+        const res = await fetch(`/api/events/results?eventId=${event.id}&klasse=${encodeURIComponent(klasseToLoad)}`);
+        const data = await res.json();
+
+        if (data.success && data.results) {
+          setResultsData((prev) => ({
+            ...prev,
+            [event.id]: {
+              ...(prev[event.id] ?? {}),
+              [klasseToLoad]: data.results,
+            },
+          }));
+        }
+      } catch (err) {
+        console.error("Fehler beim Laden der Ergebnisse:", err);
+      }
+    }
+
+    loadResults();
+  }, [activeTab, event, selectedClass]);
 
   if (!event) {
-    return <div className="min-h-screen flex items-center justify-center text-white">{t("regattaDetail.loading")}</div>;
+    return <div className="min-h-screen flex items-center justify-center text-white">{t("loading")}</div>;
   }
 
-return (
-  <main className="min-h-screen px-6 py-12 rounded-3xl bg-blue-950/50 backdrop-blur-md">
-    <div className="max-w-7xl mx-auto space-y-10">
-  
-      {/* HEADER */}
-      <section className="bg-blue-900/50 p-10 rounded-3xl border border-white/10 flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-bold text-white">{event!.name}</h1>
-          <p className="text-white/80 mt-2">
-            {event!.datumVon} – {event!.datumBis} · {event!.location}
-          </p>
-          <p className="text-white/60 mt-1">
-            {t("regattaDetail.details.organizer")}: {verein?.name || t("regattaDetail.fallback")}
-          </p>
-        </div>
-      
-        {/* Dashboard / Back Buttons */}
-        <div className="flex gap-3">
-          {seglerId ? (
-            <>
-              <button
-                onClick={() => setIsInviteModalOpen(true)}
-                className="bg-indigo-600/80 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl transition flex items-center gap-2 border border-indigo-500/30"
-              >
-                <span>👋</span> {t("regattaDetail.inviteFriends")}
-              </button>
+  return (
+    <main className="min-h-screen px-6 py-12 rounded-3xl bg-blue-950/50 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto space-y-10">
+
+        {/* HEADER */}
+        <section className="bg-blue-900/50 p-10 rounded-3xl border border-white/10 flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold text-white">{event.name}</h1>
+            <p className="text-white/80 mt-2">
+              {event.datumVon} – {event.datumBis} · {event.location}
+            </p>
+            <p className="text-white/60 mt-1">
+              {t("details.organizer")}: {verein?.name || t("fallback")}
+            </p>
+          </div>
+
+          {/* Dashboard / Back Buttons */}
+          <div className="flex gap-3">
+            {seglerId ? (
+              <>
+                <button
+                  onClick={() => setIsInviteModalOpen(true)}
+                  className="bg-indigo-600/80 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl transition flex items-center gap-2 border border-indigo-500/30"
+                >
+                  <span>👋</span> {t("inviteFriends")}
+                </button>
+                <button
+                  onClick={() => router.back()}
+                  className="bg-blue-600/50 text-white px-4 py-2 rounded hover:bg-blue-800/90 transition font-medium"
+                >
+                  {tCommon("back")}
+                </button>
+              </>
+            ) : (
               <button
                 onClick={() => router.back()}
-                className="bg-blue-600/50 text-white px-4 py-2 rounded hover:bg-blue-800/90 transition font-medium"
+                className="bg-slate-700/50 text-white px-6 py-2 rounded-xl hover:bg-slate-600 transition font-medium border border-white/10"
               >
-                {t("Common.back")}
+                ← {tCommon("back")}
               </button>
-            </>
-          ) : (
-            <button
-              onClick={() => router.back()}
-              className="bg-slate-700/50 text-white px-6 py-2 rounded-xl hover:bg-slate-600 transition font-medium border border-white/10"
-            >
-              ← {t("Common.back")}
-            </button>
-          )}
-        </div>
-        {isInviteModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-slate-900 border border-white/10 w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">
-                    {t("regattaDetail.inviteTitle.part1")} <span className="text-indigo-500">{t("regattaDetail.inviteTitle.part2")}</span>
-                  </h2>
-                  <p className="text-xs text-slate-400 uppercase font-bold tracking-widest mt-1">
-                    {t("regattaDetail.selectFriends", { event: event?.name })}
-                  </p>
-                </div>
-                <button onClick={() => setIsInviteModalOpen(false)} className="text-white/40 hover:text-white">✕</button>
-              </div>
-        
-              <div className="max-h-64 overflow-y-auto space-y-2 pr-2 mb-8 custom-scrollbar">
-                {userFriends.length > 0 ? (
-                  userFriends
-                    .filter((friend, index, self) => 
-                      index === self.findIndex((f) => f.id === friend.id)
-                    )
-                    .map(friend => {
-                      // Wir bauen den Namen hier zusammen
-                      const displayName = friend.vorname || friend.nachname 
-                        ? `${friend.vorname ?? ""} ${friend.nachname ?? ""}`.trim() 
-                        : (friend.name || t("regattaDetail.unknown"));
-                
-                      // Wir holen die Initialen (z.B. "MA" für Max Mustermann)
-                      const initials = friend.vorname 
-                        ? (friend.vorname[0] + (friend.nachname?.[0] || "")).toUpperCase()
-                        : displayName.substring(0, 2).toUpperCase();
-                
-                      return (
-                        <div 
-                          key={friend.id}
-                          onClick={() => {
-                            setSelectedFriends(prev => 
-                              prev.includes(friend.id) ? prev.filter(id => id !== friend.id) : [...prev, friend.id]
-                            )
-                          }}
-                          className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition border ${
-                            selectedFriends.includes(friend.id) 
-                            ? "bg-indigo-600/20 border-indigo-500 text-white" 
-                            : "bg-white/5 border-transparent text-slate-400 hover:bg-white/10"
-                          }`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-black italic border border-white/10 text-xs">
-                            {initials}
-                          </div>
-                          <span className="font-bold uppercase italic text-sm">
-                            {displayName}
-                          </span>
-                          {selectedFriends.includes(friend.id) && <span className="ml-auto text-indigo-400 font-bold">✓</span>}
-                        </div>
-                      );
-                    })
-                ) : (
-                  <p className="text-center text-slate-500 py-10 text-xs font-bold uppercase italic">{t("regattaDetail.noFriends")}</p>
-                )}
-              </div>
-        
-              <button
-                onClick={sendInvitations}
-                disabled={selectedFriends.length === 0 || isSending}
-                className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50 w-full"
-              >
-                {isSending ? t("regattaDetail.sending") : t("regattaDetail.sendInvite")}
-              </button>
-
-            </div>
+            )}
           </div>
-        )}
+
+          {isInviteModalOpen && seglerId && (
+            <InviteFriendsModal
+              seglerId={seglerId}
+              eventId={event.id}
+              eventName={event.name}
+              onClose={() => setIsInviteModalOpen(false)}
+            />
+          )}
         </section>
 
-      {/* TABS */}
-      <div className="flex gap-4 border-b border-white/20">
-        {["details", "bootsklassen", "meldungen", "ergebnisse", "dokumente"].map(tab => (
-          <button
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab);
-              setSelectedClass(event!.bootsklassen[0]);
-            }}
-            className={`px-6 py-2 rounded-t-xl font-semibold ${
-              activeTab === tab
-                ? "bg-blue-700 text-white"
-                : "bg-blue-900/40 text-white/60"
-            }`}
-          >
-            {t(`regattaDetail.tabs.${tab}`)}
-          </button>
-        ))}
-      </div>
-      {/* CONTENT */}
-      <section className="bg-blue-900/50 rounded-3xl p-8 border border-white/10 text-white">
-
-        {/* DETAILS */}
-{activeTab === "details" && (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 bg-blue-800/20 p-6 rounded-2xl border border-white/5">
-      
-      {/* Linke Spalte */}
-      <div className="space-y-4">
-        <p className="flex gap-1.5 items-baseline">
-          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("regattaDetail.details.eventPeriod")}:
-          </span> 
-          <span className="font-semibold text-white">
-            {event?.datumVon ? new Date(event.datumVon).toLocaleDateString("de-DE") : "—"} 
-            {" – "}
-            {event?.datumBis ? new Date(event.datumBis).toLocaleDateString("de-DE") : "—"}
-          </span>
-        </p>
-
-        <p className="flex gap-1.5 items-baseline">
-          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("regattaDetail.details.registrationPeriod")}:
-          </span> 
-          <span className="font-semibold text-white">
-            {event?.anmeldungVon ? new Date(event.anmeldungVon).toLocaleDateString("de-DE") : "—"} 
-            {" – "}
-            {event?.anmeldungBis ? new Date(event.anmeldungBis).toLocaleDateString("de-DE") : "—"}
-          </span>
-        </p>
-
-        <p className="flex gap-1.5 items-baseline">
-          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("regattaDetail.details.organizer")}:
-          </span> 
-          <span className="font-semibold text-white">{verein?.name || "—"}</span>
-        </p>
-      </div>
-
-      {/* Rechte Spalte */}
-      <div className="space-y-4">
-        <p className="flex gap-1.5 items-baseline">
-          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("regattaDetail.details.email")}:
-          </span> 
-          <span className="font-semibold text-blue-400">{verein?.email || "—"}</span>
-        </p>
-        <p className="flex gap-1.5 items-baseline">
-          <span className="text-white/40 text-sm uppercase font-bold tracking-wider whitespace-nowrap">
-            {t("regattaDetail.details.address")}:
-          </span> 
-          <span className="font-semibold text-white">{verein?.adresse || event!.location}</span>
-        </p>
-      </div>
-    </div>
-
-    {/* NEU: NOTIZEN / BESCHREIBUNG */}
-    {event?.notizen && (
-      <div className="bg-white/5 p-6 rounded-2xl border border-white/5 space-y-3">
-        <h3 className="text-white/40 text-sm uppercase font-bold tracking-wider flex items-center gap-2">
-          <span>📝</span> {t("regattaDetail.details.notes")}
-        </h3>
-        <div className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-          {event.notizen}
+        {/* TABS */}
+        <div className="flex gap-4 border-b border-white/20">
+          {["details", "bootsklassen", "meldungen", "ergebnisse", "dokumente"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => {
+                setActiveTab(tab);
+                setSelectedClass(event.bootsklassen[0]);
+              }}
+              className={`px-6 py-2 rounded-t-xl font-semibold ${
+                activeTab === tab
+                  ? "bg-blue-700 text-white"
+                  : "bg-blue-900/40 text-white/60"
+              }`}
+            >
+              {t(`tabs.${tab}`)}
+            </button>
+          ))}
         </div>
+
+        {/* CONTENT */}
+        <section className="bg-blue-900/50 rounded-3xl p-8 border border-white/10 text-white">
+          {activeTab === "details" && (
+            <DetailsTab event={event} verein={verein} hideMap={isInviteModalOpen} />
+          )}
+
+          {activeTab === "bootsklassen" && (
+            <ClassesTab event={event} onRegister={goToRegister} />
+          )}
+
+          {activeTab === "meldungen" && (
+            <EntriesTab
+              event={event}
+              meldungen={meldungen}
+              selectedClass={selectedClass}
+              onSelectClass={setSelectedClass}
+            />
+          )}
+
+          {activeTab === "ergebnisse" && (
+            <ResultsTab
+              event={event}
+              resultsData={resultsData}
+              selectedClass={selectedClass}
+              onSelectClass={setSelectedClass}
+            />
+          )}
+
+          {activeTab === "dokumente" && (
+            <DocumentsTab documents={event.documents} />
+          )}
+        </section>
       </div>
-    )}
-
-    {/* MAP Bereich ... */}
-    {isInviteModalOpen !== true && Number.isFinite(event!.latitude) && Number.isFinite(event!.longitude) ? (
-      <div className="h-80 w-full rounded-2xl overflow-hidden border border-white/10">
-        <EventMap
-          lat={event!.latitude!}
-          lng={event!.longitude!}
-          title={event!.name}
-        />
-      </div>
-    ) : (
-      <div className="h-80 flex items-center justify-center rounded-2xl border border-white/10 text-white/60">
-        {t("regattaDetail.details.noCoordinates")}
-      </div>
-    )}
-  </div>
-)}
-
-        {/* BOOTSKLASSEN */}
-        {activeTab === "bootsklassen" && (
-  <div className="space-y-4">
-    {event?.alleKlassen ? (
-      <div className="flex justify-between bg-blue-800/40 p-6 rounded-2xl border border-white/5 items-center">
-        <span>{t("regattaDetail.classes.openForAll")}</span>
-        <button 
-          onClick={() => goToRegister(event.id, "GLOBAL")} 
-          className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-medium transition shadow-lg"
-        >
-          {t("regattaDetail.classes.registerNow")}
-        </button>
-      </div>
-    ) : event?.gebuehren_pro_klasse ? (
-      Object.entries(event.gebuehren_pro_klasse).map(([className, config], index) => {
-        const data = config as any; 
-
-        // Datum Logik: Prüfe auf spezifischen Zeitraum der Klasse, sonst Regatta-Zeitraum
-        const datumVon = data.datumVon || event.datumVon;
-        const datumBis = data.datumBis || event.datumBis;
-        
-        const displayDate = `${new Date(datumVon).toLocaleDateString("de-DE")} – ${new Date(datumBis).toLocaleDateString("de-DE")}`;
-        // Aktuelles Datum für den Vergleich (auf 00:00:00 gesetzt für korrekte Tages-Vergleiche)
-const now = new Date();
-now.setHours(0, 0, 0, 0);
-
-// Anmeldezeitraum vom Event (oder spezifisch aus den Klassendaten, falls vorhanden)
-const anmeldungVon = new Date(event.anmeldungsZeitraum.von);
-const anmeldungBis = new Date(event.anmeldungsZeitraum.bis);
-
-// Prüfung: Ist das aktuelle Datum im erlaubten Bereich?
-const isRegistrationOpen = now >= anmeldungVon && now <= anmeldungBis;
-
-        return (
-    <div
-      key={`${className}-${index}`} // <--- HIER ist die wichtige Änderung!
-      className="bg-blue-800/40 p-5 rounded-2xl border border-blue-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4"
-    >
-            <div className="flex flex-col gap-2">
-              <span className="font-bold text-xl text-white tracking-tight">{className}</span>
-              
-              <div className="flex flex-wrap gap-2 text-sm text-gray-300">
-                {/* Zeitraum Anzeige */}
-                <span className="bg-blue-950/50 px-3 py-1 rounded-full border border-blue-800 flex items-center gap-2">
-                  📅 <span className="text-white font-semibold">{displayDate}</span>
-                </span>
-                
-                {data.gender && (
-                  <span className="bg-indigo-900/30 px-3 py-1 rounded-full text-indigo-200 border border-indigo-800/50">
-                    {data.gender}
-                  </span>
-                )}
-                {(data.minAge || data.maxAge) && (
-                  <span className="bg-emerald-900/30 px-3 py-1 rounded-full text-emerald-200 border border-emerald-800/50">
-                    Alter: {data.minAge ?? '0'} - {data.maxAge ?? '∞'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {isRegistrationOpen ? (
-  <button
-    onClick={() => goToRegister(event.id, className)}
-    className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg flex-shrink-0"
-  >
-    {t("regattaDetail.classes.register")}
-  </button>
-) : (
-  <span className="text-gray-500 text-sm italic px-4">
-    {now > anmeldungBis 
-      ? t("regattaDetail.classes.registrationClosed") 
-      : t("regattaDetail.classes.registrationNotYetOpen")}
-  </span>
-)}
-          </div>
-        );
-      })
-    ) : (
-      <p className="text-center text-gray-400 p-8">
-        {t("regattaDetail.classes.noClassesAvailable")}
-      </p>
-    )}
-  </div>
-)}
-
-        {/* MELDUNGEN */}
-        {activeTab === "meldungen" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        
-            {/* Klassenliste */}
-            <ul className="space-y-2 border-r border-white/10 pr-4">
-              {event!.bootsklassen.map((cls, index) => (
-  <li 
-    key={`${cls}-${index}`} 
-    onClick={() => setSelectedClass(cls)} 
-    className={`cursor-pointer p-2 rounded transition ${
-      selectedClass === cls || (!selectedClass && index === 0)
-        ? "bg-blue-700"
-        : "hover:bg-blue-800/40"
-    }`}
-  >
-    {cls}
-  </li>
-))}
-            </ul>
-        
-    {/* Seglerliste */}
-    <div className="md:col-span-3 bg-blue-800/40 p-6 rounded-xl space-y-4">
-
-      {/* HEADER mit Anzahl Segler */}
-      <div className="flex justify-between items-center border-b border-white/20 pb-3">
-        <h3 className="text-xl font-semibold">
-          {t("regattaDetail.entries.header", {
-            klasse: selectedClass ?? event!.bootsklassen[0]
-          })}
-        </h3>
-        <span className="text-white/70">
-          {t('regattaDetail.entries.sailors', { count: meldungen[selectedClass ?? event!.bootsklassen[0]]?.length ?? 0 })}
-        </span>
-      </div>
-
-      {/* LISTE */}
-      {(() => {
-        const activeClass = selectedClass ?? event!.bootsklassen[0];
-        const list = meldungen[activeClass] ?? [];
-
-        if (!list.length) {
-          return <p className="text-white/60">{t("regattaDetail.entries.none")}</p>;
-        }
-
-        return (
-          <ul className="space-y-2">
-            {list.map(m => {
-              const isOpen = openId === m.id;
-
-              return (
-                <li key={m.id} className="border border-white/10 rounded-xl overflow-hidden">
-
-                  {/* COLLAPSED BUTTON */}
-                  <button
-                    onClick={() => setOpenId(isOpen ? null : m.id)}
-                    className="w-full flex justify-between items-center px-4 py-3 hover:bg-blue-700/40 transition"
-                  >
-                    <div className="flex items-center gap-3 text-left">
-                      {/* FLAGGE */}
-                      <img
-                        src={`https://flagcdn.com/w20/${
-                          m.sailCountry ? sailCountryToFlag[m.sailCountry]?.toLowerCase() || "un" : "un"
-                        }.png`}
-                        alt={m.sailCountry || "un"}
-                        className="h-4 w-6 rounded-sm"
-                      />
-
-                      {/* TEXT */}
-                      <div>
-                        <div className="font-semibold">
-                          {m.sailCountry} {m.sailNumber}
-                          {m.bootName && ` – ${m.bootName}`}
-                        </div>
-                        <div className="text-sm text-white/70">{m.skipperName}</div>
-                      </div>
-                    </div>
-
-                    <span className="text-white/60">{isOpen ? "▲" : "▼"}</span>
-                  </button>
-
-                  {/* EXPANDED (Meldungen-Tab) */}
-                  {isOpen && (
-                    <div className="p-5 bg-blue-950/60 border-t border-white/10">
-                      {/* Detail-Gitter analog zu den Ergebnissen */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-sm text-white/80">
-                        
-                        {/* Suche diese Stelle in deinem Accordion-Content */}
-                        <div className="space-y-1">
-                          <p className="text-white/40 text-[10px] uppercase font-bold mb-1 tracking-widest">
-                            {t("regattaDetail.entries.people")}
-                          </p>
-                          <p><strong>{t("regattaDetail.entries.skipper")}</strong> : {m.skipperName}</p>
-                          
-                          {/* Crew-Anzeige: Nur anzeigen, wenn auch eine Crew vorhanden ist */}
-                          <p>
-                            <strong>{t("regattaDetail.entries.crew")}</strong> : {m.crew && m.crew !== "" ? m.crew : "Einhand"}
-                          </p>
-                        </div>
-                  
-                        {/* Rechte Spalte: Boot & Status */}
-                        <div className="space-y-1">
-                          <p className="text-white/40 text-[10px] uppercase font-bold mb-1 tracking-widest">{t("regattaDetail.entries.boatStatus")}</p>
-                          <p><strong>{t("regattaDetail.entries.nation")}</strong> : {m.sailCountry || "—"}</p>
-                          <p><strong>{t("regattaDetail.entries.sailNumber")}</strong> : {m.sailCountry} {m.sailNumber}</p>
-                          {m.bootName && <p><strong>{t("regattaDetail.entries.boat")}</strong> : {m.bootName}</p>}
-                          
-                          {/* Bootsklasse nur bei GLOBAL oder alleKlassen anzeigen */}
-                          {(selectedClass === "GLOBAL" || event.alleKlassen) && m.bootsklasse && (
-                            <p><strong>{t("regattaDetail.entries.class")}</strong> : {m.bootsklasse}</p>
-                          )}
-                          
-                          <p className="mt-2 flex items-center gap-2">
-                            <strong>{t("regattaDetail.entries.status")}</strong> :
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              m.bezahlt ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                            }`}>
-                              {m.bezahlt ? t("regattaDetail.entries.paid") : t("regattaDetail.entries.paymentOpen")}
-                            </span>
-                          </p>
-                        </div>
-                  
-                      </div>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        );
-      })()}
-
-    </div>
-
-  </div>
-)}
-
-
-        {activeTab === "ergebnisse" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Klassenliste links */}
-            <ul className="space-y-2 border-r border-white/10 pr-4">
-              {(event?.alleKlassen ? ["GLOBAL", ...event.bootsklassen] : event!.bootsklassen).map((cls) => (
-                <li
-                  key={cls}
-                  onClick={() => setSelectedClass(cls)}
-                  className={`cursor-pointer p-2 rounded transition ${
-                    (selectedClass === cls || (!selectedClass && event!.bootsklassen[0] === cls))
-                      ? "bg-blue-700 text-white" : "hover:bg-blue-800/40 text-white/60"
-                  }`}
-                >
-                  {cls}
-                </li>
-              ))}
-            </ul>
-        
-            {/* Ergebnisliste rechts */}
-            <div className="md:col-span-3 bg-blue-800/40 p-6 rounded-xl space-y-4 text-white">
-              {(() => {
-                const activeClass = selectedClass || event!.bootsklassen[0];
-                const isGlobal = activeClass === "GLOBAL" || event?.alleKlassen;
-                
-                // Segler-Liste bestimmen
-                const seglerList = isGlobal
-                  ? Object.values(event?.segler ?? {}).flat()
-                  : event?.segler?.[activeClass] ?? [];
-        
-                const eventResults = resultsData[event!.id]?.[activeClass] || {};
-        
-                if (seglerList.length === 0) {
-                  return <p className="text-white/60 text-center py-10">{t("regattaDetail.results.none")}</p>;
-                }
-        
-                // Berechnung & Sortierung
-                const scoredSegler = seglerList.map(s => {
-                  const sId = s.skipper.seglerId;
-                  const scoresRaw = eventResults[sId] || [];
-                  
-                  const numericScores = scoresRaw.map(val => {
-                    const n = parseFloat(val);
-                    return !isNaN(n) ? n : (seglerList.length + 1);
-                  });
-        
-                  let discardIdx = -1;
-                  if (numericScores.length >= 4) {
-                    discardIdx = numericScores.indexOf(Math.max(...numericScores));
-                  }
-        
-                  const total = numericScores.reduce((sum, val, i) => i === discardIdx ? sum : sum + val, 0);
-                  return { s, scoresRaw, total, discardIdx };
-                }).sort((a, b) => a.total - b.total);
-        
-                return (
-                  <ul className="space-y-3">
-                    {scoredSegler.map(({ s, scoresRaw, total, discardIdx }, idx) => {
-                      const isOpen = openId === s.skipper.seglerId;
-                      const place = idx + 1;
-                      
-                      // Medaillen-Logik
-                      const medal = place === 1 ? "🥇" : place === 2 ? "🥈" : place === 3 ? "🥉" : null;
-        
-                      return (
-                        <li key={s.skipper.seglerId} className="border border-white/10 rounded-xl bg-blue-900/20 overflow-hidden">
-                          <button
-                            onClick={() => setOpenId(isOpen ? null : s.skipper.seglerId)}
-                            className="w-full flex justify-between items-center px-4 py-4 hover:bg-white/5 transition"
-                          >
-                            <div className="flex items-center gap-4 text-left">
-                              {/* Platzierung oder Medaille */}
-                              <span className="font-bold w-8 text-center text-lg">
-                                {medal || `${place}.`}
-                              </span>
-                              {/* Flagge wie bei Meldungen */}
-                              <img
-                                src={`https://flagcdn.com/w20/${
-                                  s.boot.countryCode ? sailCountryToFlag[s.boot.countryCode]?.toLowerCase() || "un" : "un"
-                                }.png`}
-                                alt={s.boot.countryCode || "un"}
-                                className="h-4 w-6 rounded-sm shadow-sm"
-                              />
-                              <div>
-                                <div className="font-semibold text-white leading-tight">{s.skipper.name}</div>
-                                <div className="text-xs text-white/50">
-                                  {s.boot.countryCode} {s.boot.segelnummer} {s.boot.bootName && `| ${s.boot.bootName}`}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <div className="text-sm font-bold text-blue-300 font-mono">
-                                  {scoresRaw.length > 0
-                                    ? t('regattaDetail.results.points', { points: total })
-                                    : "—"}
-                                </div>
-                              </div>
-                              <span className="text-white/30 text-xs">{isOpen ? "▲" : "▼"}</span>
-                            </div>
-                          </button>
-        
-                          {isOpen && (
-                            <div className="p-5 bg-blue-950/60 border-t border-white/10">
-                              {/* Detail-Gitter */}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-8 text-sm text-white/80 mb-6">
-                                <p><strong>{t("regattaDetail.results.skipper")}:</strong> {s.skipper.name}</p>
-                                <p><strong>{t("regattaDetail.results.nation")}:</strong> {s.boot.countryCode || "—"}</p>
-                                <p><strong>{t("regattaDetail.results.sailNumber")}:</strong> {s.boot.countryCode} {s.boot.segelnummer}</p>
-                                {s.boot.bootName && <p><strong>{t("regattaDetail.results.boat")}:</strong> {s.boot.bootName}</p>}
-                                {isGlobal && <p><strong>{t("regattaDetail.results.class")}:</strong> {s.boot.bootsklasse || activeClass}</p>}
-                              </div>
-        
-                              {/* Renn-Einzelergebnisse */}
-                              <div className="space-y-2">
-                                <p className="text-[10px] uppercase font-bold text-white/40 tracking-widest">{t("regattaDetail.results.races")}</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {scoresRaw.map((sc, i) => (
-                                    <div key={i} className="flex flex-col items-center">
-                                      <div className={`w-10 h-10 flex items-center justify-center rounded-lg border text-sm font-bold
-                                        ${i === discardIdx 
-                                          ? "border-red-500/40 bg-red-500/10 text-red-400 line-through" 
-                                          : "border-white/10 bg-white/5 text-white"}`}>
-                                        {sc}
-                                      </div>
-                                      <span className="text-[9px] mt-1 opacity-30">R{i+1}</span>
-                                    </div>
-                                  ))}
-                                  {scoresRaw.length === 0 && (
-                                    <span className="text-white/30 italic text-xs">{t("regattaDetail.results.noResults")}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                );
-              })()}
-            </div>
-          </div>
-        )}
-
-        {/* DOKUMENTE */}
-        {activeTab === "dokumente" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* Linke Seite: Liste der Dokumente */}
-            <div className="space-y-3">
-              <h3 className="text-white/40 text-[10px] uppercase font-bold tracking-widest mb-4">
-                {t("regattaDetail.documents.available")}
-              </h3>
-              {event!.documents.length === 0 && (
-                <p className="text-white/40 italic text-sm">{t("regattaDetail.documents.none")}</p>
-              )}
-              <ul className="space-y-2">
-                {event!.documents.map(doc => (
-                  <li key={doc.id}>
-                    <button
-                      onClick={() => setSelectedDoc(doc.url)} // Wir brauchen einen neuen State: const [selectedDoc, setSelectedDoc] = useState<string | null>(null);
-                      className={`w-full flex items-center gap-3 p-4 rounded-xl border transition text-left ${
-                        selectedDoc === doc.url 
-                        ? "bg-blue-700 border-blue-500 text-white" 
-                        : "bg-blue-900/20 border-white/10 text-white/70 hover:bg-blue-800/40"
-                      }`}
-                    >
-                      <span className="text-2xl">
-                        {doc.name.toLowerCase().includes("pdf") ? "📄" : "📝"}
-                      </span>
-                      <div className="flex-1 overflow-hidden">
-                        <div className="font-semibold truncate">{doc.name}</div>
-                        <div className="text-[10px] opacity-50 uppercase">{t("regattaDetail.documents.viewDownload")}</div>
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-        
-            {/* Rechte Seite: Dokumenten-Viewer */}
-            <div className="lg:col-span-2">
-              <div className="bg-blue-950/40 border border-white/10 rounded-2xl overflow-hidden h-[600px] flex flex-col">
-                {selectedDoc ? (
-                  <>
-                    <div className="p-3 bg-white/5 border-b border-white/10 flex justify-between items-center">
-                      <span className="text-xs text-white/50 truncate pr-4">{selectedDoc}</span>
-                      <a 
-                        href={selectedDoc} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-md transition"
-                      >
-                        {t("regattaDetail.documents.openExternal")}
-                      </a>
-                    </div>
-                    <iframe
-                      src={selectedDoc}
-                      className="w-full h-full bg-white"
-                      title={t("regattaDetail.documents.previewTitle")}
-                    />
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-white/30 space-y-4">
-                    <span className="text-5xl opacity-20">🔎</span>
-                    <p className="text-sm">{t("regattaDetail.documents.selectToPreview")}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
-    </div>
-  </main>
-)
-};
+    </main>
+  );
+}

@@ -41,7 +41,6 @@ export async function DELETE(request: Request) {
       WHERE id = ${id}
     `;
 
-    console.log(`[DB] Registration ${id} gelöscht.`);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

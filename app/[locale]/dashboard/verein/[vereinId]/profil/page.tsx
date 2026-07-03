@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { useTranslations } from 'next-intl';
+import { useToast } from "@/components/ToastProvider";
 
 type Verein = {
   id: string;
@@ -33,6 +34,7 @@ interface InputGroupProps {
 export default function VereinsProfilPage() {
   // Namespace auf ProfileSettings geändert
   const t = useTranslations('ProfileSettings');
+  const toast = useToast();
   const { vereinId } = useParams<{ vereinId: string }>();
   const router = useRouter();
 
@@ -90,7 +92,7 @@ export default function VereinsProfilPage() {
 
   async function saveProfile() {
     if (!verein || !currentPassword) {
-      alert(t('confirmPasswordAlert'));
+      toast(t('confirmPasswordAlert'));
       return;
     }
     setSaving(true);
@@ -170,7 +172,6 @@ async function handleOpenStripeDashboard() {
     } else if (res.status === 403 && data.error === "ONBOARDING_INCOMPLETE") {
       // Fall 2: Onboarding fehlt -> Wir leiten zum Onboarding weiter
       // Wir nutzen hierfür einfach deine bereits existierende handleStripeConnect Funktion
-      console.log("Onboarding unvollständig, generiere neuen Link für ID:", stripeId);
       await handleStripeConnect(); 
     } else {
       throw new Error(data.error || "Dashboard konnte nicht geöffnet werden");

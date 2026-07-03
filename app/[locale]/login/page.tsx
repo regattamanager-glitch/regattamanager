@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "@/navigation";
 import { useTranslations } from "next-intl";
+import { useToast } from "@/components/ToastProvider";
 
 // Definition der möglichen Ansichten
 type LoginStep = "login" | "code" | "forgot";
 
 export default function LoginPage() {
   const t = useTranslations("Auth");
+  const tCommon = useTranslations("Common");
+  const toast = useToast();
   const router = useRouter();
 
   // Formular-States
@@ -46,10 +49,11 @@ async function handleLogin(e: React.FormEvent) {
   }
 } else {
   // Hier landen nur noch echte Fehler wie 401 oder 500
-  alert(data.message || "Login fehlgeschlagen");
+  toast(data.message || t("errorLoginFailed"));
 }
   } catch (error) {
     console.error("Login error:", error);
+    toast(tCommon("networkError"));
   } finally {
     setLoading(false);
   }
@@ -80,26 +84,22 @@ async function handleLogin(e: React.FormEvent) {
 
         // 2. Normaler Login-Flow für freigeschaltete Accounts
         if (data.type === "segler") {
-          localStorage.setItem("seglerId", data.id);
+          router.replace(`/dashboard/segler/${data.id}`);
+        } else if (data.type === "federation") {
+          router.replace(`/dashboard/federation/${data.id}`);
+        } else {
+          router.replace(`/dashboard/verein/${data.id}`);
         }
-        
-        router.refresh(); 
-        
-        setTimeout(() => {
-          if (data.type === "segler") {
-            router.replace(`/dashboard/segler/${data.id}`);
-          } else if (data.type === "federation") {
-            router.replace(`/dashboard/federation/${data.id}`);
-          } else {
-            router.replace(`/dashboard/verein/${data.id}`);
-          }
-        }, 100);
+        // Nach der Navigation den Router-Cache invalidieren, damit der Header
+        // den eingeloggten Zustand aus der neuen Session anzeigt.
+        router.refresh();
 
       } else {
-        alert(data.error || "Fehler beim Verifizieren");
+        toast(data.error || t("errorVerification"));
       }
     } catch (error) {
       console.error("Verification error:", error);
+      toast(tCommon("networkError"));
     } finally {
       setLoading(false);
     }
@@ -124,10 +124,11 @@ async function handleLogin(e: React.FormEvent) {
         setMessage(t("resetEmailSentSuccess")); // "Wir haben dir einen Link gesendet!"
       } else {
         const data = await res.json();
-        alert(data.error || "Fehler beim Senden der E-Mail");
+        toast(data.error || t("errorSendingEmail"));
       }
     } catch (error) {
       console.error("Forgot password error:", error);
+      toast(tCommon("networkError"));
     } finally {
       setLoading(false);
     }

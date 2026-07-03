@@ -3,6 +3,7 @@
 import { Link, useRouter, usePathname } from "@/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useRef, useEffect } from "react";
+import { useToast } from "@/components/ToastProvider";
 
 export default function Header({
   userType,
@@ -12,6 +13,8 @@ export default function Header({
   userId?: string // Typ definieren
 }) {
   const t = useTranslations("Header");
+  const tCommon = useTranslations("Common");
+  const toast = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
@@ -54,6 +57,7 @@ export default function Header({
       router.push("/");
     } catch (error) {
       console.error("Logout fehlgeschlagen", error);
+      toast(tCommon("networkError"));
     } finally {
       setIsLoggingOut(false);
     }

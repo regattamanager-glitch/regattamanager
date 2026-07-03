@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { useTranslations } from "next-intl";
+import { useToast } from "@/components/ToastProvider";
 
 type Segler = {
   id: string;
@@ -31,6 +32,7 @@ type Segler = {
 
 export default function SeglerProfilPage() {
   const t = useTranslations("EditProfile");
+  const toast = useToast();
   const params = useParams(); 
   const seglerId = params?.seglerId as string;
   const router = useRouter();
@@ -77,7 +79,7 @@ export default function SeglerProfilPage() {
 
   async function saveProfile() {
     if (!segler || !currentPassword) {
-      alert(t('alertFillPassword'));
+      toast(t('alertFillPassword'));
       return;
     }
     setSaving(true);

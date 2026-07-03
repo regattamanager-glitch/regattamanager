@@ -5,6 +5,7 @@ import BackgroundWrapper from '@/components/BackgroundWrapper'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import PwaRegister from '@/components/PwaRegister'
+import ToastProvider from '@/components/ToastProvider'
 import { neon } from '@neondatabase/serverless';
 
 import { cookies } from "next/headers"
@@ -109,14 +110,16 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className="relative min-h-screen overflow-x-hidden flex flex-col">
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <PwaRegister />
-          <BackgroundWrapper />
-          <div className="relative z-10 flex-grow">
-            {/* Jetzt sind beide Variablen hier bekannt */}
-            <Header userType={userType} userId={userId} />
-            <main className="px-6 py-8 text-white">{children}</main>
-          </div>
-          <Footer />
+          <ToastProvider>
+            <PwaRegister />
+            <BackgroundWrapper />
+            <div className="relative z-10 flex-grow">
+              {/* Jetzt sind beide Variablen hier bekannt */}
+              <Header userType={userType} userId={userId} />
+              <main className="px-6 py-8 text-white">{children}</main>
+            </div>
+            <Footer />
+          </ToastProvider>
         </NextIntlClientProvider>
       </body>
     </html>

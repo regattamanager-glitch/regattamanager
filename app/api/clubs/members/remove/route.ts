@@ -17,7 +17,6 @@ export async function POST(request: Request) {
       AND "B"::text = ${clubId}::text
     `;
 
-    console.log(`✅ Mitgliedschaft zwischen User ${userId} und Club ${clubId} im Regatta Manager beendet.`);
 
     return NextResponse.json({ 
       success: true, 

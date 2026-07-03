@@ -32,7 +32,6 @@ export async function GET(req: NextRequest) {
       WHERE "A" = ${seglerId} OR "B" = ${seglerId}
     `.catch(() => []);
 
-    console.log(`Erfolg! ${myRegistrations.length} Registrierungen für ${seglerId} geladen.`);
 
     return NextResponse.json({ 
       friends: friendsRows.map((f: any) => f.friend_id), 

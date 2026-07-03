@@ -323,7 +323,6 @@ if (body.documents && Array.isArray(body.documents)) {
             ${doc.name}
           )
         `;
-        console.log("Gespeichert:", documentName);
       } catch (insertErr) {
         console.error("Fehler beim Speichern des Dokuments:", insertErr);
         throw insertErr; 

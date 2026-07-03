@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/ToastProvider";
 
 export default function ProfilPage() {
+  const toast = useToast();
   const [user, setUser] = useState<any>(null);
   const [codeConfirm, setCodeConfirm] = useState("");
   const [verified, setVerified] = useState(false);
@@ -26,8 +28,8 @@ export default function ProfilPage() {
     if (user && codeConfirm === user.passwort) {
       setVerified(true);
     } else {
-      alert("Falscher Code!");
-    } 
+      toast("Falscher Code!");
+    }
   }
 
   async function handleSave(e: React.FormEvent) {

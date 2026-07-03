@@ -74,7 +74,6 @@ export default function ClubEventsPage() {
           }).filter((id: string) => id.length > 0) // Hier war vermutlich der Fehler: id muss als string deklariert sein
         : [];
 
-      console.log("Bereinigte Vereins-IDs:", myClubIds);
 
       // 3. Filterung der Vereine (Joined vs. Others)
       const joined = allClubsData.filter((c: any) => 
@@ -113,7 +112,6 @@ export default function ClubEventsPage() {
           .join(',');
         
         if (idsQuery) {
-          console.log("Fetch Content für IDs:", idsQuery);
           const resContent = await fetch(`/api/clubs/content?ids=${idsQuery}`);
           
           if (resContent.ok) {

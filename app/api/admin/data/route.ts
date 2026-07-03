@@ -21,7 +21,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const daysParam = searchParams.get("days") || "30";
 
-    console.log(`=== START ADMIN API FETCH (Filter: ${daysParam} Tage, Kumuliert) ===`);
 
     // 1. Einfache Zähler abfragen
     let seglerCount = 0, vereineCount = 0, eventsCount = 0;

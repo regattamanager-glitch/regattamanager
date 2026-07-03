@@ -24,16 +24,6 @@ export async function POST(req: Request) {
   const emailOk = String(email || "").toLowerCase() === expectedEmail;
   const pwOk = String(password || "") === expectedPassword;
 
-  // TEMPORÄRE DIAGNOSE – nach dem Test wieder entfernen.
-  console.log("[ADMIN-LOGIN DEBUG]", {
-    receivedEmail: String(email || ""),
-    receivedPwLength: String(password || "").length,
-    expectedEmail,
-    expectedPwLength: expectedPassword.length,
-    emailOk,
-    pwOk,
-  });
-
   if (!emailOk || !pwOk) {
     return NextResponse.json(
       { success: false, message: "E-Mail oder Passwort falsch." },

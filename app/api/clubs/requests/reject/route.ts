@@ -16,7 +16,6 @@ export async function POST(request: Request) {
       WHERE id = ${requestId};
     `;
 
-    console.log(`❌ Beitrittsanfrage ${requestId} wurde im Regatta Manager abgelehnt.`);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

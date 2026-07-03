@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "@/navigation";
 import { useTranslations } from 'next-intl';
+import { useToast } from "@/components/ToastProvider";
 import { LegalModal } from "@/components/LegalModal";
 
 const BOOTSKLASSEN = [
@@ -56,6 +57,8 @@ const TrashIcon = () => (
 
 export default function CreateEventPage() {
   const t = useTranslations('CreateEvent');
+  const tCommon = useTranslations('Common');
+  const toast = useToast();
   const dropRef = useRef<HTMLDivElement>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [alleBootsklassen, setAlleBootsklassen] = useState(false);
@@ -299,13 +302,13 @@ export default function CreateEventPage() {
   
   // 1. Validierung: Allgemeine Regatta-Daten
   if (!form.name || !form.datumVon || !form.datumBis || !form.land || !form.location || !form.anmeldungVon || !form.anmeldungBis) {
-    alert("Bitte fülle alle Pflichtfelder der Regatta aus.");
+    toast(t("fillAllRequiredFields"));
     return;
   }
 
   // 2. Validierung: Klassen vorhanden
   if (activeClasses.length === 0) {
-    alert(t("addAtLeastOneClass"));
+    toast(t("addAtLeastOneClass"));
     return;
   }
 
@@ -315,7 +318,7 @@ export default function CreateEventPage() {
   );
 
   if (isAnyClassEmpty) {
-    alert("Bitte fülle alle Pflichtfelder (Name, Gebühren, Zeitraum) in allen Bootsklassen aus.");
+    toast(t("fillAllClassFields"));
     return;
   }
 
@@ -324,14 +327,14 @@ export default function CreateEventPage() {
   const hasDuplicates = new Set(classNames).size !== classNames.length;
 
   if (hasDuplicates) {
-    alert("Fehler: Es gibt Klassen mit identischen Namen.");
+    toast(t("duplicateClassNames"));
     return;
   }
 
   // 5. Prüfung: Mindestgebühr
   const feeTooLow = activeClasses.some(cls => Number(cls.feeRegular) < 10 || Number(cls.feeLate) < 10);
   if (feeTooLow) {
-    alert(t("minFeeError"));
+    toast(t("minFeeError"));
     return;
   }
   
@@ -346,7 +349,7 @@ export default function CreateEventPage() {
   });
 
   if (invalidDate) {
-    alert("Fehler: Der Zeitraum einer Klasse muss innerhalb des Regatta-Zeitraums liegen.");
+    toast(t("classPeriodOutsideRegatta"));
     return;
   }
 

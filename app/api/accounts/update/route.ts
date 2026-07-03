@@ -115,7 +115,6 @@ export async function POST(req: NextRequest) {
     const updatedUser = reload[0];
     const { passwort: _, ...userResponse } = updatedUser;
     
-    console.log(`>>> UPDATE ERFOLGREICH: ${userType} ${updatedUser.id} <<<`);
     return NextResponse.json({ success: true, user: userResponse });
 
   } catch (error: any) {

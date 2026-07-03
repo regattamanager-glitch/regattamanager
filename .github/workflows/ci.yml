@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Vorerst nicht-blockierend: der Bestand hat noch ~1250 Lint-Fehler.
+      # Sobald die abgebaut sind, continue-on-error entfernen.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: i18n key parity
+        run: npm run check:i18n
+
+      - name: Unit tests
+        run: npm test

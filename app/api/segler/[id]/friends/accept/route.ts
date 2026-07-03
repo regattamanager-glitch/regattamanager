@@ -21,7 +21,6 @@ export async function POST(req: Request) {
       RETURNING id
     `;
 
-    console.log("Einladung aktualisiert:", updateResult.length > 0);
 
     // 2. Eintrag in _SeglerFriends
     // Wir sortieren die IDs (A muss oft kleiner sein als B bei Prisma-Tabellen),
@@ -39,7 +38,6 @@ export async function POST(req: Request) {
         )
         ON CONFLICT DO NOTHING
       `;
-      console.log("Eintrag in _SeglerFriends erfolgreich!");
     } catch (dbErr: any) {
       console.error("Fehler beim Schreiben in _SeglerFriends:", dbErr.message);
       // Wir werfen den Fehler nicht, damit die Einladung trotzdem als 'accepted' gilt

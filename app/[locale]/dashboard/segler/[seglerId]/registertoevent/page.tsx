@@ -5,6 +5,7 @@ import { useEffect, useState, ChangeEvent } from "react";
 import { User, Anchor, Users, Trash2, CreditCard, Info, ChevronRight, Phone, ShieldAlert, Award, ShoppingBag } from "lucide-react";
 import { useRouter } from "@/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import { useToast } from "@/components/ToastProvider";
 
 // --- Interfaces bleiben gleich ---
 interface Person {
@@ -47,6 +48,7 @@ type CrewMember = Person & {
 
 export default function RegisterToEventPage() {
   const t = useTranslations("Register");
+  const toast = useToast();
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -213,7 +215,7 @@ export default function RegisterToEventPage() {
       }
     } catch (err: any) {
       console.error("Fehler bei der Anmeldung:", err);
-      alert(`${t('errorPayment')}: ${err.message}`);
+      toast(`${t('errorPayment')}: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
